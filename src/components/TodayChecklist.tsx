@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { AiBadge, TribunalBadge } from "@/components/StatusBadges";
 import { Badge } from "@/components/ui/Badge";
 import type { Verdict } from "@/lib/ai-review";
-import { GOAL_ICON } from "@/lib/goal-icons";
+import { GOAL_SPRITE } from "@/lib/goal-icons";
+import { Sprite } from "@/components/Sprite";
 import { compressImage, mediaPath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 import { checkinNumbers, goalMeta, GOALS, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
@@ -38,7 +39,7 @@ export function TodayChecklist({ groupId, userId, done }: Props) {
   return (
     <>
       <section aria-labelledby="metas" className="mb-8">
-        <h2 id="metas" className="mb-3 text-lg font-semibold leading-6">
+        <h2 id="metas" className="pixel mb-3 text-2xl uppercase leading-7">
           Metas
         </h2>
         {/* Stable order (study → typing → reading): cards never move while someone is typing. */}
@@ -52,7 +53,7 @@ export function TodayChecklist({ groupId, userId, done }: Props) {
       </section>
 
       <section aria-labelledby="projeto">
-        <h2 id="projeto" className="text-lg font-semibold leading-6">
+        <h2 id="projeto" className="pixel text-2xl uppercase leading-7">
           Projeto opcional
         </h2>
         <p className="mb-3 text-sm text-muted">Não conta para as 3 metas. Vale poucos pontos no ranking, no máximo 1 por dia.</p>
@@ -64,26 +65,19 @@ export function TodayChecklist({ groupId, userId, done }: Props) {
 
 function DoneRow({ item }: { item: DoneGoal }) {
   const g = goalMeta(item.goal);
-  const Icon = GOAL_ICON[item.goal];
   const value = checkinNumbers(item);
+  const annulled = item.dispute === "upheld";
   return (
     <Link
       href={`/checkin/${item.id}`}
-      className="flex min-h-[88px] items-center gap-3 rounded-2xl bg-surface p-3 transition-colors duration-150 hover:bg-raised"
+      className="card flex min-h-[88px] items-center gap-3 p-3 transition-colors duration-150 hover:bg-raised"
       data-goal={item.goal}
-      data-state={item.dispute === "upheld" ? "annulled" : "done"}
+      data-state={annulled ? "annulled" : "done"}
     >
-      {item.photoUrl ? (
-        <img src={item.photoUrl} alt="" className="h-16 w-20 shrink-0 rounded-xl object-cover" />
-      ) : (
-        <span className="h-16 w-20 shrink-0 rounded-xl bg-raised" />
-      )}
+      <Sprite name={GOAL_SPRITE[item.goal]} dim={annulled} />
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 font-semibold">
-          <Icon size={18} aria-hidden className="text-muted" />
-          {g.label}
-        </span>
-        {value && <span className="tabular mt-0.5 block truncate text-sm text-muted">{value}</span>}
+        <span className="pixel block text-lg uppercase leading-5">{g.label}</span>
+        {value && <span className="tabular mt-0.5 block break-words text-sm text-muted">{value}</span>}
         <span className="mt-1 flex flex-wrap gap-1">
           {item.dispute ? (
             <TribunalBadge status={item.dispute} />
@@ -97,6 +91,11 @@ function DoneRow({ item }: { item: DoneGoal }) {
           )}
         </span>
       </span>
+      {item.photoUrl ? (
+        <img src={item.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-sm border-2 border-bevel-dark object-cover" />
+      ) : (
+        <span className="h-14 w-14 shrink-0 rounded-sm bg-raised" />
+      )}
       <ChevronRight size={20} aria-hidden className="shrink-0 text-muted" />
     </Link>
   );
@@ -105,7 +104,6 @@ function DoneRow({ item }: { item: DoneGoal }) {
 function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; userId: string }) {
   const router = useRouter();
   const g = goalMeta(goal);
-  const Icon = GOAL_ICON[goal];
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [summary, setSummary] = useState("");
@@ -114,12 +112,24 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
 
   const minutesOk = goal !== "study" || Number(minutes) >= MIN_STUDY_MINUTES;
   const pagesOk = goal !== "reading" || Number(pages) >= 1;
   const titleOk = goal !== "project" || title.trim().length >= 3;
   const summaryOk = goal !== "study" || summary.trim().length >= MIN_SUMMARY;
   const ready = !!file && minutesOk && pagesOk && titleOk && summaryOk;
+
+  // What is still missing, in words, next to the disabled button.
+  const missing = [
+    !titleOk && "dê um nome ao projeto",
+    !file && "adicione a foto",
+    goal === "study" && !minutesOk && `informe pelo menos ${MIN_STUDY_MINUTES} min`,
+    goal === "reading" && !pagesOk && "informe as páginas lidas",
+    goal === "study" && !summaryOk && "complete o resumo",
+  ].filter(Boolean) as string[];
+  const missingText =
+    missing.length === 0 ? "" : `Para enviar: ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} e ${missing.at(-1)}`}.`;
 
   useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
 
@@ -181,13 +191,15 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
   const fieldId = (name: string) => `${goal}-${name}`;
 
   return (
-    <section className="rounded-2xl bg-surface p-4" data-goal={goal} data-state="pending" aria-labelledby={fieldId("title")}>
-      <div className="mb-3 flex items-center gap-2">
-        <Icon size={22} aria-hidden className="text-muted" />
-        <h3 id={fieldId("title")} className="flex-1 text-lg font-semibold leading-6">
-          {g.label}
-        </h3>
-        <span className="text-sm text-muted">{g.hint}</span>
+    <section className="card" data-goal={goal} data-state="pending" aria-labelledby={fieldId("title")} onChange={() => setTouched(true)}>
+      <div className="mb-3 flex items-center gap-3">
+        <Sprite name={GOAL_SPRITE[goal]} dim />
+        <div className="min-w-0 flex-1">
+          <h3 id={fieldId("title")} className="pixel text-xl uppercase leading-6">
+            {g.label}
+          </h3>
+          <p className="text-sm text-muted">{g.hint}</p>
+        </div>
       </div>
 
       {goal === "project" && (
@@ -208,7 +220,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
       )}
 
       {/* No `capture` attribute: phones offer both camera and gallery. */}
-      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
+      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
         {preview ? (
           <img src={preview} alt="Prévia da prova" className="max-h-64 w-full object-contain" />
         ) : (
@@ -235,7 +247,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
               onChange={(e) => setSummary(e.target.value)}
               aria-describedby={fieldId("summary-help")}
             />
-            <p id={fieldId("summary-help")} className={`tabular mt-1 text-sm ${summaryOk ? "text-muted" : "text-warn"}`}>
+            <p id={fieldId("summary-help")} className={`tabular mt-1 text-sm ${summaryOk || !touched ? "text-muted" : "text-warn"}`}>
               {summary.trim().length} de {MIN_SUMMARY} caracteres mínimos
             </p>
           </div>
@@ -252,7 +264,17 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
           {error}
         </p>
       )}
-      <button className={`${goal === "project" ? "btn-secondary" : "btn-primary"} mt-4 w-full`} disabled={!ready || busy} onClick={submit}>
+      {missingText && (
+        <p id={fieldId("missing")} className="mt-4 text-sm text-muted" aria-live="polite">
+          {missingText}
+        </p>
+      )}
+      <button
+        className={`${goal === "project" ? "btn-secondary" : "btn-primary"} mt-3 w-full`}
+        disabled={!ready || busy}
+        onClick={submit}
+        aria-describedby={missingText ? fieldId("missing") : undefined}
+      >
         {busy && <Loader size={18} aria-hidden className="animate-spin motion-reduce:animate-none" />}
         {busy ? "Enviando…" : goal === "project" ? "Registrar projeto" : "Enviar prova"}
       </button>

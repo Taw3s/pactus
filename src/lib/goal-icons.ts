@@ -7,3 +7,13 @@ export const GOAL_ICON: Record<Goal, LucideIcon> = {
   reading: BookOpen,
   project: Hammer,
 };
+
+import type { SpriteName } from "@/components/Sprite";
+
+/** Low-poly prop that represents each goal. */
+export const GOAL_SPRITE: Record<Goal, SpriteName> = {
+  study: "notebook",
+  typing: "keyboard",
+  reading: "openBook",
+  project: "computer",
+};

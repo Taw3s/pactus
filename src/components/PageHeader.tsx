@@ -14,7 +14,7 @@ export function PageHeader({ title, subtitle, right, backFallback }: Props) {
       {backFallback && <BackButton fallback={backFallback} />}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight">{title}</h1>
+          <h1 className="pixel text-[32px] font-bold uppercase leading-9">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
         </div>
         {right && <div className="shrink-0">{right}</div>}
