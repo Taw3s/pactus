@@ -15,7 +15,10 @@ export type SpriteName =
   | "trophy"
   | "scales";
 
-/** Pre-rendered 48×48 low-poly prop, scaled by a whole number (1×, 2×, 3×) to keep pixels sharp. */
+/**
+ * Pre-rendered 48×48 low-poly prop, scaled by a whole number (1×, 2×, 3×) to keep pixels sharp.
+ * `dim` (pending): slightly darker but still coloured; the text next to it carries the state.
+ */
 export function Sprite({ name, scale = 1, dim = false, className = "" }: { name: SpriteName; scale?: 1 | 2 | 3; dim?: boolean; className?: string }) {
   const size = 48 * scale;
   return (
@@ -24,7 +27,7 @@ export function Sprite({ name, scale = 1, dim = false, className = "" }: { name:
       alt=""
       width={size}
       height={size}
-      className={`sprite shrink-0 transition-[filter] duration-200 ${dim ? "brightness-[0.55] grayscale" : ""} ${className}`}
+      className={`sprite shrink-0 transition-[filter] duration-200 ease-[steps(2)] ${dim ? "brightness-[0.8] saturate-[0.6]" : ""} ${className}`}
     />
   );
 }

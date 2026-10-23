@@ -23,15 +23,17 @@ interface Props {
   stamp: string;
   note: string;
   tone: keyof typeof TONE;
-  /** The animation plays once per device for this key (e.g. the day, or the dispute id). */
+  /** The animation plays once per device for this key: include the viewer (user + day, user + dispute). */
   playKey: string;
   testId?: string;
 }
 
 /** A judge's gavel strikes twice and a stamp lands. Static when already seen or with reduced motion. */
 export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
+  // Starts on the final, static state; only an unseen event replays the gavel and the stamp.
   const [frame, setFrame] = useState(FRAMES.length - 1);
   const [stamped, setStamped] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [impact, setImpact] = useState(0);
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
 
     setFrame(0);
     setStamped(false);
+    setPlaying(true);
     const timers: ReturnType<typeof setTimeout>[] = [];
     let t = 0;
     FRAMES.forEach((f, i) => {
@@ -68,7 +71,7 @@ export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
       <div className="min-w-0">
         <p
           className={`pixel inline-block -rotate-6 rounded-sm border-[3px] px-3 py-1 text-2xl font-bold uppercase leading-7 shadow-[3px_3px_0_var(--color-hard-shadow)] ${TONE[tone]} ${
-            stamped ? "animate-[stamp_260ms_steps(4)_both]" : "invisible"
+            !stamped ? "invisible" : playing ? "animate-[stamp_260ms_steps(4)_both]" : ""
           }`}
         >
           {stamp}

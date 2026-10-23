@@ -39,15 +39,19 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
     router.refresh();
   }
 
-  const option = (value: "guilty" | "innocent", label: string, Icon: typeof Gavel, on: string) => (
+  // The game word plus its literal consequence: the group judges the proof, not the person.
+  const option = (value: "guilty" | "innocent", label: string, effect: string, Icon: typeof Gavel, on: string) => (
     <button
       type="button"
       aria-pressed={choice === value}
       onClick={() => setChoice(value)}
-      className={`btn-secondary flex-1 ${choice === value ? on : ""}`}
+      className={`btn-secondary min-h-16 flex-1 flex-col !gap-0.5 py-2 ${choice === value ? on : ""}`}
     >
-      <Icon size={18} aria-hidden />
-      {label}
+      <span className="flex items-center gap-2">
+        <Icon size={18} aria-hidden />
+        {label}
+      </span>
+      <span className="font-sans text-xs font-medium normal-case">{effect}</span>
     </button>
   );
 
@@ -55,8 +59,8 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
     <div className="space-y-3" data-testid="vote-form">
       <p className="pixel text-lg uppercase">Seu veredito sobre {defendant}</p>
       <div className="flex gap-2">
-        {option("guilty", "Culpado", Gavel, "!border-fail !bg-fail-bg !text-fail")}
-        {option("innocent", "Inocente", ShieldCheck, "!border-done !bg-done-bg !text-done")}
+        {option("guilty", "Culpado", "anular a prova", Gavel, "!border-fail !bg-fail-bg !text-fail")}
+        {option("innocent", "Inocente", "manter a prova", ShieldCheck, "!border-done !bg-done-bg !text-done")}
       </div>
       {choice && (
         <div>
@@ -80,7 +84,7 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
       )}
       {choice && (
         <button className="btn-primary w-full" disabled={!ready || busy} onClick={submit}>
-          {busy && <Loader size={18} aria-hidden className="animate-spin motion-reduce:animate-none" />}
+          {busy && <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
           Confirmar voto
         </button>
       )}

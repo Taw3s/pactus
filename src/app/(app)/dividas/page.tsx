@@ -50,7 +50,7 @@ export default async function DebtsPage() {
       <section className="card mb-6" aria-label="Seu saldo" data-testid="my-balance">
         {owesSomething ? (
           <>
-            <p className="pixel text-sm uppercase text-muted">Seu saldo</p>
+            <p className="pixel text-base uppercase text-muted">Seu saldo</p>
             <div aria-hidden className="mt-2 flex items-end justify-center gap-6">
               <span className="flex items-end">
                 <Sprite name="sodaCan" scale={2} />

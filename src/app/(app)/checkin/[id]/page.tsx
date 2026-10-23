@@ -70,14 +70,14 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     <>
       {(value || checkin.goal === "project") && (
         <dl className="card mb-4">
-          <dt className="pixel text-sm uppercase text-muted">{checkin.goal === "project" ? "Projeto" : "Informado"}</dt>
+          <dt className="pixel text-base uppercase text-muted">{checkin.goal === "project" ? "Projeto" : "Informado"}</dt>
           <dd className="pixel tabular text-[32px] font-bold leading-9">{value}</dd>
         </dl>
       )}
       {photoBlock}
       {checkin.summary && (
         <section className="mb-4" aria-labelledby="resumo">
-          <h2 id="resumo" className="pixel mb-1 text-sm uppercase text-muted">
+          <h2 id="resumo" className="pixel mb-1 text-base uppercase text-muted">
             Resumo
           </h2>
           <p className="whitespace-pre-wrap">{checkin.summary}</p>
@@ -135,7 +135,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
             <p className="mt-2 text-sm text-muted">{ownerName} ainda não se defendeu.</p>
           )}
         </section>
-        <p className="pixel mb-2 flex items-center gap-1.5 text-sm uppercase text-muted">
+        <p className="pixel mb-2 flex items-center gap-1.5 text-base uppercase text-muted">
           <GoalIcon size={16} aria-hidden />
           Prova de {goal.label.toLowerCase()} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
         </p>
@@ -158,7 +158,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-x-2 font-semibold">
                       {m?.display_name}
-                      <span className={`pixel text-sm uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Culpado" : "Inocente"}</span>
+                      <span className={`pixel text-base uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Culpado" : "Inocente"}</span>
                       <span className="text-xs font-normal text-muted">{time(v.created_at)}</span>
                     </p>
                     <p className="mt-1 break-words text-sm">{v.reason ?? <span className="text-muted">Sem motivo (voto antigo).</span>}</p>
@@ -185,7 +185,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           accuser={accuser}
           byAi={dispute.by_ai}
           jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
-          me={{ isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
+          me={{ id: me.user_id, isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
         />
         <TribunalTabs evidence={evidence} votes={voteList} voteCount={votes.length} />
       </>

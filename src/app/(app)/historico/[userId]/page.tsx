@@ -21,7 +21,7 @@ function Cell({ day, status, today, offButDone }: { day: string; status: DayStat
     missed: "bg-fail-bg text-fail",
     off: "bg-off-bg text-off",
     pending: "bg-pending-bg text-pending",
-    before: "text-muted/60",
+    before: "text-muted",
   };
   const Icon = status === "done" ? Check : status === "missed" ? X : status === "off" ? Pause : status === "pending" ? Circle : null;
   const label = `${n} de ${monthName(day.slice(0, 7)).split(" ")[0].toLowerCase()}, ${WEEK_FULL[weekdayOf(day)]}: ${WORD[status]}${offButDone ? ", metas feitas na folga" : ""}${today ? ", hoje" : ""}`;

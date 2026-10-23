@@ -106,8 +106,8 @@ export default async function FeedPage() {
                       <div className="flex aspect-square flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-divider">
                         <Sprite name={GOAL_SPRITE[g.id]} dim />
                       </div>
-                      <p className="pixel mt-1.5 text-sm uppercase">{g.label}</p>
-                      <p className="text-xs text-muted">Pendente</p>
+                      <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
+                      <p className="text-xs text-muted">{off ? "Opcional" : "Pendente"}</p>
                     </li>
                   );
                 }
@@ -116,7 +116,7 @@ export default async function FeedPage() {
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
                       <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
-                      <p className="pixel mt-1.5 text-sm uppercase">{g.label}</p>
+                      <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
                       {value && <p className="tabular text-xs text-muted">{value}</p>}
                     </Link>
                     <div className="mt-1">
