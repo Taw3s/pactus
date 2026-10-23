@@ -13,7 +13,9 @@ export type SpriteName =
   | "gavelUp"
   | "judgeBench"
   | "trophy"
-  | "scales";
+  | "scales"
+  | "memoryCard"
+  | "calendar";
 
 /**
  * Pre-rendered 48×48 low-poly prop, scaled by a whole number (1×, 2×, 3×) to keep pixels sharp.

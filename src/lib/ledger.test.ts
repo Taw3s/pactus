@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, eachDay, lastDayOfMonth, msUntilEndOfDay, nextMonday, spToday, weekdayOf } from "./dates";
-import { currentStreak, dayOffOn, dayStatus, debtLines, debtSummary, missedDays, type MemberLedgerInput } from "./ledger";
+import { currentStreak, dayOffOn, dayStatus, debtLines, debtSummary, missedDays, streakMilestone, type MemberLedgerInput } from "./ledger";
 
 describe("dates (America/Sao_Paulo)", () => {
   it("uses São Paulo date, not UTC, around midnight", () => {
@@ -96,5 +96,17 @@ describe("ledger", () => {
     const lines = debtLines(base(), [], "2026-10-21");
     expect(lines.map((l) => l.day)).toEqual(["2026-10-19", "2026-10-19", "2026-10-20", "2026-10-20"]);
     expect(lines.some((l) => l.overdue)).toBe(false);
+  });
+});
+
+describe("streakMilestone", () => {
+  it("returns the highest milestone reached, or null below 3", () => {
+    expect(streakMilestone(0)).toBeNull();
+    expect(streakMilestone(2)).toBeNull();
+    expect(streakMilestone(3)).toBe(3);
+    expect(streakMilestone(6)).toBe(3);
+    expect(streakMilestone(7)).toBe(7);
+    expect(streakMilestone(29)).toBe(14);
+    expect(streakMilestone(120)).toBe(30);
   });
 });

@@ -1,13 +1,43 @@
 // Pacto service worker.
-// Deliberately no offline caching: check-ins must always hit the server
-// (fresh day in São Paulo, fresh auth). It exists so the app is installable
-// and so push notifications can be added later (see src/lib/push/README.md).
+// App data is never cached: check-ins must always hit the server (fresh day in
+// São Paulo, fresh auth). The only cached thing is a static "no connection" page,
+// shown when a page navigation fails because the phone is offline.
+// It also keeps the app installable and is where push notifications will live
+// (see src/lib/push/README.md).
 
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+const OFFLINE_CACHE = "pacto-offline-v1";
+const OFFLINE_FILES = ["/offline.html", "/lowpoly/computer.png"];
 
-// Network passthrough (keeps install criteria satisfied on all browsers).
-self.addEventListener("fetch", () => {});
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(OFFLINE_CACHE)
+      .then((cache) => cache.addAll(OFFLINE_FILES))
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== OFFLINE_CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.mode === "navigate") {
+    // Network first, always; the offline page only when the network itself fails.
+    event.respondWith(fetch(request).catch(() => caches.match("/offline.html")));
+    return;
+  }
+  if (OFFLINE_FILES.includes(new URL(request.url).pathname) && new URL(request.url).origin === self.location.origin) {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
+  }
+  // Everything else: plain network.
+});
 
 // --- Push (disabled in the MVP) ---------------------------------------------
 // self.addEventListener("push", (event) => {

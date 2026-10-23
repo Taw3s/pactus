@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
+import { MilestonePlaque } from "@/components/MilestonePlaque";
 import { PersonPicker } from "@/components/PersonPicker";
+import { Sprite } from "@/components/Sprite";
 import { eachDay, lastDayOfMonth, monthKey, spToday, weekdayOf } from "@/lib/dates";
 import { getLedgerInputs, getMembers, requireMember } from "@/lib/data";
-import { currentStreak, dayStatus, type DayStatus } from "@/lib/ledger";
+import { currentStreak, dayStatus, streakMilestone, type DayStatus } from "@/lib/ledger";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +32,9 @@ function Cell({ day, status, today, offButDone }: { day: string; status: DayStat
       aria-label={label}
       data-day={day}
       data-status={status}
-      className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm font-semibold ${style[status]} ${today ? "ring-2 ring-accent ring-inset" : ""}`}
+      className={`relative flex h-12 flex-col items-center justify-center rounded-sm ${style[status]} ${today ? "ring-2 ring-accent ring-inset" : ""}`}
     >
-      <span className="tabular leading-4">{n}</span>
+      <span className="pixel tabular text-lg leading-5">{n}</span>
       {Icon && <Icon size={14} strokeWidth={2.5} aria-hidden />}
       {offButDone && <Check size={10} strokeWidth={3} aria-hidden className="absolute right-1 top-1 text-done" />}
     </li>
@@ -58,12 +60,12 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   const isMe = userId === me.user_id;
   const streak = currentStreak(input, today);
   const monthLower = monthName(month).split(" ")[0].toLowerCase();
+  const milestone = streakMilestone(streak);
 
   return (
     <>
       <PageHeader
-        title={isMe ? "Perfil" : member.display_name}
-        subtitle={isMe ? member.display_name : "Histórico"}
+        title={isMe ? "Perfil" : "Histórico"}
         right={
           <Link href="/config" className="btn-secondary min-h-11 px-3 text-sm">
             <Settings size={18} aria-hidden />
@@ -73,17 +75,27 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
       />
       <PersonPicker people={members.map((x) => ({ id: x.user_id, name: x.display_name }))} selected={userId} month={month} />
 
+      <div className="card mb-4 flex items-center gap-3">
+        <Sprite name="memoryCard" />
+        <div className="min-w-0">
+          <h2 className="pixel break-words text-2xl font-bold uppercase leading-7">{member.display_name}</h2>
+          <p className="text-sm text-muted">{isMe ? "Seu histórico" : "Histórico"}</p>
+        </div>
+      </div>
+
+      {milestone && <MilestonePlaque milestone={milestone} viewerId={me.user_id} personId={userId} />}
+
       <dl className="mb-4 grid grid-cols-2 gap-2">
-        <div className="card">
-          <dt className="text-sm text-muted">Sequência atual</dt>
-          <dd className="tabular text-[32px] font-bold leading-9" data-testid="streak">
+        <div className="card !border-done/40 !bg-done-bg">
+          <dt className="text-sm text-done">Sequência atual</dt>
+          <dd className="pixel tabular text-[40px] font-bold leading-[44px] text-done" data-testid="streak">
             {streak}
           </dd>
-          <dd className="text-sm text-muted">{streak === 1 ? "dia seguido" : "dias seguidos"}, folgas não interrompem</dd>
+          <dd className="text-sm text-fg">{streak === 1 ? "dia seguido" : "dias seguidos"}, folgas não interrompem</dd>
         </div>
         <div className="card">
           <dt className="text-sm text-muted">Falhas em {monthLower}</dt>
-          <dd className="tabular text-[32px] font-bold leading-9" data-testid="missed-month">
+          <dd className="pixel tabular text-[32px] font-bold leading-[44px]" data-testid="missed-month">
             {count("missed")}
           </dd>
           <dd className="text-sm text-muted">{count("missed") === 1 ? "dia descumprido" : "dias descumpridos"}</dd>

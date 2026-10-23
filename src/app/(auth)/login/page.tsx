@@ -55,7 +55,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div role="tablist" aria-label="Forma de entrar" className="grid grid-cols-2 gap-1 rounded-sm bg-surface p-1">
+      <div role="tablist" aria-label="Forma de entrar" className="grid grid-cols-2 gap-1 rounded-sm border-2 border-bevel-dark bg-bg p-1">
         {(["password", "magic"] as const).map((m) => (
           <button
             key={m}
@@ -63,7 +63,7 @@ function LoginForm() {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`min-h-11 rounded-lg text-sm font-semibold transition-colors duration-150 ${mode === m ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}
+            className={`pixel min-h-12 rounded-sm text-base uppercase ${mode === m ? "bg-raised text-accent shadow-[2px_2px_0_var(--color-hard-shadow)]" : "text-muted hover:text-fg"}`}
           >
             {m === "password" ? "Senha" : "Link por e-mail"}
           </button>

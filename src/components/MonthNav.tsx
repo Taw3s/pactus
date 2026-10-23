@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { Sprite } from "./Sprite";
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -16,11 +17,14 @@ export function monthName(key: string) {
 export function MonthNav({ month, current, hrefFor }: { month: string; current: string; hrefFor: (m: string) => string }) {
   const btn = "flex h-11 w-11 items-center justify-center rounded-sm text-muted hover:bg-raised hover:text-fg";
   return (
-    <div className="mb-4 flex items-center justify-between rounded-sm bg-surface p-1">
+    <div className="card mb-4 flex items-center justify-between !p-1">
       <Link href={hrefFor(shiftMonth(month, -1))} className={btn} aria-label="Mês anterior">
         <ChevronLeft size={22} aria-hidden />
       </Link>
-      <h2 className="text-lg font-semibold leading-6">{monthName(month)}</h2>
+      <h2 className="pixel flex items-center gap-2 text-xl uppercase leading-6">
+        <Sprite name="calendar" />
+        {monthName(month)}
+      </h2>
       {month < current ? (
         <Link href={hrefFor(shiftMonth(month, 1))} className={btn} aria-label="Próximo mês">
           <ChevronRight size={22} aria-hidden />
