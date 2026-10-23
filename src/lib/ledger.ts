@@ -86,3 +86,10 @@ export function debtSummary(lines: DebtLine[]) {
     overdue: open.filter((l) => l.overdue).length,
   };
 }
+
+/** Streak milestones shown as a plaque in the history (visual only: no points, no rule). */
+export const STREAK_MILESTONES = [3, 7, 14, 30] as const;
+
+export function streakMilestone(streak: number): number | null {
+  return [...STREAK_MILESTONES].reverse().find((n) => streak >= n) ?? null;
+}
