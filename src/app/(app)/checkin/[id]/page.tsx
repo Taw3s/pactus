@@ -6,7 +6,7 @@ import { DisputeBadge } from "@/components/DisputeBadge";
 import { DisputeActions } from "@/components/DisputeActions";
 import { addDays, formatDayPt, spToday } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
-import { GOALS, type Checkin, type Dispute, type DisputeResult, type DisputeVote } from "@/lib/types";
+import { checkinNumbers, goalMeta, type Checkin, type Dispute, type DisputeResult, type DisputeVote } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,8 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const byId = new Map(members.map((m) => [m.user_id, m]));
   const owner = byId.get(checkin.user_id);
   const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path]);
-  const goal = GOALS.find((g) => g.id === checkin.goal)!;
+  const goal = goalMeta(checkin.goal);
+  const numbers = checkinNumbers(checkin);
   const isOwner = checkin.user_id === me.user_id;
   const canDispute = !dispute && !isOwner && checkin.day >= addDays(spToday(), -1);
 
@@ -56,6 +57,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           {result && <DisputeBadge status={result.status} />}
         </div>
         <img src={urls.get(checkin.photo_path)} alt={`Prova de ${goal.label}`} className="w-full rounded-xl" />
+        {numbers && <p className="mt-3 text-sm font-medium text-emerald-300">{numbers}</p>}
         {checkin.summary && <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-200">{checkin.summary}</p>}
       </article>
 

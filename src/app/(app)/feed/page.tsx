@@ -6,7 +6,7 @@ import { DisputeBadge } from "@/components/DisputeBadge";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
-import { GOALS, type Checkin, type DisputeResult } from "@/lib/types";
+import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -35,9 +35,11 @@ export default async function FeedPage() {
 
   const rows = members.map((m) => {
     const changes = (changeRows ?? []).filter((c) => c.user_id === m.user_id) as DayOffChange[];
-    const mine = checkins.filter((c) => c.user_id === m.user_id);
+    const all = checkins.filter((c) => c.user_id === m.user_id);
+    const mine = all.filter((c) => c.goal !== "project");
+    const project = all.find((c) => c.goal === "project");
     const valid = mine.filter((c) => resultByCheckin.get(c.id)?.status !== "upheld");
-    return { m, mine, off: weekdayOf(today) === dayOffOn(changes, today), complete: new Set(valid.map((c) => c.goal)).size === 3 };
+    return { m, mine, project, off: weekdayOf(today) === dayOffOn(changes, today), complete: new Set(valid.map((c) => c.goal)).size === 3 };
   });
   rows.sort((a, b) => Number(b.complete) - Number(a.complete) || b.mine.length - a.mine.length);
 
@@ -52,7 +54,7 @@ export default async function FeedPage() {
             {open.map((c) => (
               <li key={c.id}>
                 <Link href={`/checkin/${c.id}`} className="text-amber-100 underline">
-                  {GOALS.find((g) => g.id === c.goal)?.label} de {nameOf.get(c.user_id)} · {formatDayPt(c.day)}
+                  {goalMeta(c.goal).label} de {nameOf.get(c.user_id)} · {formatDayPt(c.day)}
                 </Link>
               </li>
             ))}
@@ -61,7 +63,7 @@ export default async function FeedPage() {
       )}
 
       <div className="space-y-3">
-        {rows.map(({ m, mine, off, complete }) => (
+        {rows.map(({ m, mine, project, off, complete }) => (
           <section key={m.user_id} className="card" data-member={m.display_name}>
             <div className="flex items-center gap-3">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
@@ -98,8 +100,19 @@ export default async function FeedPage() {
                 })}
               </div>
             )}
+            {mine.length > 0 && (
+              <p className="mt-2 text-xs text-emerald-300">
+                {mine.map((c) => checkinNumbers(c)).filter(Boolean).join(" · ")}
+              </p>
+            )}
             {mine.find((c) => c.goal === "study")?.summary && (
-              <p className="mt-2 line-clamp-3 text-sm text-zinc-300">📚 {mine.find((c) => c.goal === "study")!.summary}</p>
+              <p className="mt-1 line-clamp-3 text-sm text-zinc-300">📚 {mine.find((c) => c.goal === "study")!.summary}</p>
+            )}
+            {project && (
+              <Link href={`/checkin/${project.id}`} className="mt-2 flex items-center gap-2 rounded-xl bg-zinc-950 px-3 py-2 text-sm">
+                <span className="flex-1">🛠️ Projeto: {project.title}</span>
+                {resultByCheckin.get(project.id) && <DisputeBadge status={resultByCheckin.get(project.id)!.status} />}
+              </Link>
             )}
           </section>
         ))}

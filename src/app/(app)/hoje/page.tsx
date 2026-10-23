@@ -29,27 +29,31 @@ export default async function TodayPage() {
   return (
     <>
       <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · olá, ${me.display_name}`} right={!isOff && <Countdown />} />
-      {isOff ? (
-        <div className="card text-center">
+      {isOff && (
+        <div className="card mb-3 text-center">
           <p className="text-4xl">🏖️</p>
           <h2 className="mt-2 text-lg font-semibold">Dia de folga</h2>
           <p className="text-sm text-zinc-400">
-            {WEEKDAYS_PT[dayOff]} é sua folga. Sem metas e sem penalidade hoje.
+            {WEEKDAYS_PT[dayOff]} é sua folga: nada é obrigatório e não há penalidade. Se quiser estudar mesmo assim, o que você
+            enviar conta pontos no ranking.
           </p>
         </div>
-      ) : (
-        <TodayChecklist
-          groupId={me.group_id}
-          userId={me.user_id}
-          done={mine.map((c) => ({
-            id: c.id,
-            goal: c.goal,
-            summary: c.summary,
-            photoUrl: urls.get(c.photo_path) ?? null,
-            dispute: statusOf.get(c.id) ?? null,
-          }))}
-        />
       )}
+      <TodayChecklist
+        groupId={me.group_id}
+        userId={me.user_id}
+        isOff={isOff}
+        done={mine.map((c) => ({
+          id: c.id,
+          goal: c.goal,
+          summary: c.summary,
+          minutes: c.minutes,
+          pages: c.pages,
+          title: c.title,
+          photoUrl: urls.get(c.photo_path) ?? null,
+          dispute: statusOf.get(c.id) ?? null,
+        }))}
+      />
     </>
   );
 }

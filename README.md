@@ -15,6 +15,10 @@ Todo dia, cada pessoa cumpre **3 metas**, cada uma com foto de prova:
 - **Penalidade:** cada dia descumprido vale 1 Coca-Cola + 1 salgado, devidos **ao grupo**. Quem recebe marca como pago.
 - **Prazo de pagamento:** último dia do mês. Depois disso a dívida aparece como **atrasada**, mas continua valendo.
 - **Tribunal:** qualquer membro pode contestar um check-in; o grupo vota (regras abaixo).
+- **Números:** o estudo registra os minutos (mínimo 60) e a leitura, as páginas.
+- **Projetos:** opcional, 1 por dia, com nome e foto. Vale pouco no ranking para ninguém "rushar".
+- **Folga:** nada é obrigatório, mas check-ins enviados na folga contam pontos no ranking.
+- **Ranking mensal:** dia cumprido 20 pts · estudo 1 pt/min (até 240 min/dia) · leitura 2 pts/página (até 50/dia) · projeto 10 pts. Check-in anulado pelo tribunal não pontua. A tabela fica em `src/lib/ranking.ts` (`SCORING`).
 
 Stack: Next.js 15 (App Router) + TypeScript + Tailwind 4 + Supabase (Auth, Postgres, Storage com RLS) + Vercel.
 
@@ -48,7 +52,11 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
    - os triggers de regra de negócio, as funções `join_group`, `check_invite_code` e `set_day_off`;
    - as políticas RLS de todas as tabelas;
    - o bucket privado `media` no Storage, com as políticas de upload e leitura.
-   Em seguida, numa aba nova, cole e rode também [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) (correções da auditoria de segurança). **Rode cada arquivo uma vez só, nessa ordem.** Quem já tinha rodado o `0001` antes só precisa rodar o `0002`.
+   Em seguida, cada um numa aba nova e nesta ordem, rode também:
+   - [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) — correções da auditoria de segurança;
+   - [`supabase/migrations/0003_ranking_projects.sql`](supabase/migrations/0003_ranking_projects.sql) — minutos, páginas, projetos e ranking.
+
+   **Rode cada arquivo uma vez só, nessa ordem.** Quem já rodou os anteriores só roda os que faltam.
 3. **Crie o grupo e o código de convite** (mesmo SQL Editor):
 
    ```sql

@@ -62,12 +62,13 @@ do $$ begin
 end $$;
 
 -- client-chosen day / user are overwritten by the trigger
-insert into public.checkins (goal, photo_path, summary) values
+insert into public.checkins (goal, photo_path, summary, minutes) values
   ('study', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/s.jpg',
-   'Estudei integrais por partes e substituição trigonométrica hoje.');
+   'Estudei integrais por partes e substituição trigonométrica hoje.', 75);
 insert into public.checkins (goal, photo_path) values
-  ('typing',  '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/t.jpg'),
-  ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/r.jpg');
+  ('typing',  '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/t.jpg');
+insert into public.checkins (goal, photo_path, pages) values
+  ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/r.jpg', 18);
 
 do $$ begin
   assert (select count(*) from public.completed_days where user_id = '00000000-0000-0000-0000-000000000001' and day = sp_today()) = 1, 'ana completed today';
@@ -84,8 +85,8 @@ end $$;
 -- Must fail: short study summary
 do $$ begin
   begin
-    insert into public.checkins (goal, photo_path, summary) values ('study',
-      '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/z.jpg', 'curto');
+    insert into public.checkins (goal, photo_path, summary, minutes) values ('study',
+      '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/z.jpg', 'curto', 60);
     raise exception 'FAIL: short summary accepted';
   exception when check_violation then null; end;
 end $$;
@@ -186,7 +187,7 @@ insert into public.checkins (goal, photo_path) values
 -- Must fail: the same photo proving a second goal (PAC-01)
 do $$ begin
   begin
-    insert into public.checkins (goal, photo_path) values ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000002/t.jpg');
+    insert into public.checkins (goal, photo_path, pages) values ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000002/t.jpg', 10);
     raise exception 'FAIL: photo reused';
   exception when unique_violation then null; end;
 end $$;
@@ -380,5 +381,54 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 reset role;
+
+-- Ranking numbers and projects (0003) -------------------------------------------
+select pg_temp.act_as('00000000-0000-0000-0000-000000000003');
+set role authenticated;
+insert into storage.objects (bucket_id, name) values
+  ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/s.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/r.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/t.jpg'),
+  ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p1.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p2.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p0.jpg');
+do $$ begin
+  begin
+    insert into public.checkins (goal, photo_path, summary, minutes) values ('study', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/s.jpg',
+      'Resumo com mais de quarenta caracteres para o teste de minutos.', 59);
+    raise exception 'FAIL: 59 minutes accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.checkins (goal, photo_path, summary) values ('study', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/s.jpg',
+      'Resumo com mais de quarenta caracteres para o teste de minutos.');
+    raise exception 'FAIL: study without minutes accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.checkins (goal, photo_path) values ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/r.jpg');
+    raise exception 'FAIL: reading without pages accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.checkins (goal, photo_path, title) values ('project', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p0.jpg', ' x ');
+    raise exception 'FAIL: project without title accepted';
+  exception when check_violation then null; end;
+end $$;
+-- Fields that don't belong to the goal are dropped
+insert into public.checkins (goal, photo_path, pages, minutes, title) values ('typing', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/t.jpg', 50, 300, 'hack');
+insert into public.checkins (goal, photo_path, title, minutes) values ('project', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p1.jpg', '  Calculadora em Python  ', 500);
+do $$ begin
+  assert (select pages is null and minutes is null and title is null from public.checkins where goal = 'typing' and user_id = auth.uid()),
+    'typing keeps no numbers';
+  assert (select title = 'Calculadora em Python' and minutes is null from public.checkins where goal::text = 'project' and user_id = auth.uid()),
+    'project title trimmed, minutes dropped';
+  begin
+    insert into public.checkins (goal, photo_path, title) values ('project', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000003/p2.jpg', 'Segundo projeto');
+    raise exception 'FAIL: two projects in a day';
+  exception when unique_violation then null; end;
+end $$;
+reset role;
+
+-- A project never replaces a daily goal: Caio has typing + project only
+do $$ begin
+  assert not exists (select 1 from public.completed_days where user_id = '00000000-0000-0000-0000-000000000003'),
+    'project counted as a daily goal';
+  assert (select count(*) from public.completed_days where user_id = '00000000-0000-0000-0000-000000000001' and day = sp_today()) = 1,
+    'ana still complete';
+end $$;
 
 select 'ALL SQL TESTS PASSED' as result;
