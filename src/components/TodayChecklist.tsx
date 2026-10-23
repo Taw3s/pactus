@@ -272,7 +272,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
         onClick={submit}
         aria-describedby={missingText ? fieldId("missing") : undefined}
       >
-        {busy && <Loader size={18} aria-hidden className="animate-spin motion-reduce:animate-none" />}
+        {busy && <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
         {busy ? "Enviando…" : goal === "project" ? "Registrar projeto" : "Enviar prova"}
       </button>
     </section>

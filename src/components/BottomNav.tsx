@@ -24,7 +24,7 @@ const ITEMS: Item[] = [
 function TabIcon({ icon: Icon }: { icon: LucideIcon }) {
   const { pending } = useLinkStatus();
   return pending ? (
-    <Loader size={22} strokeWidth={2} aria-hidden className="animate-spin text-accent motion-reduce:animate-none" />
+    <Loader size={22} strokeWidth={2} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] text-accent motion-reduce:animate-none" />
   ) : (
     <Icon size={22} strokeWidth={2} aria-hidden />
   );

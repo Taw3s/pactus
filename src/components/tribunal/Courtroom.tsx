@@ -19,7 +19,7 @@ interface Props {
   accuser: string; // a member's name, or "Juiz IA"
   byAi: boolean;
   jurors: Juror[];
-  me: { isOwner: boolean; canVote: boolean; vote: DisputeVote | null; joinedLate: boolean };
+  me: { id: string; isOwner: boolean; canVote: boolean; vote: DisputeVote | null; joinedLate: boolean };
 }
 
 const when = (iso: string) =>
@@ -45,7 +45,7 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
             Tribunal
           </h1>
           <span
-            className={`pixel rounded-sm border-2 px-2 text-sm uppercase ${
+            className={`pixel rounded-sm border-2 px-2 text-base uppercase ${
               open ? "border-warn bg-warn-bg text-warn" : result.status === "upheld" ? "border-fail bg-fail-bg text-fail" : "border-done bg-done-bg text-done"
             }`}
           >
@@ -53,7 +53,7 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
           </span>
         </div>
         <Sprite name="judgeBench" scale={3} className="-mb-3 -mt-6" />
-        {byAi && <p className="pixel -mt-1 mb-2 text-sm uppercase text-accent">Juiz IA acusa</p>}
+        {byAi && <p className="pixel -mt-1 mb-2 text-base uppercase text-accent">Juiz IA acusa</p>}
       </div>
       <div aria-hidden className="h-2 border-b-4 border-wood-dark bg-wood" />
 
@@ -62,7 +62,7 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
         <div className={`rounded-full border-4 p-1 ${defendantRing}`}>
           <Avatar name={defendant.display_name} url={defendantAvatar} size={88} />
         </div>
-        <p className="pixel mt-2 text-sm uppercase text-muted">Réu</p>
+        <p className="pixel mt-2 text-base uppercase text-muted">Réu</p>
         <p className="text-xl font-bold leading-6" data-testid="defendant">
           {defendant.display_name}
         </p>
@@ -75,14 +75,14 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
           <p className="pixel tabular text-3xl font-bold leading-8 text-fail" data-testid="guilty-count">
             {result.yes}
           </p>
-          <p className="pixel text-xs uppercase text-muted">Culpado</p>
+          <p className="text-xs font-semibold text-muted">Culpado</p>
         </div>
         <p className="pixel text-xl text-muted">×</p>
         <div>
           <p className="pixel tabular text-3xl font-bold leading-8 text-done" data-testid="innocent-count">
             {result.no}
           </p>
-          <p className="pixel text-xs uppercase text-muted">Inocente</p>
+          <p className="text-xs font-semibold text-muted">Inocente</p>
         </div>
       </div>
       <p className="tabular mx-4 mt-2 text-center text-sm text-muted">
@@ -92,7 +92,7 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
 
       {/* jury box */}
       <div className="mt-4 px-4">
-        <p className="pixel mb-2 text-center text-sm uppercase text-muted">Júri</p>
+        <p className="pixel mb-2 text-center text-base uppercase text-muted">Júri</p>
         <ul className="flex flex-wrap justify-center gap-x-3 gap-y-3">
           {jurors.map(({ member, avatarUrl, vote }) => {
             const state = !vote ? "none" : vote.upheld ? "guilty" : "innocent";
@@ -126,19 +126,20 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
       <div className="p-4">
         {!open ? (
           <GavelStamp
-            playKey={`verdict:${disputeId}`}
+            playKey={`verdict:${me.id}:${disputeId}`}
             tone={result.status === "upheld" ? "fail" : "done"}
             stamp={result.status === "upheld" ? "Condenado" : "Absolvido"}
             note={
               result.status === "upheld"
-                ? "O júri decidiu: esta prova não conta e a meta deixa de valer."
-                : "O júri decidiu: a prova continua valendo."
+                ? "Prova anulada. O júri decidiu: esta prova não conta e a meta deixa de valer."
+                : "Prova mantida. O júri decidiu: a prova continua valendo."
             }
             testId="verdict"
           />
         ) : me.vote ? (
           <p className="font-medium">
-            Seu voto: <b className={me.vote.upheld ? "text-fail" : "text-done"}>{me.vote.upheld ? "culpado" : "inocente"}</b>.
+            Seu voto: <b className={me.vote.upheld ? "text-fail" : "text-done"}>{me.vote.upheld ? "culpado" : "inocente"}</b> (
+            {me.vote.upheld ? "anular a prova" : "manter a prova"}).
           </p>
         ) : me.isOwner ? (
           <p className="text-sm text-muted">Você é o réu e não vota. Use a aba Provas para se defender.</p>

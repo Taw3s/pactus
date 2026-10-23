@@ -33,7 +33,7 @@ export function PayButton({ debtorId, debtorName, day, item }: { debtorId: strin
         </span>
       )}
       <button className="btn-secondary min-h-11 shrink-0 px-4 text-sm" disabled={busy} onClick={pay} aria-label={`Recebi ${ONE[item]} de ${debtorName}, ${d}/${m}`}>
-        {busy && <Loader size={16} aria-hidden className="animate-spin motion-reduce:animate-none" />}
+        {busy && <Loader size={16} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
         Recebi
       </button>
     </span>

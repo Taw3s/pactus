@@ -45,7 +45,7 @@ export default async function TodayPage() {
     <>
       <PendingReviews ids={unreviewed} />
       <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
-      <Scoreboard isOff={isOff} states={states} verifiedDay={verified ? today : null} />
+      <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
       <TodayChecklist
         groupId={me.group_id}
         userId={me.user_id}

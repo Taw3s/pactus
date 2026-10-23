@@ -13,8 +13,8 @@ export type GoalState = "done" | "pending" | "annulled";
 interface Props {
   isOff: boolean;
   states: Record<DailyGoal, GoalState>;
-  /** Today's date when the AI judge confirmed all 3 proofs (shows the "Verificado!" seal). */
-  verifiedDay?: string | null;
+  /** Set when the AI judge confirmed all 3 proofs today (shows the "Verificado!" seal). */
+  verified?: { day: string; userId: string } | null;
 }
 
 function remaining(ms: number) {
@@ -64,7 +64,7 @@ function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
       <ul className="mt-2 grid grid-cols-3 gap-1.5 text-center" aria-hidden>
         {GOALS.map((g) => (
           <li key={g.id}>
-            <p className="pixel text-sm uppercase leading-4">{g.label}</p>
+            <p className="pixel text-base uppercase leading-4">{g.label}</p>
             <p className={`text-xs ${states[g.id] === "done" ? "text-done" : states[g.id] === "annulled" ? "text-fail" : "text-muted"}`}>
               {WORD[states[g.id]]}
             </p>
@@ -78,7 +78,7 @@ function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
 }
 
 /** Answers "how much is left?" in one glance: count, next pending goal, deadline. */
-export function Scoreboard({ isOff, states, verifiedDay }: Props) {
+export function Scoreboard({ isOff, states, verified }: Props) {
   const [ms, setMs] = useState<number | null>(null);
   useEffect(() => {
     const tick = () => setMs(msUntilEndOfDay());
@@ -94,7 +94,7 @@ export function Scoreboard({ isOff, states, verifiedDay }: Props) {
   if (isOff) {
     return (
       <section className="card mb-6" data-testid="scoreboard" data-scoreboard="off">
-        {verifiedDay && <VerifiedSeal day={verifiedDay} />}
+        {verified && <VerifiedSeal {...verified} />}
         <div className="flex items-center gap-3">
           <Sprite name="beachChair" scale={2} />
           <div>
@@ -113,13 +113,13 @@ export function Scoreboard({ isOff, states, verifiedDay }: Props) {
 
   return (
     <section className="card mb-6" data-testid="scoreboard" data-scoreboard={complete ? "complete" : "pending"}>
-      {verifiedDay && <VerifiedSeal day={verifiedDay} />}
+      {verified && <VerifiedSeal {...verified} />}
       <div className="flex items-center gap-4">
         <p className={`pixel tabular text-[56px] font-bold leading-[56px] ${complete ? "text-done" : "text-accent"}`} data-testid="progress">
           {done}/3
         </p>
         <div className="min-w-0">
-          <p className="pixel text-sm uppercase text-muted">{complete ? "Dia cumprido" : "Metas cumpridas"}</p>
+          <p className="pixel text-base uppercase text-muted">{complete ? "Dia cumprido" : "Metas cumpridas"}</p>
           <p className="text-lg font-semibold leading-6">{complete ? "Missão do dia completa" : missingPhrase(missing)}</p>
         </div>
       </div>

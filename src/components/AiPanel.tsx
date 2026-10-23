@@ -18,7 +18,7 @@ interface Props {
   secondary: boolean;
 }
 
-/** "Análise automática": an indication that never replaces the group's decision. */
+/** "Juiz IA": a first-instance reading that never replaces the group's decision. */
 export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner, canRequest, secondary }: Props) {
   const router = useRouter();
   const [state, setState] = useState<AiState | "off" | null>(review ? review.verdict : canRequest ? "analyzing" : null);
@@ -49,7 +49,7 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
       data-testid="ai-review"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 id="ai-title" className={`pixel uppercase ${secondary ? "text-sm text-muted" : "text-lg leading-6"}`}>
+        <h2 id="ai-title" className={`pixel uppercase ${secondary ? "text-base text-muted" : "text-lg leading-6"}`}>
           Juiz IA
         </h2>
         <AiBadge state={state} />

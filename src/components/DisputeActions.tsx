@@ -42,7 +42,7 @@ export function DisputeActions({ checkinId, disputeId, canDispute, canReply }: P
   }
 
   const supabase = createClient();
-  const spinner = <Loader size={18} aria-hidden className="animate-spin motion-reduce:animate-none" />;
+  const spinner = <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />;
   const errorLine = error && (
     <p role="alert" className="text-sm text-fail">
       {error}
