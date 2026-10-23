@@ -124,14 +124,14 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
       const up = await supabase.storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
       if (up.error) throw new Error("Falha no upload da foto. Tente de novo.");
       // The database sets the day (São Paulo) and the owner; the client only sends the content.
-      const { error } = await supabase.from("checkins").insert({
+      const { data: created, error } = await supabase.from("checkins").insert({
         goal,
         photo_path: path,
         summary: goal === "study" ? summary.trim() : null,
         minutes: goal === "study" ? Number(minutes) : null,
         pages: goal === "reading" ? Number(pages) : null,
         title: goal === "project" ? title.trim() : null,
-      });
+      }).select("id").single();
       if (error) {
         throw new Error(
           error.code === "23505"
@@ -143,6 +143,13 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
               : "Não foi possível enviar o check-in.",
         );
       }
+      // AI review runs in the background; the check-in is already saved.
+      fetch("/api/review", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkinId: created.id }),
+        keepalive: true,
+      }).catch(() => {});
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");

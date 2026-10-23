@@ -15,4 +15,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0001_init.sql
 "${PSQL[@]}" -f ../migrations/0002_security_fixes.sql
 "${PSQL[@]}" -f ../migrations/0003_ranking_projects.sql
+"${PSQL[@]}" -f ../migrations/0004_ai_reviews.sql
 "${PSQL[@]}" -f rls_test.sql

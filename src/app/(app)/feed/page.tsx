@@ -3,10 +3,11 @@ import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { PageHeader } from "@/components/PageHeader";
 import { DisputeBadge } from "@/components/DisputeBadge";
+import { ReviewBadge } from "@/components/ReviewBadge";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
-import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
+import { checkinNumbers, goalMeta, GOALS, type Checkin, type CheckinReview, type DisputeResult } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,10 @@ export default async function FeedPage() {
   const checkins = (checkinRows ?? []) as Checkin[];
   const results = (resultRows ?? []) as DisputeResult[];
   const resultByCheckin = new Map(results.map((r) => [r.checkin_id, r]));
+  const { data: reviewRows } = checkins.length
+    ? await supabase.from("checkin_reviews").select("checkin_id, verdict").in("checkin_id", checkins.map((c) => c.id))
+    : { data: [] as Pick<CheckinReview, "checkin_id" | "verdict">[] };
+  const reviewOf = new Map((reviewRows ?? []).map((r) => [r.checkin_id, r.verdict as CheckinReview["verdict"]]));
   const urls = await signUrls(supabase, [...checkins.map((c) => c.photo_path), ...members.map((m) => m.avatar_path)]);
 
   // Open disputes may concern yesterday's check-ins, so list them separately.
@@ -95,6 +100,7 @@ export default async function FeedPage() {
                       <img src={urls.get(c.photo_path)} alt={g.label} className="h-full w-full object-cover" />
                       <span className="absolute inset-x-0 bottom-0 bg-black/60 px-1.5 py-0.5 text-[11px]">{g.emoji} {g.label}</span>
                       {result && <DisputeBadge status={result.status} className="absolute left-1 top-1" />}
+                      {reviewOf.get(c.id) && <ReviewBadge verdict={reviewOf.get(c.id)!} className="absolute right-1 top-1" />}
                     </Link>
                   );
                 })}

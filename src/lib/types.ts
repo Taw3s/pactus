@@ -98,3 +98,11 @@ export interface PaymentRow {
 }
 
 export const ITEM_LABEL: Record<DebtItem, string> = { coke: "Coca-Cola", snack: "Salgado" };
+
+export interface CheckinReview {
+  checkin_id: string;
+  verdict: import("./ai-review").Verdict;
+  seen: string;
+  detected: number | null;
+  model: string;
+}

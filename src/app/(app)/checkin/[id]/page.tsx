@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { DisputeBadge } from "@/components/DisputeBadge";
 import { DisputeActions } from "@/components/DisputeActions";
+import { ReviewBadge } from "@/components/ReviewBadge";
+import { ReviewTrigger } from "@/components/ReviewTrigger";
 import { addDays, formatDayPt, spToday } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
-import { checkinNumbers, goalMeta, type Checkin, type Dispute, type DisputeResult, type DisputeVote } from "@/lib/types";
+import { checkinNumbers, goalMeta, type Checkin, type CheckinReview, type Dispute, type DisputeResult, type DisputeVote } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +25,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const { data: checkin } = await supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>();
   if (!checkin) notFound();
 
-  const [members, { data: dispute }, { data: result }] = await Promise.all([
+  const [members, { data: dispute }, { data: result }, { data: review }] = await Promise.all([
     getMembers(supabase),
     supabase.from("disputes").select("*").eq("checkin_id", id).maybeSingle<Dispute>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),
+    supabase.from("checkin_reviews").select("*").eq("checkin_id", id).maybeSingle<CheckinReview>(),
   ]);
   const { data: voteRows } = dispute
     ? await supabase.from("dispute_votes").select("*").eq("dispute_id", dispute.id).order("created_at")
@@ -54,10 +57,24 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
               {new Date(checkin.created_at).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
+          {review && <ReviewBadge verdict={review.verdict} />}
           {result && <DisputeBadge status={result.status} />}
         </div>
         <img src={urls.get(checkin.photo_path)} alt={`Prova de ${goal.label}`} className="w-full rounded-xl" />
         {numbers && <p className="mt-3 text-sm font-medium text-emerald-300">{numbers}</p>}
+        {review ? (
+          <div className={`mt-3 rounded-xl p-3 text-sm ${review.verdict === "mismatch" ? "bg-amber-400/10 text-amber-100" : "bg-zinc-950 text-zinc-300"}`} data-testid="ai-review">
+            <p className="text-xs text-zinc-500">🤖 O que a IA viu na foto:</p>
+            <p className="mt-1">{review.seen}</p>
+            {review.verdict === "mismatch" && (
+              <p className="mt-1 text-xs">
+                A IA achou que a foto não bate com o que foi declarado. Ela pode errar: se o grupo concordar, leve ao tribunal.
+              </p>
+            )}
+          </div>
+        ) : (
+          checkin.day >= addDays(spToday(), -1) && <ReviewTrigger checkinId={checkin.id} />
+        )}
         {checkin.summary && <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-200">{checkin.summary}</p>}
       </article>
 

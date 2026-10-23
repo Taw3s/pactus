@@ -54,7 +54,8 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
    - o bucket privado `media` no Storage, com as políticas de upload e leitura.
    Em seguida, cada um numa aba nova e nesta ordem, rode também:
    - [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) — correções da auditoria de segurança;
-   - [`supabase/migrations/0003_ranking_projects.sql`](supabase/migrations/0003_ranking_projects.sql) — minutos, páginas, projetos e ranking.
+   - [`supabase/migrations/0003_ranking_projects.sql`](supabase/migrations/0003_ranking_projects.sql) — minutos, páginas, projetos e ranking;
+   - [`supabase/migrations/0004_ai_reviews.sql`](supabase/migrations/0004_ai_reviews.sql) — parecer da IA sobre as fotos.
 
    **Rode cada arquivo uma vez só, nessa ordem.** Quem já rodou os anteriores só roda os que faltam.
 3. **Crie o grupo e o código de convite** (mesmo SQL Editor):
@@ -103,6 +104,23 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
 4. Clique em **Deploy**. Depois volte ao Supabase (passo 2.4) e coloque a URL final em *Site URL* e *Redirect URLs*.
 
 Sem GitHub, dá para usar a CLI na pasta do projeto: `npx vercel` e, depois, `npx vercel --prod`. Configure as mesmas variáveis no painel.
+
+### IA nas fotos (opcional, Gemini)
+
+Depois de cada check-in, o servidor manda a foto e o que foi declarado para o Gemini, que descreve o que vê.
+O app mostra **🤖 conferido** quando bate, **🤖 ⚠️ conferir** quando diverge (ex.: cronômetro com 45 min e 240 min declarados) e nada quando a foto é inconclusiva.
+**A IA nunca anula check-in nem cria dívida:** quem decide continua sendo o tribunal.
+
+Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **Redeploy**:
+
+| Nome | Valor |
+|---|---|
+| `GEMINI_API_KEY` | chave criada em <https://aistudio.google.com> → *Get API key* |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → *Project Settings → API Keys* → chave **secret / service_role** |
+| `GEMINI_MODEL` | opcional; o padrão é `gemini-3.5-flash`. Troque se o AI Studio mostrar outro nome |
+
+> Essas duas chaves são **segredos de servidor**: nunca use o prefixo `NEXT_PUBLIC_` nelas e nunca as coloque no código.
+> No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. O grupo concordou com isso.
 
 ### Instalar no celular
 

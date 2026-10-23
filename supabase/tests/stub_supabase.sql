@@ -5,6 +5,7 @@ create extension if not exists pgcrypto;
 do $$ begin
   create role anon nologin;
   create role authenticated nologin;
+  create role service_role nologin bypassrls;
 exception when duplicate_object then null; end $$;
 
 create schema auth;
@@ -37,7 +38,7 @@ grant usage on schema storage to anon, authenticated;
 grant select, insert on storage.objects to authenticated;
 grant execute on function storage.foldername(text) to authenticated;
 
-grant usage on schema public to anon, authenticated;
+grant usage on schema public to anon, authenticated, service_role;
 -- Supabase grants everything by default; the migration must revoke what it doesn't want.
-alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated;

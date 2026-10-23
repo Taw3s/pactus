@@ -431,4 +431,37 @@ do $$ begin
     'ana still complete';
 end $$;
 
+-- AI reviews (0004): only the server (service_role) writes, members of the group read ---------
+select pg_temp.act_as('00000000-0000-0000-0000-000000000001');
+set role authenticated;
+do $$ begin
+  begin
+    insert into public.checkin_reviews (checkin_id, group_id, verdict, seen, model)
+    select id, group_id, 'match', 'forjado', 'fake' from public.checkins where user_id = auth.uid() limit 1;
+    raise exception 'FAIL: member forged an AI review';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+set role service_role;
+insert into public.checkin_reviews (checkin_id, group_id, verdict, seen, detected, model)
+select id, group_id, 'mismatch', 'Foto de um gato, não de estudo', null, 'gemini-test'
+from public.checkins where goal = 'typing' and user_id = '00000000-0000-0000-0000-000000000002' and day = sp_today();
+reset role;
+select pg_temp.act_as('00000000-0000-0000-0000-000000000001');
+set role authenticated;
+do $$ begin
+  assert (select count(*) from public.checkin_reviews) = 1, 'group member reads the review';
+  begin
+    update public.checkin_reviews set verdict = 'match';
+    raise exception 'FAIL: member edited an AI review';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+select pg_temp.act_as('00000000-0000-0000-0000-000000000010');
+set role authenticated;
+do $$ begin
+  assert (select count(*) from public.checkin_reviews) = 0, 'other group cannot read reviews';
+end $$;
+reset role;
+
 select 'ALL SQL TESTS PASSED' as result;
