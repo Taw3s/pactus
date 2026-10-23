@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorPt } from "@/lib/auth-errors";
 import { confirmUrl } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
 
@@ -54,7 +55,7 @@ function JoinForm() {
         options: { data, emailRedirectTo: confirmUrl() },
       });
       setBusy(false);
-      if (error) return setError(error.message.includes("Password") ? "Senha fraca: use pelo menos 6 caracteres." : error.message);
+      if (error) return setError(authErrorPt(error.message));
       if (res.session) {
         router.replace("/hoje");
         router.refresh();
@@ -65,7 +66,7 @@ function JoinForm() {
         options: { shouldCreateUser: true, data, emailRedirectTo: confirmUrl() },
       });
       setBusy(false);
-      if (error) return setError(error.message);
+      if (error) return setError(authErrorPt(error.message));
       setSent("magic");
     }
   }

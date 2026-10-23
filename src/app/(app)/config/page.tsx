@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { SettingsForm } from "@/components/SettingsForm";
-import { addDays, spToday } from "@/lib/dates";
+import { nextMonday, spToday } from "@/lib/dates";
 import { requireMember, signUrls } from "@/lib/data";
 import { dayOffOn } from "@/lib/ledger";
 
@@ -21,7 +21,8 @@ export default async function SettingsPage() {
         name={me.display_name}
         avatarUrl={me.avatar_path ? urls.get(me.avatar_path) ?? null : null}
         dayOffToday={dayOffOn(changes ?? [], today)}
-        dayOffTomorrow={dayOffOn(changes ?? [], addDays(today, 1))}
+        nextWeek={nextMonday(today)}
+        dayOffNextWeek={dayOffOn(changes ?? [], nextMonday(today))}
       />
     </>
   );

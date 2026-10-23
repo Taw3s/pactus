@@ -49,6 +49,11 @@ export function eachDay(from: ISODate, to: ISODate): ISODate[] {
   return days;
 }
 
+/** Monday after `day` (same rule as Postgres `next_monday`): day-off changes start there. */
+export function nextMonday(day: ISODate): ISODate {
+  return addDays(day, ((8 - weekdayOf(day)) % 7) || 7);
+}
+
 export function monthKey(day: ISODate): string {
   return day.slice(0, 7);
 }

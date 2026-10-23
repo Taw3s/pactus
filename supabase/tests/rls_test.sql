@@ -46,6 +46,21 @@ do $$ begin
   assert (select count(*) from public.groups) = 1, 'ana sees one group';
 end $$;
 
+-- Photos are uploaded before the check-in (PAC-01)
+insert into storage.objects (bucket_id, name) values
+  ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/s.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/t.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/r.jpg'),
+  ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/t2.jpg'), ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/z.jpg');
+
+-- Must fail: check-in pointing to a photo that was never uploaded (PAC-01)
+do $$ begin
+  begin
+    insert into public.checkins (goal, photo_path) values ('typing', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/nunca-enviada.jpg');
+    raise exception 'FAIL: missing photo accepted';
+  exception when raise_exception then
+    if sqlerrm not like '%photo not uploaded%' then raise; end if;
+  end;
+end $$;
+
 -- client-chosen day / user are overwritten by the trigger
 insert into public.checkins (goal, photo_path, summary) values
   ('study', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/s.jpg',
@@ -69,11 +84,10 @@ end $$;
 -- Must fail: short study summary
 do $$ begin
   begin
-    reset role; perform set_config('role', 'authenticated', true);
     insert into public.checkins (goal, photo_path, summary) values ('study',
       '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/z.jpg', 'curto');
     raise exception 'FAIL: short summary accepted';
-  exception when check_violation or unique_violation then null; end;
+  exception when check_violation then null; end;
 end $$;
 
 -- Must fail: duplicated goal on the same day
@@ -115,11 +129,16 @@ do $$ begin
     raise exception 'FAIL: joined_on update allowed';
   exception when insufficient_privilege then null; end;
 end $$;
-update public.members set display_name = 'Ana Clara' where user_id = auth.uid();
+update public.members set display_name = '   Ana Clara   ' where user_id = auth.uid();
+do $$ begin
+  assert (select display_name from public.members where user_id = auth.uid()) = 'Ana Clara', 'name trimmed (PAC-06)';
+  begin
+    update public.members set display_name = repeat('a', 41) where user_id = auth.uid();
+    raise exception 'FAIL: 41-char name accepted';
+  exception when check_violation then null; end;
+end $$;
 
 -- Storage policies
-insert into storage.objects (bucket_id, name) values
-  ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000001/s.jpg');
 do $$ begin
   begin
     insert into storage.objects (bucket_id, name) values
@@ -128,11 +147,22 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 
--- Day off changes take effect tomorrow
+-- Day off changes take effect next Monday, one choice per week (PAC-02)
+select public.set_day_off(5::smallint);
 select public.set_day_off(3::smallint);
-do $$ begin
-  assert public.day_off_for(auth.uid(), sp_today()) = 0, 'today still sunday rule';
-  assert public.day_off_for(auth.uid(), sp_today() + 1) = 3, 'tomorrow wednesday';
+do $$
+declare nm date := public.next_monday(sp_today());
+begin
+  assert extract(isodow from nm) = 1 and nm > sp_today() and nm <= sp_today() + 7, 'next monday';
+  assert public.day_off_for(auth.uid(), sp_today()) = 0, 'this week keeps sunday';
+  assert public.day_off_for(auth.uid(), nm - 1) = 0, 'until sunday keeps sunday';
+  assert public.day_off_for(auth.uid(), nm) = 3, 'from next monday: wednesday';
+  assert (select count(*) from public.day_off_changes where user_id = auth.uid() and effective_from > sp_today()) = 1,
+    'one choice per week';
+  -- Requests on any day of a week land on the same Monday: at most one change per Mon–Sun week.
+  for i in 0..20 loop
+    assert public.next_monday(date '2026-10-19' + i) = date '2026-10-26' + 7 * (i / 7), 'monday for day ' || i;
+  end loop;
 end $$;
 
 -- Must fail: Ana cannot mark her own debt
@@ -150,8 +180,16 @@ reset role;
 -- Bia (user 2) checks in; Ana disputes ------------------------------------------
 select pg_temp.act_as('00000000-0000-0000-0000-000000000002');
 set role authenticated;
+insert into storage.objects (bucket_id, name) values ('media', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000002/t.jpg');
 insert into public.checkins (goal, photo_path) values
   ('typing', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000002/t.jpg');
+-- Must fail: the same photo proving a second goal (PAC-01)
+do $$ begin
+  begin
+    insert into public.checkins (goal, photo_path) values ('reading', '00000000-0000-0000-0000-0000000000a1/00000000-0000-0000-0000-000000000002/t.jpg');
+    raise exception 'FAIL: photo reused';
+  exception when unique_violation then null; end;
+end $$;
 -- Bia cannot dispute her own
 do $$ begin
   begin
@@ -232,6 +270,27 @@ do $$ begin
   assert (select status from public.dispute_results) = 'upheld', 'upheld with 3 of 5';
 end $$;
 reset role;
+
+-- A new member joins after the verdict: it must not reopen, and they cannot vote (PAC-03)
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000000007', 'gil@x.com', '{"invite_code":"PACTO123","display_name":"Gil"}');
+do $$ begin
+  assert (select status from public.dispute_results) = 'upheld', 'still upheld after a new member';
+  assert (select eligible from public.dispute_results) = 5, 'electorate frozen at 5';
+  assert (select count(*) from public.completed_days where user_id = '00000000-0000-0000-0000-000000000002') = 0,
+    'annulled day stays annulled';
+end $$;
+select pg_temp.act_as('00000000-0000-0000-0000-000000000007');
+set role authenticated;
+do $$ begin
+  begin
+    insert into public.dispute_votes (dispute_id, upheld) select id, false from public.disputes;
+    raise exception 'FAIL: late member voted';
+  exception when raise_exception then
+    if sqlerrm not like '%joined after%' then raise; end if;
+  end;
+end $$;
+reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-000000000005');
 set role authenticated;
 do $$ begin
@@ -284,6 +343,9 @@ do $$ begin
   assert (select count(*) from public.disputes) = 0, 'no disputes';
   assert (select count(*) from public.payments) = 0, 'no payments';
   assert (select count(*) from storage.objects) = 0, 'no media';
+  -- Ana's real choice from next Monday is Wednesday (3); other groups only get the default (PAC-05)
+  assert public.day_off_for('00000000-0000-0000-0000-000000000001', public.next_monday(sp_today())) = 0,
+    'day_off_for leaks across groups';
 end $$;
 reset role;
 
@@ -302,7 +364,7 @@ end $$;
 -- ...but can join with a valid code
 select public.join_group('pacto123', 'Intruso Convidado');
 do $$ begin
-  assert (select count(*) from public.members) = 7, 'joined with code';
+  assert (select count(*) from public.members) = 8, 'joined with code';
 end $$;
 reset role;
 

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { safeNextPath } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 // Handles both e-mail link formats:
@@ -7,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 //   ?code=...                    (default PKCE link, must open in the same browser that asked)
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
-  const next = searchParams.get("next")?.startsWith("/") ? searchParams.get("next")! : "/hoje";
+  const next = safeNextPath(searchParams.get("next"), origin);
   const supabase = await createClient();
 
   const tokenHash = searchParams.get("token_hash");

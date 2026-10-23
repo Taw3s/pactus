@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/client";
-import { WEEKDAYS_PT } from "@/lib/dates";
+import { formatDayPt, WEEKDAYS_PT } from "@/lib/dates";
 import { compressImage, mediaPath } from "@/lib/image";
 
 interface Props {
@@ -13,14 +13,15 @@ interface Props {
   name: string;
   avatarUrl: string | null;
   dayOffToday: number;
-  dayOffTomorrow: number;
+  nextWeek: string;
+  dayOffNextWeek: number;
 }
 
-export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, dayOffToday, dayOffTomorrow }: Props) {
+export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, dayOffToday, nextWeek, dayOffNextWeek }: Props) {
   const router = useRouter();
   const supabase = createClient();
   const [name, setName] = useState(initialName);
-  const [dayOff, setDayOff] = useState(dayOffTomorrow);
+  const [dayOff, setDayOff] = useState(dayOffNextWeek);
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
 
@@ -37,7 +38,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
     setBusy("dayoff");
     const { error } = await supabase.rpc("set_day_off", { p_weekday: weekday });
     setBusy("");
-    setMsg(error ? "Erro ao salvar a folga." : `Folga: ${WEEKDAYS_PT[weekday]} (vale a partir de amanhã).`);
+    setMsg(error ? "Erro ao salvar a folga." : `Folga: ${WEEKDAYS_PT[weekday]} a partir de segunda, ${formatDayPt(nextWeek).slice(4)}.`);
     router.refresh();
   }
 
@@ -89,7 +90,8 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
       <section className="card">
         <h2 className="font-semibold">Dia de folga (6x1)</h2>
         <p className="mb-3 text-xs text-zinc-400">
-          Hoje vale: {WEEKDAYS_PT[dayOffToday]}. Mudanças valem a partir de amanhã, para não alterar dias passados.
+          Nesta semana: {WEEKDAYS_PT[dayOffToday]}. A escolha vale a partir da próxima segunda ({formatDayPt(nextWeek).slice(4)}),
+          uma por semana, para manter exatamente 1 folga por semana.
         </p>
         <div className="grid grid-cols-4 gap-2">
           {WEEKDAYS_PT.map((label, i) => (

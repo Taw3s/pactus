@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorPt } from "@/lib/auth-errors";
 import { confirmUrl } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
 
@@ -25,7 +26,7 @@ function LoginForm() {
     if (mode === "password") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setError("E-mail ou senha incorretos.");
+        setError(authErrorPt(error.message));
         setBusy(false);
         return;
       }
@@ -38,7 +39,7 @@ function LoginForm() {
         options: { shouldCreateUser: false, emailRedirectTo: confirmUrl() },
       });
       setBusy(false);
-      if (error) setError("Não encontramos essa conta. Entrou com convite?");
+      if (error) setError(authErrorPt(error.message));
       else setSent(true);
     }
   }

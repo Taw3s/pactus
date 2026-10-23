@@ -8,6 +8,7 @@ const ERRORS: Record<string, string> = {
   "dispute window closed": "Só dá para contestar check-ins de hoje ou de ontem.",
   "dispute closed": "A votação já foi encerrada.",
   "already replied": "Você já respondeu.",
+  "joined after": "Você entrou no grupo depois que essa contestação foi aberta.",
 };
 
 function message(error: { message: string; code?: string }) {

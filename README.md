@@ -22,7 +22,7 @@ Stack: Next.js 15 (App Router) + TypeScript + Tailwind 4 + Supabase (Auth, Postg
 
 ## 1. Rodar localmente
 
-Pré-requisitos: Node 20+ e um projeto Supabase (passo 2).
+Pré-requisitos: Node 22+ e um projeto Supabase (passo 2).
 
 ```bash
 npm install
@@ -48,6 +48,7 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
    - os triggers de regra de negócio, as funções `join_group`, `check_invite_code` e `set_day_off`;
    - as políticas RLS de todas as tabelas;
    - o bucket privado `media` no Storage, com as políticas de upload e leitura.
+   Em seguida, numa aba nova, cole e rode também [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) (correções da auditoria de segurança). **Rode cada arquivo uma vez só, nessa ordem.** Quem já tinha rodado o `0001` antes só precisa rodar o `0002`.
 3. **Crie o grupo e o código de convite** (mesmo SQL Editor):
 
    ```sql
@@ -131,7 +132,7 @@ Comprimidas no navegador antes do upload ([`src/lib/image.ts`](src/lib/image.ts)
 
 ### Tribunal (contestação)
 - Só dá para contestar check-ins **de hoje ou de ontem**. Cada check-in pode ter uma contestação.
-- **Votam** todos os membros, menos o dono do check-in. Quem contestou já conta como 1 voto "procede".
+- **Votam** os membros que já estavam no grupo quando a contestação foi aberta, menos o dono do check-in. O eleitorado fica congelado: quem entra depois não vota nem muda a maioria, então um veredito encerrado não reabre. Quem contestou já conta como 1 voto "procede".
 - **Procede:** maioria absoluta dos aptos (com 6 pessoas, 3 de 5). O check-in é **anulado** e a meta deixa de contar; se o dia não fechar as 3 metas, vira dívida.
 - **Rejeitada:** quando "procede" não consegue mais chegar à maioria.
 - **Prazo de 72h:** sem maioria até lá, vale quem tiver mais votos; o empate mantém o check-in.
@@ -139,7 +140,7 @@ Comprimidas no navegador antes do upload ([`src/lib/image.ts`](src/lib/image.ts)
 - O veredito é calculado na view `dispute_results` (sem cron, como as dívidas).
 
 ### Folga
-As trocas ficam em `day_off_changes` com `effective_from = amanhã`. Trocar a folga nunca muda dias passados. Na semana da troca, a pessoa pode acabar com 0 ou 2 folgas; isso foi aceito como o padrão mais simples.
+As trocas ficam em `day_off_changes` com `effective_from = próxima segunda-feira`, uma escolha por semana (trocar de novo na mesma semana só substitui a escolha). Assim toda semana de segunda a domingo tem exatamente 1 folga, e trocar nunca muda dias passados.
 
 ### Notificações push
 Fora do MVP de propósito (no iPhone, push exige o app instalado). A estrutura está pronta: veja [`src/lib/push/README.md`](src/lib/push/README.md) e os handlers comentados em [`public/sw.js`](public/sw.js).

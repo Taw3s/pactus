@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, eachDay, lastDayOfMonth, msUntilEndOfDay, spToday, weekdayOf } from "./dates";
+import { addDays, eachDay, lastDayOfMonth, msUntilEndOfDay, nextMonday, spToday, weekdayOf } from "./dates";
 import { currentStreak, dayOffOn, dayStatus, debtLines, debtSummary, missedDays, type MemberLedgerInput } from "./ledger";
 
 describe("dates (America/Sao_Paulo)", () => {
@@ -19,6 +19,9 @@ describe("dates (America/Sao_Paulo)", () => {
     expect(addDays("2026-02-28", 1)).toBe("2026-03-01");
     expect(eachDay("2026-10-30", "2026-11-02")).toEqual(["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"]);
     expect(lastDayOfMonth("2028-02-10")).toBe("2028-02-29");
+    expect(nextMonday("2026-10-23")).toBe("2026-10-26"); // Friday
+    expect(nextMonday("2026-10-25")).toBe("2026-10-26"); // Sunday
+    expect(nextMonday("2026-10-26")).toBe("2026-11-02"); // Monday -> following week
   });
 });
 

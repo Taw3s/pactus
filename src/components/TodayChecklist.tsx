@@ -103,7 +103,15 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
       const { error } = await supabase
         .from("checkins")
         .insert({ goal, photo_path: path, summary: needsSummary ? summary.trim() : null });
-      if (error) throw new Error(error.code === "23505" ? "Essa meta já foi enviada hoje." : "Não foi possível enviar o check-in.");
+      if (error) {
+        throw new Error(
+          error.code === "23505"
+            ? "Essa meta já foi enviada hoje."
+            : error.message.includes("photo not uploaded")
+              ? "A foto não terminou de subir. Tente de novo."
+              : "Não foi possível enviar o check-in.",
+        );
+      }
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");
