@@ -117,7 +117,7 @@ Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **
 |---|---|
 | `GEMINI_API_KEY` | chave criada em <https://aistudio.google.com> → *Get API key* |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → *Project Settings → API Keys* → chave **secret / service_role** |
-| `GEMINI_MODEL` | opcional; o padrão é `gemini-3.5-flash`. Troque se o AI Studio mostrar outro nome |
+| `GEMINI_MODEL` | opcional; o padrão é `gemini-flash-latest`. Se ele estiver sobrecarregado (503) ou lento, o app tenta sozinho `GEMINI_FALLBACK_MODEL` (padrão `gemini-flash-lite-latest`) |
 
 > Essas duas chaves são **segredos de servidor**: nunca use o prefixo `NEXT_PUBLIC_` nelas e nunca as coloque no código.
 > No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. O grupo concordou com isso.

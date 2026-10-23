@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildPrompt, decideVerdict, parseAnswer } from "@/lib/ai-review";
-import { askGemini, geminiConfigured, geminiModel } from "@/lib/gemini";
+import { askGemini, geminiConfigured } from "@/lib/gemini";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Checkin } from "@/lib/types";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // Reviews one check-in photo with Gemini. Any member of the group may trigger it
 // (idempotent: an existing review is kept). Without the keys the feature is simply off.
@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
   if (photo.error || !photo.data) return NextResponse.json({ error: "photo unavailable" }, { status: 502 });
 
   try {
-    const answer = parseAnswer(await askGemini(buildPrompt(checkin), await photo.data.arrayBuffer()));
+    const { text, model } = await askGemini(buildPrompt(checkin), await photo.data.arrayBuffer());
+    const answer = parseAnswer(text);
     if (!answer) throw new Error("unparseable answer");
     const { error } = await admin.from("checkin_reviews").insert({
       checkin_id: checkin.id,
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       verdict: decideVerdict(checkin, answer),
       seen: answer.seen,
       detected: answer.number,
-      model: geminiModel(),
+      model,
     });
     if (error && error.code !== "23505") throw new Error(error.message);
     return NextResponse.json({ status: "reviewed" });
