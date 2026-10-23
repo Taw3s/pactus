@@ -1,35 +1,97 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* Design tokens — "placar esportivo sóbrio" (spec: Redesign-Pacto.md). Dark theme only. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-bg: #0d1110;
+  --color-surface: #171d1a;
+  --color-raised: #202823;
+  --color-fg: #f2f5ee;
+  --color-muted: #b5c0b7;
+  --color-accent: #d3f36b;
+  --color-on-accent: #16200d;
+  --color-divider: #303c34;
+  --color-control: #708078;
+
+  /* Semantic states: text/icon + background */
+  --color-done: #84e1bc;
+  --color-done-bg: #17352a;
+  --color-fail: #ff9a9a;
+  --color-fail-bg: #3b2024;
+  --color-pending: #cbd3cb;
+  --color-pending-bg: #252d28;
+  --color-off: #c8befa;
+  --color-off-bg: #2b263e;
+  --color-warn: #f6c76a;
+  --color-warn-bg: #392e18;
+  --color-ai: #a9cbff;
+  --color-ai-bg: #202f43;
+
+  --color-gold: #e8c577;
+  --color-silver: #c8d0d9;
+  --color-bronze: #d8b39b;
+}
 
 :root {
   color-scheme: dark;
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100 antialiased;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  @apply bg-bg font-sans text-fg antialiased;
+  font-size: 16px;
+  line-height: 24px;
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Visible focus: 2 px accent outline with 2 px offset */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Page gutter: 16 px at 360, 20 px from 390 */
+@utility gutter {
+  padding-inline: 16px;
+  @media (min-width: 390px) {
+    padding-inline: 20px;
+  }
+}
+
 @utility card {
-  @apply rounded-2xl border border-zinc-800 bg-zinc-900 p-4;
+  @apply rounded-2xl bg-surface p-4;
 }
 
 @utility input {
-  @apply w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-base text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500 focus:outline-none;
+  @apply min-h-12 w-full rounded-xl border border-control bg-bg px-3 py-3 text-base text-fg placeholder:text-muted transition-colors duration-150 focus:border-accent focus:outline-none;
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold transition duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
 }
 
 @utility btn-primary {
-  @apply btn bg-emerald-500 text-zinc-950 hover:bg-emerald-400;
+  @apply btn bg-accent text-on-accent hover:brightness-105;
 }
 
-@utility btn-ghost {
-  @apply btn border border-zinc-700 text-zinc-200 hover:bg-zinc-800;
+@utility btn-secondary {
+  @apply btn border border-control text-fg hover:bg-raised;
 }
 
 @utility label {
-  @apply mb-1 block text-sm font-medium text-zinc-300;
+  @apply mb-1 block text-sm font-medium text-muted;
 }

@@ -1,37 +1,47 @@
+import { Check, Circle, Pause, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
+import { PersonPicker } from "@/components/PersonPicker";
 import { eachDay, lastDayOfMonth, monthKey, spToday, weekdayOf } from "@/lib/dates";
 import { getLedgerInputs, getMembers, requireMember } from "@/lib/data";
-import { currentStreak, dayStatus, missedDays, type DayStatus } from "@/lib/ledger";
+import { currentStreak, dayStatus, type DayStatus } from "@/lib/ledger";
 
 export const dynamic = "force-dynamic";
 
-const STYLE: Record<DayStatus, string> = {
-  done: "bg-emerald-500 text-zinc-950 font-semibold",
-  missed: "bg-red-500/80 text-white",
-  off: "bg-zinc-700 text-zinc-300",
-  pending: "border border-emerald-500 text-emerald-300",
-  before: "text-zinc-700",
-};
+const WEEK = ["D", "S", "T", "Q", "Q", "S", "S"];
+const WEEK_FULL = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const WORD: Record<DayStatus, string> = { done: "cumprido", missed: "falhou", off: "folga", pending: "pendente (hoje)", before: "sem meta" };
 
-const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-function shiftMonth(key: string, delta: number) {
-  const [y, m] = key.split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
-  return d.toISOString().slice(0, 7);
+function Cell({ day, status, today, offButDone }: { day: string; status: DayStatus; today: boolean; offButDone: boolean }) {
+  const n = Number(day.slice(8));
+  const style: Record<DayStatus, string> = {
+    done: "bg-done-bg text-done",
+    missed: "bg-fail-bg text-fail",
+    off: "bg-off-bg text-off",
+    pending: "bg-pending-bg text-pending",
+    before: "text-muted/60",
+  };
+  const Icon = status === "done" ? Check : status === "missed" ? X : status === "off" ? Pause : status === "pending" ? Circle : null;
+  const label = `${n} de ${monthName(day.slice(0, 7)).split(" ")[0].toLowerCase()}, ${WEEK_FULL[weekdayOf(day)]}: ${WORD[status]}${offButDone ? ", metas feitas na folga" : ""}${today ? ", hoje" : ""}`;
+  return (
+    <li
+      aria-label={label}
+      data-day={day}
+      data-status={status}
+      className={`relative flex h-12 flex-col items-center justify-center rounded-lg text-sm font-semibold ${style[status]} ${today ? "ring-2 ring-accent ring-inset" : ""}`}
+    >
+      <span className="tabular leading-4">{n}</span>
+      {Icon && <Icon size={14} strokeWidth={2.5} aria-hidden />}
+      {offButDone && <Check size={10} strokeWidth={3} aria-hidden className="absolute right-1 top-1 text-done" />}
+    </li>
+  );
 }
 
-export default async function HistoryPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ userId: string }>;
-  searchParams: Promise<{ m?: string }>;
-}) {
+export default async function HistoryPage({ params, searchParams }: { params: Promise<{ userId: string }>; searchParams: Promise<{ m?: string }> }) {
   const [{ userId }, { m }] = await Promise.all([params, searchParams]);
-  const { supabase } = await requireMember();
+  const { supabase, me } = await requireMember();
   const today = spToday();
   const members = await getMembers(supabase);
   const member = members.find((x) => x.user_id === userId);
@@ -39,65 +49,79 @@ export default async function HistoryPage({
 
   const { inputs } = await getLedgerInputs(supabase, [member]);
   const input = inputs.get(userId)!;
-  const month = m && /^\d{4}-\d{2}$/.test(m) ? m : monthKey(today);
+  const current = monthKey(today);
+  const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
   const first = `${month}-01`;
   const days = eachDay(first, lastDayOfMonth(first));
   const statuses = days.map((d) => dayStatus(input, d, today));
   const count = (s: DayStatus) => statuses.filter((x) => x === s).length;
+  const isMe = userId === me.user_id;
+  const streak = currentStreak(input, today);
+  const monthLower = monthName(month).split(" ")[0].toLowerCase();
 
   return (
     <>
-      <PageHeader title="Histórico" />
-      <nav className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {members.map((x) => (
-          <Link
-            key={x.user_id}
-            href={`/historico/${x.user_id}?m=${month}`}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${x.user_id === userId ? "bg-emerald-500 text-zinc-950" : "bg-zinc-900 text-zinc-300"}`}
-          >
-            {x.display_name}
+      <PageHeader
+        title={isMe ? "Perfil" : member.display_name}
+        subtitle={isMe ? member.display_name : "Histórico"}
+        right={
+          <Link href="/config" className="btn-secondary min-h-11 px-3 text-sm">
+            <Settings size={18} aria-hidden />
+            Configurações
           </Link>
-        ))}
-      </nav>
+        }
+      />
+      <PersonPicker people={members.map((x) => ({ id: x.user_id, name: x.display_name }))} selected={userId} month={month} />
 
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <div className="card text-center">
-          <p className="text-3xl font-black" data-testid="streak">{currentStreak(input, today)}</p>
-          <p className="text-xs text-zinc-400">🔥 sequência atual</p>
+      <dl className="mb-4 grid grid-cols-2 gap-2">
+        <div className="card">
+          <dt className="text-sm text-muted">Sequência atual</dt>
+          <dd className="tabular text-[32px] font-bold leading-9" data-testid="streak">
+            {streak}
+          </dd>
+          <dd className="text-sm text-muted">{streak === 1 ? "dia seguido" : "dias seguidos"}, folgas não interrompem</dd>
         </div>
-        <div className="card text-center">
-          <p className="text-3xl font-black">{missedDays(input, today).length}</p>
-          <p className="text-xs text-zinc-400">dias descumpridos (total)</p>
+        <div className="card">
+          <dt className="text-sm text-muted">Falhas em {monthLower}</dt>
+          <dd className="tabular text-[32px] font-bold leading-9" data-testid="missed-month">
+            {count("missed")}
+          </dd>
+          <dd className="text-sm text-muted">{count("missed") === 1 ? "dia descumprido" : "dias descumpridos"}</dd>
         </div>
-      </div>
+      </dl>
 
-      <section className="card">
-        <div className="mb-3 flex items-center justify-between">
-          <Link href={`?m=${shiftMonth(month, -1)}`} className="px-2 text-zinc-400" aria-label="Mês anterior">‹</Link>
-          <h2 className="font-semibold">{MONTHS[Number(month.slice(5)) - 1]} {month.slice(0, 4)}</h2>
-          <Link href={`?m=${shiftMonth(month, 1)}`} className="px-2 text-zinc-400" aria-label="Próximo mês">›</Link>
-        </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-zinc-500">
-          {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => <span key={i}>{d}</span>)}
-        </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {Array.from({ length: weekdayOf(first) }, (_, i) => <span key={`pad-${i}`} />)}
-          {days.map((d, i) => (
-            <span
-              key={d}
-              data-day={d}
-              data-status={statuses[i]}
-              className={`flex aspect-square items-center justify-center rounded-lg text-sm ${STYLE[statuses[i]]}`}
-            >
-              {Number(d.slice(8))}
+      <MonthNav month={month} current={current} hrefFor={(x) => `/historico/${userId}?m=${x}`} />
+
+      <section aria-label={`Calendário de ${monthLower}`}>
+        <div className="grid grid-cols-7 gap-0.5 text-center text-xs font-semibold text-muted" aria-hidden>
+          {WEEK.map((d, i) => (
+            <span key={i} className="py-1">
+              {d}
             </span>
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
-          <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />cumprido {count("done")}</span>
-          <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-red-500/80" />falhou {count("missed")}</span>
-          <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-zinc-700" />folga {count("off")}</span>
-        </div>
+        <ol className="grid grid-cols-7 gap-0.5">
+          {Array.from({ length: weekdayOf(first) }, (_, i) => (
+            <li key={`pad-${i}`} aria-hidden />
+          ))}
+          {days.map((d, i) => (
+            <Cell key={d} day={d} status={statuses[i]} today={d === today} offButDone={statuses[i] === "off" && input.completedDays.has(d)} />
+          ))}
+        </ol>
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted">
+          <li className="flex items-center gap-2">
+            <Check size={16} aria-hidden className="text-done" /> Cumprido: {count("done")}
+          </li>
+          <li className="flex items-center gap-2">
+            <X size={16} aria-hidden className="text-fail" /> Falhou: {count("missed")}
+          </li>
+          <li className="flex items-center gap-2">
+            <Pause size={16} aria-hidden className="text-off" /> Folga: {count("off")}
+          </li>
+          <li className="flex items-center gap-2">
+            <Circle size={16} aria-hidden className="text-pending" /> Hoje, pendente
+          </li>
+        </ul>
       </section>
     </>
   );

@@ -1,12 +1,23 @@
-import { Avatar } from "@/components/Avatar";
+import { CircleCheck } from "lucide-react";
+import { DebtorRow, type DebtDay } from "@/components/DebtorRow";
 import { PageHeader } from "@/components/PageHeader";
-import { PayButton } from "@/components/PayButton";
 import { formatDayPt, lastDayOfMonth, spToday } from "@/lib/dates";
 import { getLedgerInputs, getMembers, requireMember, signUrls } from "@/lib/data";
-import { debtLines, debtSummary } from "@/lib/ledger";
-import { ITEM_LABEL } from "@/lib/types";
+import { debtLines, debtSummary, type DebtLine } from "@/lib/ledger";
+import { plural } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
+
+function groupByDay(lines: DebtLine[], nameOf: Map<string, string>): DebtDay[] {
+  const days = new Map<string, DebtDay>();
+  for (const l of lines) {
+    const d = days.get(l.day) ?? { day: l.day, label: formatDayPt(l.day), overdue: false, items: [] };
+    d.overdue ||= l.overdue;
+    d.items.push({ item: l.item, receivedBy: l.payment ? (nameOf.get(l.payment.received_by) ?? "alguém") : null });
+    days.set(l.day, d);
+  }
+  return [...days.values()];
+}
 
 export default async function DebtsPage() {
   const { supabase, me } = await requireMember();
@@ -21,70 +32,57 @@ export default async function DebtsPage() {
   const rows = members
     .map((m) => {
       const lines = debtLines(inputs.get(m.user_id)!, paymentsBy.get(m.user_id) ?? [], today);
-      return { m, lines, open: lines.filter((l) => !l.payment), paid: lines.filter((l) => l.payment), sum: debtSummary(lines) };
+      // Open items first; paid ones stay visible as history inside the expansion.
+      const days = groupByDay([...lines.filter((l) => !l.payment), ...lines.filter((l) => l.payment)], nameOf);
+      return { m, days, sum: debtSummary(lines) };
     })
-    .sort((a, b) => b.open.length - a.open.length);
+    .sort((a, b) => b.sum.cokes + b.sum.snacks - (a.sum.cokes + a.sum.snacks));
 
+  const mine = rows.find((r) => r.m.user_id === me.user_id)!.sum;
+  const owesSomething = mine.cokes + mine.snacks > 0;
   const [, month, day] = lastDayOfMonth(today).split("-");
-  const deadline = `${day}/${month}`;
 
   return (
     <>
-      <PageHeader title="Dívidas" subtitle={`Cada dia descumprido = 1 Coca + 1 salgado ao grupo · prazo: ${deadline}`} />
-      <div className="space-y-3">
-        {rows.map(({ m, open, paid, sum }) => {
-          const isMe = m.user_id === me.user_id;
-          return (
-            <section key={m.user_id} className="card" data-debtor={m.display_name}>
-              <div className="flex items-center gap-3">
-                <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
-                <div className="flex-1">
-                  <p className="font-semibold">
-                    {m.display_name}
-                    {isMe && <span className="text-zinc-500"> (você)</span>}
-                  </p>
-                  <p className="text-xs text-zinc-400" data-testid="summary">
-                    {open.length === 0 ? "Nada a pagar 🎉" : `deve ${sum.cokes} 🥤 Coca · ${sum.snacks} 🥟 salgado`}
-                  </p>
-                </div>
-                {sum.overdue > 0 && (
-                  <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-300">{sum.overdue} atrasada(s)</span>
-                )}
-              </div>
+      <PageHeader title="Dívidas" subtitle={`Cada dia descumprido vale 1 Coca + 1 salgado ao grupo. Prazo deste mês: ${day}/${month}.`} />
 
-              {open.length > 0 && (
-                <ul className="mt-3 divide-y divide-zinc-800 border-t border-zinc-800">
-                  {open.map((l) => (
-                    <li key={`${l.day}-${l.item}`} className="flex items-center justify-between gap-2 py-2 text-sm">
-                      <span>
-                        {l.item === "coke" ? "🥤" : "🥟"} {ITEM_LABEL[l.item]} · {formatDayPt(l.day)}
-                        {l.overdue && <span className="ml-1 text-xs font-semibold text-red-400">atrasada</span>}
-                      </span>
-                      {!isMe && <PayButton debtorId={m.user_id} debtorName={m.display_name} day={l.day} item={l.item} />}
-                    </li>
-                  ))}
-                </ul>
-              )}
+      <section className="card mb-6" aria-label="Seu saldo" data-testid="my-balance">
+        {owesSomething ? (
+          <>
+            <p className="text-sm text-muted">Seu saldo</p>
+            <p className="tabular text-[28px] font-bold leading-[34px]">
+              Você deve {plural(mine.cokes, "Coca", "Cocas")} + {plural(mine.snacks, "salgado", "salgados")}
+            </p>
+            {mine.overdue > 0 && <p className="mt-1 text-sm text-fail">{plural(mine.overdue, "item atrasado", "itens atrasados")} do mês passado.</p>}
+            <p className="mt-2 text-sm text-muted">Pague a qualquer pessoa do grupo; quem receber marca aqui.</p>
+          </>
+        ) : (
+          <>
+            <p className="flex items-center gap-2 text-[28px] font-bold leading-[34px]">
+              <CircleCheck size={26} aria-hidden className="text-done" /> Tudo em dia
+            </p>
+            <p className="mt-1 text-sm text-muted">A geladeira agradece.</p>
+          </>
+        )}
+      </section>
 
-              {paid.length > 0 && (
-                <details className="mt-2 text-xs text-zinc-400">
-                  <summary className="cursor-pointer">{paid.length} item(ns) pago(s)</summary>
-                  <ul className="mt-1 space-y-0.5">
-                    {paid.map((l) => (
-                      <li key={`${l.day}-${l.item}`}>
-                        {ITEM_LABEL[l.item]} de {formatDayPt(l.day)} → recebido por {nameOf.get(l.payment!.received_by)}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-            </section>
-          );
-        })}
-      </div>
-      <p className="mt-4 text-center text-xs text-zinc-500">
-        Quem recebe marca como pago. O dia de hoje só vira dívida depois das 23:59.
-      </p>
+      <h2 className="mb-3 text-lg font-semibold leading-6">Saldo do grupo</h2>
+      <ul className="space-y-2">
+        {rows.map(({ m, days, sum }) => (
+          <DebtorRow
+            key={m.user_id}
+            debtorId={m.user_id}
+            name={m.display_name}
+            avatarUrl={m.avatar_path ? (urls.get(m.avatar_path) ?? null) : null}
+            isMe={m.user_id === me.user_id}
+            cokes={sum.cokes}
+            snacks={sum.snacks}
+            overdue={sum.overdue}
+            days={days}
+          />
+        ))}
+      </ul>
+      <p className="mt-4 text-sm text-muted">O dia de hoje só vira dívida depois das 23:59.</p>
     </>
   );
 }

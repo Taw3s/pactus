@@ -1,10 +1,11 @@
 import { PageHeader } from "@/components/PageHeader";
-import { Countdown } from "@/components/Countdown";
+import { Scoreboard, type GoalState } from "@/components/Scoreboard";
 import { TodayChecklist } from "@/components/TodayChecklist";
-import { formatDayPt, spToday, weekdayOf, WEEKDAYS_PT } from "@/lib/dates";
+import type { Verdict } from "@/lib/ai-review";
+import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { requireMember, signUrls } from "@/lib/data";
 import { dayOffOn } from "@/lib/ledger";
-import type { Checkin, DisputeStatus } from "@/lib/types";
+import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,32 +18,32 @@ export default async function TodayPage() {
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
   ]);
   const mine = (checkins ?? []) as Checkin[];
-  const { data: results } = await supabase
-    .from("dispute_results")
-    .select("checkin_id, status")
-    .in("checkin_id", mine.map((c) => c.id));
+  const ids = mine.map((c) => c.id);
+  const [{ data: results }, { data: reviews }, urls] = await Promise.all([
+    supabase.from("dispute_results").select("checkin_id, status").in("checkin_id", ids),
+    supabase.from("checkin_reviews").select("checkin_id, verdict").in("checkin_id", ids),
+    signUrls(supabase, mine.map((c) => c.photo_path)),
+  ]);
   const statusOf = new Map((results ?? []).map((r) => [r.checkin_id as string, r.status as DisputeStatus]));
-  const urls = await signUrls(supabase, mine.map((c) => c.photo_path));
-  const dayOff = dayOffOn(changes ?? [], today);
-  const isOff = weekdayOf(today) === dayOff;
+  const reviewOf = new Map((reviews ?? []).map((r) => [r.checkin_id as string, r.verdict as Verdict]));
+  const isOff = weekdayOf(today) === dayOffOn(changes ?? [], today);
+
+  // Same rule as the ledger: a goal counts only with a check-in not annulled by the tribunal.
+  const states = Object.fromEntries(
+    GOALS.map((g) => {
+      const c = mine.find((x) => x.goal === g.id);
+      const state: GoalState = !c ? "pending" : statusOf.get(c.id) === "upheld" ? "annulled" : "done";
+      return [g.id, state];
+    }),
+  ) as Record<DailyGoal, GoalState>;
 
   return (
     <>
-      <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · olá, ${me.display_name}`} right={!isOff && <Countdown />} />
-      {isOff && (
-        <div className="card mb-3 text-center">
-          <p className="text-4xl">🏖️</p>
-          <h2 className="mt-2 text-lg font-semibold">Dia de folga</h2>
-          <p className="text-sm text-zinc-400">
-            {WEEKDAYS_PT[dayOff]} é sua folga: nada é obrigatório e não há penalidade. Se quiser estudar mesmo assim, o que você
-            enviar conta pontos no ranking.
-          </p>
-        </div>
-      )}
+      <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
+      <Scoreboard isOff={isOff} states={states} />
       <TodayChecklist
         groupId={me.group_id}
         userId={me.user_id}
-        isOff={isOff}
         done={mine.map((c) => ({
           id: c.id,
           goal: c.goal,
@@ -52,6 +53,7 @@ export default async function TodayPage() {
           title: c.title,
           photoUrl: urls.get(c.photo_path) ?? null,
           dispute: statusOf.get(c.id) ?? null,
+          review: reviewOf.get(c.id) ?? null,
         }))}
       />
     </>

@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { GroupTabs } from "@/components/GroupTabs";
+import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
 import { lastDayOfMonth, monthKey, spToday } from "@/lib/dates";
 import { fetchAll, getMembers, requireMember, signUrls } from "@/lib/data";
@@ -7,13 +8,7 @@ import { positions, scoreMonth, SCORING, type RankingCheckin } from "@/lib/ranki
 
 export const dynamic = "force-dynamic";
 
-const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-const MEDALS = ["🥇", "🥈", "🥉"];
-
-function shiftMonth(key: string, delta: number) {
-  const [y, m] = key.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 7);
-}
+const PODIUM = ["text-gold", "text-silver", "text-bronze"];
 
 function hours(minutes: number) {
   const h = Math.floor(minutes / 60);
@@ -55,70 +50,91 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
     [...scores].sort((a, b) => b[key] - a[key]).find((s) => s[key] > 0);
   const highlights = [
     { label: "Mais horas", s: leader("studyMinutes"), value: (s: (typeof scores)[number]) => hours(s.studyMinutes) },
-    { label: "Mais páginas", s: leader("pages"), value: (s: (typeof scores)[number]) => `${s.pages} pág.` },
+    { label: "Mais páginas", s: leader("pages"), value: (s: (typeof scores)[number]) => `${s.pages} páginas` },
     { label: "Mais projetos", s: leader("projects"), value: (s: (typeof scores)[number]) => `${s.projects}` },
   ];
 
+  const everyoneZero = scores.every((s) => s.points === 0);
+
   return (
     <>
-      <PageHeader title="Ranking" subtitle="Pontuação do mês" />
+      <PageHeader title="Grupo" subtitle="Ranking do mês" />
+      <GroupTabs />
+      <MonthNav month={month} current={current} hrefFor={(x) => `/ranking?m=${x}`} />
 
-      <div className="card mb-3 flex items-center justify-between py-2">
-        <Link href={`?m=${shiftMonth(month, -1)}`} className="px-2 text-zinc-400" aria-label="Mês anterior">‹</Link>
-        <h2 className="font-semibold">{MONTHS[Number(month.slice(5)) - 1]} {month.slice(0, 4)}</h2>
-        {month < current ? (
-          <Link href={`?m=${shiftMonth(month, 1)}`} className="px-2 text-zinc-400" aria-label="Próximo mês">›</Link>
-        ) : (
-          <span className="px-2 text-zinc-700">›</span>
-        )}
-      </div>
+      {everyoneZero ? (
+        <p className="card text-center text-muted">Ninguém pontuou em {monthName(month).toLowerCase()} ainda.</p>
+      ) : (
+        <ol className="space-y-2" data-testid="ranking">
+          {scores.map((s, i) => {
+            const member = byId.get(s.userId)!;
+            const p = pos[i];
+            const podium = p <= 3 && s.points > 0 ? PODIUM[p - 1] : null;
+            const isMe = s.userId === me.user_id;
+            return (
+              <li
+                key={s.userId}
+                data-member={member.display_name}
+                data-position={p}
+                className={`flex min-h-20 items-center gap-3 rounded-2xl p-3 ${isMe ? "bg-raised" : "bg-surface"}`}
+              >
+                <span className={`tabular w-8 shrink-0 text-center text-xl font-bold ${podium ?? "text-muted"}`}>
+                  {p}º
+                </span>
+                <Avatar name={member.display_name} url={member.avatar_path ? urls.get(member.avatar_path) : null} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">
+                    <span className="break-words">{member.display_name}</span>
+                    {isMe && <span className="ml-1.5 text-sm font-normal text-muted">· Você</span>}
+                  </p>
+                  <p className="tabular text-sm text-muted">
+                    {hours(s.studyMinutes)} de estudo · {s.pages} {s.pages === 1 ? "página" : "páginas"}
+                    {s.projects > 0 && ` · ${s.projects} ${s.projects === 1 ? "projeto" : "projetos"}`} · {s.completedDays}{" "}
+                    {s.completedDays === 1 ? "dia" : "dias"}
+                  </p>
+                </div>
+                <span className="shrink-0 text-right">
+                  <span className={`tabular block font-bold ${p === 1 && s.points > 0 ? "text-[32px] leading-9" : "text-2xl leading-8"}`} data-testid="points">
+                    {s.points}
+                  </span>
+                  <span className="text-xs text-muted">pts</span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
 
-      <ol className="space-y-2" data-testid="ranking">
-        {scores.map((s, i) => {
-          const member = byId.get(s.userId)!;
-          const medal = pos[i] <= 3 && s.points > 0 ? MEDALS[pos[i] - 1] : null;
-          return (
-            <li
-              key={s.userId}
-              data-member={member.display_name}
-              data-position={pos[i]}
-              className={`card flex items-center gap-3 ${medal ? "border-emerald-500/30" : ""} ${s.userId === me.user_id ? "ring-1 ring-emerald-500/50" : ""}`}
-            >
-              <span className="w-7 text-center text-lg font-bold">{medal ?? `${pos[i]}º`}</span>
-              <Avatar name={member.display_name} url={member.avatar_path ? urls.get(member.avatar_path) : null} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{member.display_name}</p>
-                <p className="text-xs text-zinc-400">
-                  ⏱️ {hours(s.studyMinutes)} · 📄 {s.pages} · 🛠️ {s.projects} · ✅ {s.completedDays} {s.completedDays === 1 ? "dia" : "dias"}
-                </p>
+      {!everyoneZero && (
+        <section className="mt-6" aria-labelledby="destaques">
+          <h2 id="destaques" className="mb-2 text-sm font-semibold text-muted">
+            Destaques do mês
+          </h2>
+          <dl className="divide-y divide-divider rounded-2xl bg-surface px-4">
+            {highlights.map((h) => (
+              <div key={h.label} className="flex min-h-12 items-center justify-between gap-3">
+                <dt className="text-sm text-muted">{h.label}</dt>
+                <dd className="tabular text-right text-sm font-semibold">
+                  {h.s ? `${byId.get(h.s.userId)?.display_name} · ${h.value(h.s)}` : "Ninguém ainda"}
+                </dd>
               </div>
-              <span className="text-right">
-                <span className="block text-xl font-black" data-testid="points">{s.points}</span>
-                <span className="text-[10px] uppercase text-zinc-500">pts</span>
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+            ))}
+          </dl>
+        </section>
+      )}
 
-      <section className="mt-4 grid grid-cols-3 gap-2">
-        {highlights.map((h) => (
-          <div key={h.label} className="card p-3 text-center">
-            <p className="text-[11px] uppercase text-zinc-500">{h.label}</p>
-            <p className="mt-1 truncate text-sm font-semibold">{h.s ? byId.get(h.s.userId)?.display_name : "—"}</p>
-            <p className="text-xs text-emerald-300">{h.s ? h.value(h.s) : ""}</p>
-          </div>
-        ))}
-      </section>
-
-      <details className="mt-4 text-xs text-zinc-400">
-        <summary className="cursor-pointer">Como a pontuação funciona</summary>
-        <ul className="mt-2 space-y-1">
-          <li>✅ Dia cumprido (3 metas): {SCORING.completedDay} pts</li>
-          <li>⏱️ Estudo: {SCORING.perStudyMinute} pt por minuto (até {SCORING.maxStudyMinutesPerDay} min por dia)</li>
-          <li>📄 Leitura: {SCORING.perPage} pts por página (até {SCORING.maxPagesPerDay} páginas por dia)</li>
-          <li>🛠️ Projeto: {SCORING.perProject} pts (1 por dia)</li>
-          <li>Check-in anulado pelo tribunal não pontua. Check-ins na folga pontuam normalmente.</li>
+      <details className="mt-6 rounded-2xl bg-surface p-4 text-sm">
+        <summary className="cursor-pointer font-semibold">Como a pontuação funciona</summary>
+        <ul className="mt-3 space-y-1 text-muted">
+          <li>Dia cumprido (3 metas): {SCORING.completedDay} pts</li>
+          <li>
+            Estudo: {SCORING.perStudyMinute} pt por minuto, até {SCORING.maxStudyMinutesPerDay} min por dia
+          </li>
+          <li>
+            Leitura: {SCORING.perPage} pts por página, até {SCORING.maxPagesPerDay} páginas por dia
+          </li>
+          <li>Projeto: {SCORING.perProject} pts, 1 por dia</li>
+          <li>Prova anulada pelo Tribunal não pontua. Provas enviadas na folga pontuam normalmente.</li>
         </ul>
       </details>
     </>

@@ -14,7 +14,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Configurações" subtitle={user.email} />
+      <PageHeader title="Configurações" subtitle={user.email} backFallback={`/historico/${me.user_id}`} />
       <SettingsForm
         groupId={me.group_id}
         userId={me.user_id}

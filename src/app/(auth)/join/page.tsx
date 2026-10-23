@@ -96,16 +96,23 @@ function JoinForm() {
             <input id="email" className="input" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <label className="label" htmlFor="password">Senha <span className="text-zinc-500">(opcional — sem senha, entra por link)</span></label>
+            <label className="label" htmlFor="password">Senha <span className="text-muted">(opcional; sem senha, você entra por link no e-mail)</span></label>
             <input id="password" className="input" type="password" minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
         </>
       )}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-fail">
+          {error}
+        </p>
+      )}
       <button className="btn-primary w-full" disabled={busy}>{busy ? "Entrando…" : "Entrar no grupo"}</button>
       {!codeOnly && (
-        <p className="text-center text-sm text-zinc-400">
-          Já tem conta? <Link href="/login" className="text-emerald-400 underline">Fazer login</Link>
+        <p className="text-center text-sm text-muted">
+          Já tem conta?{" "}
+          <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-accent underline">
+            Fazer login
+          </Link>
         </p>
       )}
     </form>

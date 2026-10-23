@@ -1,31 +1,54 @@
 "use client";
 
+import { CircleCheck, ReceiptText, UserRound, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { GROUP_TAB_KEY } from "./GroupTabs";
 
-const ITEMS = [
-  { href: "/hoje", label: "Hoje", icon: "✅" },
-  { href: "/feed", label: "Feed", icon: "👥" },
-  { href: "/ranking", label: "Ranking", icon: "🏆" },
-  { href: "/dividas", label: "Dívidas", icon: "🥤" },
-  { href: "/historico", label: "Histórico", icon: "📅" },
-  { href: "/config", label: "Config", icon: "⚙️" },
+interface Item {
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  match: string[];
+}
+
+const ITEMS: Item[] = [
+  { label: "Hoje", icon: CircleCheck, href: "/hoje", match: ["/hoje"] },
+  { label: "Grupo", icon: Users, href: "/feed", match: ["/feed", "/ranking", "/checkin"] },
+  { label: "Dívidas", icon: ReceiptText, href: "/dividas", match: ["/dividas"] },
+  { label: "Perfil", icon: UserRound, href: "/historico", match: ["/historico", "/config"] },
 ];
 
-export function BottomNav() {
+/** `profileHref` points straight at the user's own history: no redirect hop when switching tabs. */
+export function BottomNav({ profileHref }: { profileHref: string }) {
   const path = usePathname();
+  // "Grupo" reopens the sub-tab (Feed or Ranking) used last.
+  const [groupHref, setGroupHref] = useState("/feed");
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(GROUP_TAB_KEY);
+      if (saved === "/feed" || saved === "/ranking") setGroupHref(saved);
+    } catch {}
+  }, [path]);
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <ul className="mx-auto grid max-w-md grid-cols-6">
+    <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-20 border-t border-divider bg-bg pb-[env(safe-area-inset-bottom)]">
+      <ul className="mx-auto grid h-16 max-w-[560px] grid-cols-4">
         {ITEMS.map((item) => {
-          const active = path === item.href || path.startsWith(`${item.href}/`);
+          const active = item.match.some((m) => path === m || path.startsWith(`${m}/`));
+          const href = item.label === "Grupo" ? groupHref : item.label === "Perfil" ? profileHref : item.href;
+          const Icon = item.icon;
           return (
-            <li key={item.href}>
+            <li key={item.label} className="flex">
               <Link
-                href={item.href}
-                className={`flex flex-col items-center gap-0.5 py-2.5 text-[10px] ${active ? "text-emerald-400" : "text-zinc-400"}`}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`mx-1 my-1 flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-semibold leading-4 transition-colors duration-150 ${
+                  active ? "bg-raised text-accent" : "text-muted hover:text-fg"
+                }`}
               >
-                <span className="text-lg leading-none" aria-hidden>{item.icon}</span>
+                <Icon size={22} strokeWidth={2} aria-hidden />
                 {item.label}
               </Link>
             </li>
