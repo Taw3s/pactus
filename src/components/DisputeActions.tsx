@@ -4,6 +4,7 @@ import { Loader, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Sprite } from "./Sprite";
 
 const ERRORS: Record<string, string> = {
   "dispute window closed": "Só dá para contestar provas de hoje ou de ontem.",
@@ -22,10 +23,9 @@ interface Props {
   disputeId?: string;
   canDispute?: boolean;
   canReply?: boolean;
-  canVote?: boolean;
 }
 
-export function DisputeActions({ checkinId, disputeId, canDispute, canReply, canVote }: Props) {
+export function DisputeActions({ checkinId, disputeId, canDispute, canReply }: Props) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -51,12 +51,12 @@ export function DisputeActions({ checkinId, disputeId, canDispute, canReply, can
 
   if (canDispute) {
     return (
-      <section className="space-y-3 rounded-2xl bg-surface p-4" aria-labelledby="contestar">
+      <section className="card space-y-3" aria-labelledby="contestar">
         <div>
-          <h2 id="contestar" className="text-lg font-semibold leading-6">
-            Contestar esta prova
+          <h2 id="contestar" className="pixel flex items-center gap-2 text-xl uppercase leading-6">
+            <Sprite name="scales" /> Contestar esta prova
           </h2>
-          <p className="mt-1 text-sm text-muted">O grupo vota. Se a maioria concordar, a prova é anulada e a meta deixa de contar.</p>
+          <p className="mt-1 text-sm text-muted">Abre um tribunal: o grupo vota. Se a maioria disser culpado, a prova é anulada e a meta deixa de contar.</p>
         </div>
         <div>
           <label className="label" htmlFor="motivo">
@@ -82,7 +82,7 @@ export function DisputeActions({ checkinId, disputeId, canDispute, canReply, can
       {canReply && (
         <>
           <label className="label" htmlFor="resposta">
-            Sua resposta (só uma vez)
+            Sua defesa (só uma vez)
           </label>
           <textarea id="resposta" className="input min-h-20" maxLength={280} value={text} onChange={(e) => setText(e.target.value)} />
           <button
@@ -91,34 +91,8 @@ export function DisputeActions({ checkinId, disputeId, canDispute, canReply, can
             onClick={() => run("reply", () => supabase.from("disputes").update({ reply: text.trim() }).eq("id", disputeId!))}
           >
             {busy && spinner}
-            Responder
+            Enviar defesa
           </button>
-        </>
-      )}
-      {canVote && (
-        <>
-          <p className="text-sm text-muted">
-            <b className="text-fg">Procede:</b> a prova não vale e a meta deixa de contar. <b className="text-fg">Não procede:</b> a prova continua
-            valendo.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              className="btn-secondary"
-              disabled={!!busy}
-              onClick={() => run("yes", () => supabase.from("dispute_votes").insert({ dispute_id: disputeId, upheld: true }))}
-            >
-              {busy === "yes" && spinner}
-              Procede
-            </button>
-            <button
-              className="btn-secondary"
-              disabled={!!busy}
-              onClick={() => run("no", () => supabase.from("dispute_votes").insert({ dispute_id: disputeId, upheld: false }))}
-            >
-              {busy === "no" && spinner}
-              Não procede
-            </button>
-          </div>
         </>
       )}
       {errorLine}

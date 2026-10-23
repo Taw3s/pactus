@@ -1,6 +1,7 @@
 import { CircleCheck } from "lucide-react";
 import { DebtorRow, type DebtDay } from "@/components/DebtorRow";
 import { PageHeader } from "@/components/PageHeader";
+import { Sprite } from "@/components/Sprite";
 import { formatDayPt, lastDayOfMonth, spToday } from "@/lib/dates";
 import { getLedgerInputs, getMembers, requireMember, signUrls } from "@/lib/data";
 import { debtLines, debtSummary, type DebtLine } from "@/lib/ledger";
@@ -49,8 +50,19 @@ export default async function DebtsPage() {
       <section className="card mb-6" aria-label="Seu saldo" data-testid="my-balance">
         {owesSomething ? (
           <>
-            <p className="text-sm text-muted">Seu saldo</p>
-            <p className="tabular text-[28px] font-bold leading-[34px]">
+            <p className="pixel text-sm uppercase text-muted">Seu saldo</p>
+            <div aria-hidden className="mt-2 flex items-end justify-center gap-6">
+              <span className="flex items-end">
+                <Sprite name="sodaCan" scale={2} />
+                <span className="pixel tabular -ml-2 text-[32px] font-bold leading-9 text-accent">×{mine.cokes}</span>
+              </span>
+              <span className="flex items-end">
+                <Sprite name="coxinha" scale={2} />
+                <span className="pixel tabular -ml-2 text-[32px] font-bold leading-9 text-accent">×{mine.snacks}</span>
+              </span>
+            </div>
+            <div aria-hidden className="mb-3 h-2 rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[3px_3px_0_var(--color-hard-shadow)]" />
+            <p className="tabular text-xl font-bold leading-7">
               Você deve {plural(mine.cokes, "Coca", "Cocas")} + {plural(mine.snacks, "salgado", "salgados")}
             </p>
             {mine.overdue > 0 && <p className="mt-1 text-sm text-fail">{plural(mine.overdue, "item atrasado", "itens atrasados")} do mês passado.</p>}
@@ -58,15 +70,15 @@ export default async function DebtsPage() {
           </>
         ) : (
           <>
-            <p className="flex items-center gap-2 text-[28px] font-bold leading-[34px]">
-              <CircleCheck size={26} aria-hidden className="text-done" /> Tudo em dia
+            <p className="pixel flex items-center gap-2 text-[28px] font-bold uppercase leading-[34px] text-done">
+              <CircleCheck size={26} aria-hidden /> Tudo em dia
             </p>
             <p className="mt-1 text-sm text-muted">A geladeira agradece.</p>
           </>
         )}
       </section>
 
-      <h2 className="mb-3 text-lg font-semibold leading-6">Saldo do grupo</h2>
+      <h2 className="pixel mb-3 text-xl uppercase leading-6">Saldo do grupo</h2>
       <ul className="space-y-2">
         {rows.map(({ m, days, sum }) => (
           <DebtorRow

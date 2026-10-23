@@ -8,7 +8,7 @@ import Link from "next/link";
 export function PersonPicker({ people, selected, month }: { people: { id: string; name: string }[]; selected: string; month: string }) {
   const current = people.find((p) => p.id === selected);
   return (
-    <details className="group relative mb-4 rounded-xl border border-control bg-bg">
+    <details className="group relative mb-4 rounded-sm border border-control bg-bg">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 [&::-webkit-details-marker]:hidden">
         <span>
           <span className="text-sm text-muted">Histórico de </span>

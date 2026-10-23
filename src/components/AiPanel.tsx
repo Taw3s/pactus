@@ -45,12 +45,12 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
   return (
     <section
       aria-labelledby="ai-title"
-      className={`rounded-2xl p-4 ${secondary ? "bg-surface" : review?.verdict === "mismatch" ? "bg-warn-bg" : "bg-surface"}`}
+      className={`card ${!secondary && review?.verdict === "mismatch" ? "!bg-warn-bg" : ""}`}
       data-testid="ai-review"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 id="ai-title" className={`font-semibold ${secondary ? "text-sm text-muted" : "text-lg leading-6"}`}>
-          Análise automática
+        <h2 id="ai-title" className={`pixel uppercase ${secondary ? "text-sm text-muted" : "text-lg leading-6"}`}>
+          Juiz IA
         </h2>
         <AiBadge state={state} />
       </div>

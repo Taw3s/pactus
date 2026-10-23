@@ -22,6 +22,12 @@ export async function compressImage(file: File, maxSide = MAX_SIDE): Promise<Blo
   );
 }
 
+/** Small copy for lists and grids (feed, today): a few KB instead of ~200 KB. */
+export const THUMB_SIDE = 480;
+export function thumbPath(path: string) {
+  return path.replace(/\.jpg$/, ".thumb.jpg");
+}
+
 /** Uploads to the private bucket under <group>/<user>/ (required by storage RLS). */
 export function mediaPath(groupId: string, userId: string, prefix: string) {
   return `${groupId}/${userId}/${prefix}-${crypto.randomUUID()}.jpg`;

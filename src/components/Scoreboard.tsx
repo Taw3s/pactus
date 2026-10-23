@@ -6,12 +6,15 @@ import { msUntilEndOfDay } from "@/lib/dates";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { GOALS, type DailyGoal } from "@/lib/types";
 import { Sprite } from "./Sprite";
+import { VerifiedSeal } from "./VerifiedSeal";
 
 export type GoalState = "done" | "pending" | "annulled";
 
 interface Props {
   isOff: boolean;
   states: Record<DailyGoal, GoalState>;
+  /** Today's date when the AI judge confirmed all 3 proofs (shows the "Verificado!" seal). */
+  verifiedDay?: string | null;
 }
 
 function remaining(ms: number) {
@@ -75,7 +78,7 @@ function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
 }
 
 /** Answers "how much is left?" in one glance: count, next pending goal, deadline. */
-export function Scoreboard({ isOff, states }: Props) {
+export function Scoreboard({ isOff, states, verifiedDay }: Props) {
   const [ms, setMs] = useState<number | null>(null);
   useEffect(() => {
     const tick = () => setMs(msUntilEndOfDay());
@@ -90,12 +93,15 @@ export function Scoreboard({ isOff, states }: Props) {
 
   if (isOff) {
     return (
-      <section className="card mb-6 flex items-center gap-3" data-testid="scoreboard" data-scoreboard="off">
-        <Sprite name="beachChair" scale={2} />
-        <div>
-          <p className="pixel text-[28px] uppercase leading-8 text-off">Folga</p>
-          <p className="mt-1 font-semibold">Hoje é sua folga</p>
-          <p className="mt-1 text-sm text-muted">Nada é obrigatório. Se quiser fazer as metas, elas continuam pontuando.</p>
+      <section className="card mb-6" data-testid="scoreboard" data-scoreboard="off">
+        {verifiedDay && <VerifiedSeal day={verifiedDay} />}
+        <div className="flex items-center gap-3">
+          <Sprite name="beachChair" scale={2} />
+          <div>
+            <p className="pixel text-[28px] uppercase leading-8 text-off">Folga</p>
+            <p className="mt-1 font-semibold">Hoje é sua folga</p>
+            <p className="mt-1 text-sm text-muted">Nada é obrigatório. Se quiser fazer as metas, elas continuam pontuando.</p>
+          </div>
         </div>
       </section>
     );
@@ -107,6 +113,7 @@ export function Scoreboard({ isOff, states }: Props) {
 
   return (
     <section className="card mb-6" data-testid="scoreboard" data-scoreboard={complete ? "complete" : "pending"}>
+      {verifiedDay && <VerifiedSeal day={verifiedDay} />}
       <div className="flex items-center gap-4">
         <p className={`pixel tabular text-[56px] font-bold leading-[56px] ${complete ? "text-done" : "text-accent"}`} data-testid="progress">
           {done}/3

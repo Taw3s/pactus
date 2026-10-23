@@ -1,15 +1,15 @@
 /* eslint-disable @next/next/no-img-element -- signed URLs */
-import { ChevronRight, Circle, CircleCheck, Pause, Scale } from "lucide-react";
+import { ChevronRight, Circle, CircleCheck, Pause } from "lucide-react";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { GroupTabs } from "@/components/GroupTabs";
 import { PageHeader } from "@/components/PageHeader";
+import { Sprite } from "@/components/Sprite";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Badge } from "@/components/ui/Badge";
-import type { Verdict } from "@/lib/ai-review";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
-import { getMembers, requireMember, signUrls } from "@/lib/data";
-import { GOAL_ICON } from "@/lib/goal-icons";
+import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
+import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
 import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
 
@@ -21,22 +21,21 @@ export default async function FeedPage() {
 
   const [members, { data: checkinRows }, { data: changeRows }, { data: resultRows }] = await Promise.all([
     getMembers(supabase),
-    supabase.from("checkins").select("*").eq("day", today).order("created_at"),
+    supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("*"),
   ]);
-  const checkins = (checkinRows ?? []) as Checkin[];
+  const checkins = (checkinRows ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const results = (resultRows ?? []) as DisputeResult[];
   const resultByCheckin = new Map(results.map((r) => [r.checkin_id, r]));
-  const { data: reviewRows } = checkins.length
-    ? await supabase.from("checkin_reviews").select("checkin_id, verdict").in("checkin_id", checkins.map((c) => c.id))
-    : { data: [] as { checkin_id: string; verdict: string }[] };
-  const reviewOf = new Map((reviewRows ?? []).map((r) => [r.checkin_id as string, r.verdict as Verdict]));
-  const urls = await signUrls(supabase, [...checkins.map((c) => c.photo_path), ...members.map((m) => m.avatar_path)]);
+  const reviewOf = new Map(checkins.map((c) => [c.id, embeddedVerdict(c.checkin_reviews)]));
 
   // Open disputes may concern yesterday's check-ins, so list them separately.
   const openIds = results.filter((r) => r.status === "open").map((r) => r.checkin_id);
-  const { data: openRows } = openIds.length ? await supabase.from("checkins").select("*").in("id", openIds) : { data: [] as Checkin[] };
+  const [urls, { data: openRows }] = await Promise.all([
+    signThumbs(supabase, [...checkins.map((c) => c.photo_path), ...members.map((m) => m.avatar_path)]),
+    openIds.length ? supabase.from("checkins").select("*").in("id", openIds) : Promise.resolve({ data: [] as Checkin[] }),
+  ]);
   const open = (openRows ?? []) as Checkin[];
   const nameOf = new Map(members.map((m) => [m.user_id, m.display_name]));
 
@@ -57,9 +56,9 @@ export default async function FeedPage() {
       <GroupTabs />
 
       {open.length > 0 && (
-        <section className="mb-6 rounded-2xl bg-warn-bg p-4" aria-labelledby="tribunal">
-          <h2 id="tribunal" className="flex items-center gap-2 font-semibold text-warn">
-            <Scale size={20} aria-hidden /> Tribunal em andamento
+        <section className="card mb-6 !border-warn !bg-warn-bg" aria-labelledby="tribunal">
+          <h2 id="tribunal" className="pixel flex items-center gap-2 text-xl uppercase text-warn">
+            <Sprite name="judgeBench" /> Tribunal em andamento
           </h2>
           <ul className="mt-2">
             {open.map((c) => (
@@ -82,7 +81,7 @@ export default async function FeedPage() {
             <div className="flex items-center gap-3">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
               <Link href={`/historico/${m.user_id}`} className="min-w-0 flex-1">
-                <p className="break-words text-lg font-semibold leading-6">
+                <p className="pixel break-words text-xl uppercase leading-6">
                   {m.display_name}
                   {m.user_id === me.user_id && <span className="text-sm font-normal text-muted"> · você</span>}
                 </p>
@@ -101,14 +100,13 @@ export default async function FeedPage() {
             <ul className="mt-3 grid grid-cols-3 gap-2">
               {GOALS.map((g) => {
                 const c = mine.find((x) => x.goal === g.id);
-                const Icon = GOAL_ICON[g.id];
                 if (!c) {
                   return (
                     <li key={g.id}>
-                      <div className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-divider text-muted">
-                        <Icon size={20} aria-hidden />
+                      <div className="flex aspect-square flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-divider">
+                        <Sprite name={GOAL_SPRITE[g.id]} dim />
                       </div>
-                      <p className="mt-1.5 text-sm font-medium">{g.label}</p>
+                      <p className="pixel mt-1.5 text-sm uppercase">{g.label}</p>
                       <p className="text-xs text-muted">Pendente</p>
                     </li>
                   );
@@ -117,8 +115,8 @@ export default async function FeedPage() {
                 return (
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
-                      <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-xl bg-raised object-cover" />
-                      <p className="mt-1.5 text-sm font-medium">{g.label}</p>
+                      <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
+                      <p className="pixel mt-1.5 text-sm uppercase">{g.label}</p>
                       {value && <p className="tabular text-xs text-muted">{value}</p>}
                     </Link>
                     <div className="mt-1">
@@ -131,7 +129,7 @@ export default async function FeedPage() {
 
             {project && (
               <Link href={`/checkin/${project.id}`} className="mt-3 flex min-h-12 items-center gap-2 border-t border-divider pt-3 text-sm">
-                <GOAL_ICON.project size={18} aria-hidden className="shrink-0 text-muted" />
+                <Sprite name="computer" />
                 <span className="min-w-0 flex-1 truncate">Projeto: {project.title}</span>
                 <PrimaryBadge dispute={resultByCheckin.get(project.id)?.status} ai={reviewOf.get(project.id)} />
                 <ChevronRight size={18} aria-hidden className="shrink-0 text-muted" />

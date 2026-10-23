@@ -12,7 +12,7 @@ export function BackButton({ fallback, label = "Voltar" }: { fallback: string; l
     else router.push(fallback);
   }
   return (
-    <button onClick={back} className="-ml-2 mb-2 inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-medium text-muted hover:text-fg">
+    <button onClick={back} className="-ml-2 mb-2 inline-flex min-h-11 items-center gap-1 rounded-sm px-2 text-sm font-medium text-muted hover:text-fg">
       <ChevronLeft size={20} aria-hidden />
       {label}
     </button>

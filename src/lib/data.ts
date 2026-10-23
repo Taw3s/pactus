@@ -1,8 +1,11 @@
 // Server-side data access. RLS guarantees every query only sees the caller's group.
 import "server-only";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { thumbPath } from "./image";
 import { createClient } from "./supabase/server";
+import type { Verdict } from "./ai-review";
 import type { DayOffChange, MemberLedgerInput, Payment } from "./ledger";
 import type { Member, PaymentRow } from "./types";
 
@@ -21,19 +24,23 @@ export async function fetchAll<T>(
   }
 }
 
-/** Current user + membership. Redirects to login / join when missing. */
-export async function requireMember() {
+/**
+ * Current user + membership. Redirects to login / join when missing.
+ * Cached per request: the layout and the page share one lookup. getClaims verifies the JWT
+ * locally when the project uses asymmetric signing keys (no round trip to Auth).
+ */
+export const requireMember = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) redirect("/login");
+  const user = { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
 
   const { data: me } = await supabase.from("members").select("*").eq("user_id", user.id).maybeSingle<Member>();
   if (!me) redirect("/join?step=code");
 
   return { supabase, user, me };
-}
+});
 
 export async function getMembers(supabase: SupabaseClient): Promise<Member[]> {
   const { data, error } = await supabase.from("members").select("*").order("display_name");
@@ -73,4 +80,20 @@ export async function signUrls(supabase: SupabaseClient, paths: (string | null |
   const { data } = await supabase.storage.from("media").createSignedUrls(unique, 60 * 60);
   for (const row of data ?? []) if (row.path && row.signedUrl) urls.set(row.path, row.signedUrl);
   return urls;
+}
+
+/** Signed URLs for list views: the small thumbnail when it exists, else the full photo. */
+export async function signThumbs(supabase: SupabaseClient, paths: (string | null | undefined)[]) {
+  const full = [...new Set(paths.filter((p): p is string => !!p))];
+  const urls = await signUrls(supabase, [...full, ...full.map(thumbPath)]);
+  return new Map(full.flatMap((p) => {
+    const url = urls.get(thumbPath(p)) ?? urls.get(p);
+    return url ? [[p, url] as const] : [];
+  }));
+}
+
+/** Reads `checkin_reviews(verdict)` embedded in a check-in row (object, array or null). */
+export function embeddedVerdict(embed: unknown): Verdict | null {
+  const row = (Array.isArray(embed) ? embed[0] : embed) as { verdict?: Verdict } | null | undefined;
+  return row?.verdict ?? null;
 }

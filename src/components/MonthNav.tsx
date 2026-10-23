@@ -14,9 +14,9 @@ export function monthName(key: string) {
 
 /** "‹ Outubro 2026 ›" with 44 px targets. Never navigates into the future. */
 export function MonthNav({ month, current, hrefFor }: { month: string; current: string; hrefFor: (m: string) => string }) {
-  const btn = "flex h-11 w-11 items-center justify-center rounded-xl text-muted hover:bg-raised hover:text-fg";
+  const btn = "flex h-11 w-11 items-center justify-center rounded-sm text-muted hover:bg-raised hover:text-fg";
   return (
-    <div className="mb-4 flex items-center justify-between rounded-2xl bg-surface p-1">
+    <div className="mb-4 flex items-center justify-between rounded-sm bg-surface p-1">
       <Link href={hrefFor(shiftMonth(month, -1))} className={btn} aria-label="Mês anterior">
         <ChevronLeft size={22} aria-hidden />
       </Link>

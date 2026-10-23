@@ -1,7 +1,7 @@
 "use client";
 
-import { CircleCheck, ReceiptText, UserRound, Users, type LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { CircleCheck, Loader, ReceiptText, UserRound, Users, type LucideIcon } from "lucide-react";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GROUP_TAB_KEY } from "./GroupTabs";
@@ -19,6 +19,16 @@ const ITEMS: Item[] = [
   { label: "Dívidas", icon: ReceiptText, href: "/dividas", match: ["/dividas"] },
   { label: "Perfil", icon: UserRound, href: "/historico", match: ["/historico", "/config"] },
 ];
+
+/** Instant feedback on tap: the icon spins while the next page renders on the server. */
+function TabIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <Loader size={22} strokeWidth={2} aria-hidden className="animate-spin text-accent motion-reduce:animate-none" />
+  ) : (
+    <Icon size={22} strokeWidth={2} aria-hidden />
+  );
+}
 
 /** `profileHref` points straight at the user's own history: no redirect hop when switching tabs. */
 export function BottomNav({ profileHref }: { profileHref: string }) {
@@ -38,7 +48,6 @@ export function BottomNav({ profileHref }: { profileHref: string }) {
         {ITEMS.map((item) => {
           const active = item.match.some((m) => path === m || path.startsWith(`${m}/`));
           const href = item.label === "Grupo" ? groupHref : item.label === "Perfil" ? profileHref : item.href;
-          const Icon = item.icon;
           return (
             <li key={item.label} className="flex">
               <Link
@@ -48,7 +57,7 @@ export function BottomNav({ profileHref }: { profileHref: string }) {
                   active ? "border-bevel-dark border-b-bevel-light border-r-bevel-light bg-bg text-accent" : "border-transparent text-muted hover:text-fg"
                 }`}
               >
-                <Icon size={22} strokeWidth={2} aria-hidden />
+                <TabIcon icon={item.icon} />
                 {item.label}
               </Link>
             </li>

@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronDown, CupSoda, Croissant } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { PayButton } from "@/components/PayButton";
+import { Sprite } from "@/components/Sprite";
 import { Badge } from "@/components/ui/Badge";
 import type { DebtItem } from "@/lib/ledger";
 import { plural } from "@/lib/text";
@@ -26,7 +27,7 @@ interface Props {
   days: DebtDay[];
 }
 
-const ICON = { coke: CupSoda, snack: Croissant };
+const SPRITE = { coke: "sodaCan", snack: "coxinha" } as const;
 const NAME = { coke: "Coca", snack: "Salgado" };
 
 /** One line per person; expanding reveals each day and item, each with its own "Recebi". */
@@ -37,7 +38,7 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, cokes, snacks, over
   const panelId = `debts-${debtorId}`;
 
   return (
-    <li className="rounded-2xl bg-surface" data-debtor={name}>
+    <li className="card !p-0" data-debtor={name}>
       <button
         className="flex min-h-16 w-full items-center gap-3 p-3 text-left"
         aria-expanded={open}
@@ -69,10 +70,9 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, cokes, snacks, over
               </p>
               <ul>
                 {d.items.map(({ item, receivedBy }) => {
-                  const Icon = ICON[item];
                   return (
                     <li key={item} className="flex min-h-12 items-center gap-3">
-                      <Icon size={20} aria-hidden className="shrink-0 text-muted" />
+                      <Sprite name={SPRITE[item]} />
                       <span className="flex-1">{NAME[item]}</span>
                       {receivedBy ? (
                         <span className="text-sm text-done">Recebido por {receivedBy}</span>

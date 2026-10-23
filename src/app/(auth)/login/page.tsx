@@ -55,7 +55,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div role="tablist" aria-label="Forma de entrar" className="grid grid-cols-2 gap-1 rounded-xl bg-surface p-1">
+      <div role="tablist" aria-label="Forma de entrar" className="grid grid-cols-2 gap-1 rounded-sm bg-surface p-1">
         {(["password", "magic"] as const).map((m) => (
           <button
             key={m}

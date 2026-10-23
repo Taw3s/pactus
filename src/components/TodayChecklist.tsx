@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
-import { compressImage, mediaPath } from "@/lib/image";
+import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 import { checkinNumbers, goalMeta, GOALS, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
@@ -146,12 +146,17 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
     setError("");
     try {
       const supabase = createClient();
-      const blob = await compressImage(file);
+      const [blob, thumb] = await Promise.all([compressImage(file), compressImage(file, THUMB_SIDE)]);
       const path = mediaPath(groupId, userId, goal);
-      const up = await supabase.storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      const media = supabase.storage.from("media");
+      // The thumbnail only speeds up lists; if it fails, lists fall back to the full photo.
+      const [up] = await Promise.all([
+        media.upload(path, blob, { contentType: "image/jpeg", upsert: false }),
+        media.upload(thumbPath(path), thumb, { contentType: "image/jpeg", upsert: false }).catch(() => null),
+      ]);
       if (up.error) throw new Error("A foto não subiu. Seus dados continuam aqui: tente de novo.");
       // The database sets the day (São Paulo) and the owner; the client only sends the content.
-      const { data: created, error } = await supabase
+      const { error } = await supabase
         .from("checkins")
         .insert({
           goal,
@@ -160,9 +165,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
           minutes: goal === "study" ? Number(minutes) : null,
           pages: goal === "reading" ? Number(pages) : null,
           title: goal === "project" ? title.trim() : null,
-        })
-        .select("id")
-        .single();
+        });
       if (error) {
         throw new Error(
           error.code === "23505"
@@ -174,13 +177,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
               : "Não foi possível enviar. Seus dados continuam aqui: tente de novo.",
         );
       }
-      // AI review runs in the background; the check-in is already saved.
-      fetch("/api/review", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ checkinId: created.id }),
-        keepalive: true,
-      }).catch(() => {});
+      // The AI judge is called by <PendingReviews> once the page shows the new proof.
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");

@@ -20,7 +20,7 @@ export function GroupTabs() {
     } catch {}
   }, [path]);
   return (
-    <div role="tablist" aria-label="Grupo" className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1">
+    <div role="tablist" aria-label="Grupo" className="mb-6 grid grid-cols-2 gap-1 rounded-sm bg-surface p-1">
       {TABS.map((t) => {
         const active = path.startsWith(t.href);
         return (

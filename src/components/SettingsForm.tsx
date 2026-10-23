@@ -121,7 +121,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
               aria-checked={dayOff === i}
               disabled={busy === "dayoff"}
               onClick={() => saveDayOff(i)}
-              className={`min-h-11 rounded-xl text-sm font-semibold transition-colors duration-150 ${
+              className={`min-h-11 rounded-sm text-sm font-semibold transition-colors duration-150 ${
                 dayOff === i ? "bg-accent text-on-accent" : "bg-raised text-muted hover:text-fg"
               }`}
             >

@@ -63,7 +63,9 @@ export type DisputeStatus = "open" | "upheld" | "rejected";
 export interface Dispute {
   id: string;
   checkin_id: string;
-  author_id: string;
+  /** null when the AI judge opened the tribunal (by_ai). */
+  author_id: string | null;
+  by_ai: boolean;
   reason: string;
   reply: string | null;
   replied_at: string | null;
@@ -85,6 +87,8 @@ export interface DisputeVote {
   dispute_id: string;
   voter_id: string;
   upheld: boolean;
+  /** Why guilty / innocent. Null only for votes cast before reasons existed. */
+  reason: string | null;
   created_at: string;
 }
 

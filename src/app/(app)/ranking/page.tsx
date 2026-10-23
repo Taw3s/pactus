@@ -2,6 +2,7 @@ import { Avatar } from "@/components/Avatar";
 import { GroupTabs } from "@/components/GroupTabs";
 import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
+import { Sprite } from "@/components/Sprite";
 import { lastDayOfMonth, monthKey, spToday } from "@/lib/dates";
 import { fetchAll, getMembers, requireMember, signUrls } from "@/lib/data";
 import { positions, scoreMonth, SCORING, type RankingCheckin } from "@/lib/ranking";
@@ -76,11 +77,16 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                 key={s.userId}
                 data-member={member.display_name}
                 data-position={p}
-                className={`flex min-h-20 items-center gap-3 rounded-2xl p-3 ${isMe ? "bg-raised" : "bg-surface"}`}
+                className={`card flex min-h-20 items-center gap-3 !p-3 ${isMe ? "!bg-raised" : ""}`}
               >
-                <span className={`tabular w-8 shrink-0 text-center text-xl font-bold ${podium ?? "text-muted"}`}>
-                  {p}º
-                </span>
+                {p === 1 && s.points > 0 ? (
+                  <span className="-mx-2 shrink-0">
+                    <Sprite name="trophy" />
+                    <span className="sr-only">1º</span>
+                  </span>
+                ) : (
+                  <span className={`pixel tabular w-8 shrink-0 text-center text-xl font-bold ${podium ?? "text-muted"}`}>{p}º</span>
+                )}
                 <Avatar name={member.display_name} url={member.avatar_path ? urls.get(member.avatar_path) : null} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">
@@ -94,7 +100,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                   </p>
                 </div>
                 <span className="shrink-0 text-right">
-                  <span className={`tabular block font-bold ${p === 1 && s.points > 0 ? "text-[32px] leading-9" : "text-2xl leading-8"}`} data-testid="points">
+                  <span className={`pixel tabular block font-bold ${p === 1 && s.points > 0 ? "text-[32px] leading-9" : "text-2xl leading-8"}`} data-testid="points">
                     {s.points}
                   </span>
                   <span className="text-xs text-muted">pts</span>
@@ -107,10 +113,10 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
 
       {!everyoneZero && (
         <section className="mt-6" aria-labelledby="destaques">
-          <h2 id="destaques" className="mb-2 text-sm font-semibold text-muted">
+          <h2 id="destaques" className="pixel mb-2 text-lg uppercase">
             Destaques do mês
           </h2>
-          <dl className="divide-y divide-divider rounded-2xl bg-surface px-4">
+          <dl className="card divide-y divide-divider !py-0">
             {highlights.map((h) => (
               <div key={h.label} className="flex min-h-12 items-center justify-between gap-3">
                 <dt className="text-sm text-muted">{h.label}</dt>
@@ -123,7 +129,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      <details className="mt-6 rounded-2xl bg-surface p-4 text-sm">
+      <details className="card mt-6 text-sm">
         <summary className="cursor-pointer font-semibold">Como a pontuação funciona</summary>
         <ul className="mt-3 space-y-1 text-muted">
           <li>Dia cumprido (3 metas): {SCORING.completedDay} pts</li>
