@@ -1,35 +1,181 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/pixelify-sans/latin-400.css";
+@import "@fontsource/pixelify-sans/latin-600.css";
+@import "@fontsource/pixelify-sans/latin-700.css";
+
+/*
+ * Design tokens — PS1/N64 low-poly. Gray "studio" background, chunky bevelled panels,
+ * pixel font for titles and numbers (Inter for reading), pre-rendered low-poly props.
+ * All text pairs below were checked at ≥ 4.5:1.
+ */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Pixelify Sans", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #26292e;
+  --color-surface: #363a41;
+  --color-raised: #444951;
+  --color-fg: #f5f1e6;
+  --color-muted: #bdb7a8;
+  --color-accent: #ffcd38;
+  --color-on-accent: #2b2100;
+  --color-divider: #4b5058;
+  --color-control: #7a808a;
+  --color-bevel-light: #575d67;
+  --color-bevel-dark: #1a1c20;
+  --color-hard-shadow: #141518;
+  --color-wood: #8a6a45;
+  --color-wood-dark: #5e4527;
+
+  /* Semantic states: text/icon + background */
+  --color-done: #86e3a7;
+  --color-done-bg: #23402f;
+  --color-fail: #ff9696;
+  --color-fail-bg: #4a272b;
+  --color-pending: #d6d0c2;
+  --color-pending-bg: #40454d;
+  --color-off: #cdbcff;
+  --color-off-bg: #372f52;
+  --color-warn: #ffc85c;
+  --color-warn-bg: #4a3b1a;
+  --color-ai: #a3caff;
+  --color-ai-bg: #22354d;
+
+  --color-gold: #ffcd38;
+  --color-silver: #d4dae2;
+  --color-bronze: #e0a87a;
+}
 
 :root {
   color-scheme: dark;
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100 antialiased;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  @apply bg-bg font-sans text-fg antialiased;
+  font-size: 16px;
+  line-height: 24px;
   -webkit-tap-highlight-color: transparent;
+  /* faint 2×2 dither, like an old CRT/PS1 framebuffer */
+  background-image: conic-gradient(rgb(255 255 255 / 0.025) 25%, transparent 0 50%, rgb(255 255 255 / 0.025) 0 75%, transparent 0);
+  background-size: 4px 4px;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pixel display type: titles, labels, numbers. Never for paragraphs. */
+@utility pixel {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+/* Low-poly sprites are tiny PNGs scaled by whole numbers: keep the pixels sharp. */
+@utility sprite {
+  image-rendering: pixelated;
+}
+
+@utility gutter {
+  padding-inline: 16px;
+  @media (min-width: 390px) {
+    padding-inline: 20px;
+  }
+}
+
+/* Chunky bevelled panel with a hard drop shadow (PS1 menu feel). */
 @utility card {
-  @apply rounded-2xl border border-zinc-800 bg-zinc-900 p-4;
+  @apply rounded-sm border-2 bg-surface p-4;
+  border-color: var(--color-bevel-light) var(--color-bevel-dark) var(--color-bevel-dark) var(--color-bevel-light);
+  box-shadow: 4px 4px 0 var(--color-hard-shadow);
 }
 
 @utility input {
-  @apply w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-base text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500 focus:outline-none;
+  @apply min-h-12 w-full rounded-sm border-2 bg-bg px-3 py-3 text-base text-fg placeholder:text-muted transition-colors duration-150 focus:border-accent focus:outline-none;
+  border-color: var(--color-bevel-dark) var(--color-control) var(--color-control) var(--color-bevel-dark);
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100;
+  @apply pixel inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border-2 px-4 text-lg font-semibold uppercase transition duration-100 active:translate-x-0.5 active:translate-y-0.5;
 }
 
 @utility btn-primary {
-  @apply btn bg-emerald-500 text-zinc-950 hover:bg-emerald-400;
+  @apply btn bg-accent text-on-accent;
+  border-color: #fff0b3 #b38a00 #b38a00 #fff0b3;
+  box-shadow: 3px 3px 0 var(--color-hard-shadow);
+  &:active {
+    box-shadow: 1px 1px 0 var(--color-hard-shadow);
+  }
+  /* Disabled: own tokens, not a faded CTA */
+  &:disabled {
+    background: #2f3238;
+    color: var(--color-muted);
+    border-color: var(--color-divider);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
 }
 
-@utility btn-ghost {
-  @apply btn border border-zinc-700 text-zinc-200 hover:bg-zinc-800;
+@utility btn-secondary {
+  @apply btn bg-raised text-fg;
+  border-color: var(--color-bevel-light) var(--color-bevel-dark) var(--color-bevel-dark) var(--color-bevel-light);
+  box-shadow: 3px 3px 0 var(--color-hard-shadow);
+  &:active {
+    box-shadow: 1px 1px 0 var(--color-hard-shadow);
+  }
+  &:disabled {
+    background: #2f3238;
+    color: var(--color-muted);
+    border-color: var(--color-divider);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
 }
 
 @utility label {
-  @apply mb-1 block text-sm font-medium text-zinc-300;
+  @apply mb-1 block text-sm font-medium text-muted;
+}
+
+/* Verdict animations (stepped, like low-frame-rate console games). */
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.2) rotate(-14deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+@keyframes thud {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(-2px, 2px);
+  }
+  66% {
+    transform: translate(2px, -1px);
+  }
 }

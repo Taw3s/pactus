@@ -1,11 +1,12 @@
 export function AuthShell({ subtitle, children }: { subtitle: string; children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-5 py-10">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-black tracking-tight">
-          Pacto<span className="text-emerald-400">.</span>
-        </h1>
-        <p className="mt-2 text-sm text-zinc-400">{subtitle}</p>
+    <main className="gutter mx-auto flex min-h-dvh max-w-[400px] flex-col pb-10 pt-[calc(48px+env(safe-area-inset-top))]">
+      <div className="mb-8">
+        <p className="text-[40px] font-extrabold leading-[44px] tracking-tight">
+          Pacto<span className="text-accent">.</span>
+        </p>
+        <p className="mt-1 text-base text-muted">Seu compromisso com o grupo</p>
+        <h1 className="mt-6 text-lg font-semibold leading-6">{subtitle}</h1>
       </div>
       {children}
     </main>
@@ -14,9 +15,9 @@ export function AuthShell({ subtitle, children }: { subtitle: string; children: 
 
 export function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="card space-y-2 text-center">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-zinc-300">{children}</p>
+    <div className="card space-y-2" role="status">
+      <h2 className="text-lg font-semibold leading-6">{title}</h2>
+      <p className="text-muted">{children}</p>
     </div>
   );
 }

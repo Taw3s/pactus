@@ -1,131 +1,209 @@
 /* eslint-disable @next/next/no-img-element -- signed URLs */
-import Link from "next/link";
+import { Maximize2 } from "lucide-react";
 import { notFound } from "next/navigation";
+import { AiPanel } from "@/components/AiPanel";
 import { Avatar } from "@/components/Avatar";
-import { DisputeBadge } from "@/components/DisputeBadge";
+import { BackButton } from "@/components/BackButton";
 import { DisputeActions } from "@/components/DisputeActions";
-import { ReviewBadge } from "@/components/ReviewBadge";
-import { ReviewTrigger } from "@/components/ReviewTrigger";
+import { Sprite } from "@/components/Sprite";
+import { PrimaryBadge } from "@/components/StatusBadges";
+import { Courtroom } from "@/components/tribunal/Courtroom";
+import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
 import { addDays, formatDayPt, spToday } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
-import { checkinNumbers, goalMeta, type Checkin, type CheckinReview, type Dispute, type DisputeResult, type DisputeVote } from "@/lib/types";
+import { GOAL_ICON } from "@/lib/goal-icons";
+import { checkinNumbers, goalMeta, type Checkin, type CheckinReview, type Dispute, type DisputeResult, type DisputeVote, type Member } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_TEXT = {
-  open: "Em votação",
-  upheld: "Contestação procedente: check-in anulado",
-  rejected: "Contestação rejeitada: check-in mantido",
-};
+const time = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
 export default async function CheckinPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, me } = await requireMember();
 
-  const { data: checkin } = await supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>();
-  if (!checkin) notFound();
-
-  const [members, { data: dispute }, { data: result }, { data: review }] = await Promise.all([
+  // One round trip for everything about this proof (RLS limits it to the caller's group).
+  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }] = await Promise.all([
+    supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>(),
     getMembers(supabase),
-    supabase.from("disputes").select("*").eq("checkin_id", id).maybeSingle<Dispute>(),
+    supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),
     supabase.from("checkin_reviews").select("*").eq("checkin_id", id).maybeSingle<CheckinReview>(),
   ]);
-  const { data: voteRows } = dispute
-    ? await supabase.from("dispute_votes").select("*").eq("dispute_id", dispute.id).order("created_at")
-    : { data: [] };
-  const votes = (voteRows ?? []) as DisputeVote[];
+  if (!checkin) notFound();
+  const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const byId = new Map(members.map((m) => [m.user_id, m]));
   const owner = byId.get(checkin.user_id);
-  const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path]);
+  const ownerName = owner?.display_name ?? "?";
+  // Jurors: everyone but the defendant who was in the group when the tribunal opened.
+  const jurors = dispute ? members.filter((m) => m.user_id !== checkin.user_id && m.created_at <= dispute.created_at) : [];
+  const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
+  const photo = urls.get(checkin.photo_path);
+  const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
-  const numbers = checkinNumbers(checkin);
+  const GoalIcon = GOAL_ICON[checkin.goal];
+  const value = checkinNumbers(checkin);
   const isOwner = checkin.user_id === me.user_id;
-  const canDispute = !dispute && !isOwner && checkin.day >= addDays(spToday(), -1);
+  const recent = checkin.day >= addDays(spToday(), -1);
+  const canDispute = !dispute && !isOwner && recent;
+  const myVote = votes.find((v) => v.voter_id === me.user_id) ?? null;
+  const joinedLate = !!dispute && me.created_at > dispute.created_at;
+  const accuser = dispute ? (dispute.by_ai ? "Juiz IA" : (byId.get(dispute.author_id ?? "")?.display_name ?? "?")) : "";
+
+  const photoBlock = (
+    <figure className="mb-4">
+      {photo ? (
+        <a href={photo} target="_blank" rel="noreferrer" className="group relative block overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface">
+          <img src={photo} alt={`Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`} className="mx-auto max-h-[60dvh] w-full object-contain" />
+          <span className="absolute bottom-2 right-2 inline-flex min-h-9 items-center gap-1 rounded-sm bg-bg/90 px-2 text-xs font-semibold">
+            <Maximize2 size={14} aria-hidden /> Abrir foto inteira
+          </span>
+        </a>
+      ) : (
+        <div className="flex h-40 items-center justify-center rounded-sm bg-surface text-sm text-muted">Foto indisponível no momento.</div>
+      )}
+    </figure>
+  );
+
+  const details = (
+    <>
+      {(value || checkin.goal === "project") && (
+        <dl className="card mb-4">
+          <dt className="pixel text-sm uppercase text-muted">{checkin.goal === "project" ? "Projeto" : "Informado"}</dt>
+          <dd className="pixel tabular text-[32px] font-bold leading-9">{value}</dd>
+        </dl>
+      )}
+      {photoBlock}
+      {checkin.summary && (
+        <section className="mb-4" aria-labelledby="resumo">
+          <h2 id="resumo" className="pixel mb-1 text-sm uppercase text-muted">
+            Resumo
+          </h2>
+          <p className="whitespace-pre-wrap">{checkin.summary}</p>
+        </section>
+      )}
+      <div className="mb-4">
+        <AiPanel
+          checkinId={checkin.id}
+          review={review ? { verdict: review.verdict, seen: review.seen, detected: review.detected } : null}
+          declaredMinutes={checkin.minutes}
+          ownerName={ownerName}
+          isOwner={isOwner}
+          canRequest={recent}
+          secondary={result?.status === "upheld"}
+        />
+      </div>
+    </>
+  );
+
+  const header = (
+    <header className="mb-4 flex items-center gap-3">
+      <Avatar name={ownerName} url={avatar(owner)} size={48} />
+      <div className="min-w-0 flex-1">
+        <p className="pixel truncate text-[28px] font-bold uppercase leading-[34px]">{ownerName}</p>
+        <p className="flex items-center gap-1.5 text-sm text-muted">
+          <GoalIcon size={16} aria-hidden />
+          {goal.label} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
+        </p>
+      </div>
+    </header>
+  );
+
+  if (dispute && result && owner) {
+    const evidence = (
+      <>
+        <section className="card mb-4" aria-labelledby="acusacao">
+          <h2 id="acusacao" className="pixel flex items-center gap-2 text-lg uppercase text-fail">
+            {dispute.by_ai ? <Sprite name="gavel" /> : <Avatar name={accuser} url={avatar(byId.get(dispute.author_id ?? ""))} size={32} />}
+            Acusação · {accuser}
+          </h2>
+          <p className="mt-2">{dispute.reason}</p>
+        </section>
+        <section className="card mb-4" aria-labelledby="defesa">
+          <h2 id="defesa" className="pixel flex items-center gap-2 text-lg uppercase text-done">
+            <Avatar name={ownerName} url={avatar(owner)} size={32} />
+            Defesa · {ownerName}
+          </h2>
+          {dispute.reply ? (
+            <p className="mt-2">{dispute.reply}</p>
+          ) : isOwner ? (
+            <div className="mt-3">
+              <DisputeActions disputeId={dispute.id} canReply />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted">{ownerName} ainda não se defendeu.</p>
+          )}
+        </section>
+        <p className="pixel mb-2 flex items-center gap-1.5 text-sm uppercase text-muted">
+          <GoalIcon size={16} aria-hidden />
+          Prova de {goal.label.toLowerCase()} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
+        </p>
+        {details}
+      </>
+    );
+
+    const pending = jurors.filter((m) => !votes.some((v) => v.voter_id === m.user_id));
+    const voteList = (
+      <>
+        {votes.length === 0 ? (
+          <p className="text-sm text-muted">Ninguém votou ainda.</p>
+        ) : (
+          <ul className="space-y-3">
+            {votes.map((v) => {
+              const m = byId.get(v.voter_id);
+              return (
+                <li key={v.voter_id} className="card flex gap-3" data-vote-by={m?.display_name}>
+                  <Avatar name={m?.display_name ?? "?"} url={avatar(m)} size={40} />
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-x-2 font-semibold">
+                      {m?.display_name}
+                      <span className={`pixel text-sm uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Culpado" : "Inocente"}</span>
+                      <span className="text-xs font-normal text-muted">{time(v.created_at)}</span>
+                    </p>
+                    <p className="mt-1 break-words text-sm">{v.reason ?? <span className="text-muted">Sem motivo (voto antigo).</span>}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {result.status === "open" && pending.length > 0 && (
+          <p className="mt-4 text-sm text-muted">Ainda não votaram: {pending.map((m) => m.display_name).join(", ")}.</p>
+        )}
+      </>
+    );
+
+    return (
+      <>
+        <BackButton fallback="/feed" />
+        <Courtroom
+          disputeId={dispute.id}
+          result={result}
+          defendant={owner}
+          defendantAvatar={avatar(owner)}
+          accuser={accuser}
+          byAi={dispute.by_ai}
+          jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
+          me={{ isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
+        />
+        <TribunalTabs evidence={evidence} votes={voteList} voteCount={votes.length} />
+      </>
+    );
+  }
 
   return (
     <>
-      <Link href="/feed" className="mb-3 inline-block text-sm text-zinc-400">← Feed</Link>
-      <article className="card">
-        <div className="mb-3 flex items-center gap-3">
-          <Avatar name={owner?.display_name ?? "?"} url={owner?.avatar_path ? urls.get(owner.avatar_path) : null} />
-          <div className="flex-1">
-            <p className="font-semibold">{owner?.display_name}</p>
-            <p className="text-xs text-zinc-400">
-              {goal.emoji} {goal.label} · {formatDayPt(checkin.day)} ·{" "}
-              {new Date(checkin.created_at).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
-          {review && <ReviewBadge verdict={review.verdict} />}
-          {result && <DisputeBadge status={result.status} />}
+      <BackButton fallback="/feed" />
+      {header}
+      {review && (
+        <div className="mb-4">
+          <PrimaryBadge ai={review.verdict} />
         </div>
-        <img src={urls.get(checkin.photo_path)} alt={`Prova de ${goal.label}`} className="w-full rounded-xl" />
-        {numbers && <p className="mt-3 text-sm font-medium text-emerald-300">{numbers}</p>}
-        {review ? (
-          <div className={`mt-3 rounded-xl p-3 text-sm ${review.verdict === "mismatch" ? "bg-amber-400/10 text-amber-100" : "bg-zinc-950 text-zinc-300"}`} data-testid="ai-review">
-            <p className="text-xs text-zinc-500">🤖 O que a IA viu na foto:</p>
-            <p className="mt-1">{review.seen}</p>
-            {review.verdict === "mismatch" && (
-              <p className="mt-1 text-xs">
-                A IA achou que a foto não bate com o que foi declarado. Ela pode errar: se o grupo concordar, leve ao tribunal.
-              </p>
-            )}
-          </div>
-        ) : (
-          checkin.day >= addDays(spToday(), -1) && <ReviewTrigger checkinId={checkin.id} />
-        )}
-        {checkin.summary && <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-200">{checkin.summary}</p>}
-      </article>
-
-      {dispute && result && (
-        <section className="card mt-3 space-y-3" data-testid="dispute">
-          <div>
-            <h2 className="font-semibold">⚖️ Tribunal</h2>
-            <p className="text-sm text-zinc-400">{STATUS_TEXT[result.status]}</p>
-          </div>
-          <blockquote className="rounded-xl bg-zinc-950 p-3 text-sm">
-            <p className="text-xs text-zinc-500">{byId.get(dispute.author_id)?.display_name} contestou:</p>
-            <p className="mt-1">{dispute.reason}</p>
-          </blockquote>
-          {dispute.reply && (
-            <blockquote className="rounded-xl bg-zinc-950 p-3 text-sm">
-              <p className="text-xs text-zinc-500">{owner?.display_name} respondeu:</p>
-              <p className="mt-1">{dispute.reply}</p>
-            </blockquote>
-          )}
-          <div className="text-sm">
-            <p>
-              <b className="text-red-300">{result.yes} procede</b> · <b className="text-zinc-300">{result.no} não procede</b> ·{" "}
-              <span className="text-zinc-400">
-                maioria: {result.majority} de {result.eligible}
-              </span>
-            </p>
-            {result.status === "open" && (
-              <p className="text-xs text-zinc-500">
-                Se ninguém atingir a maioria até{" "}
-                {new Date(result.closes_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}, vale
-                quem tiver mais votos (empate mantém o check-in).
-              </p>
-            )}
-            <ul className="mt-2 space-y-0.5 text-xs text-zinc-400">
-              {votes.map((v) => (
-                <li key={v.voter_id}>
-                  {byId.get(v.voter_id)?.display_name}: {v.upheld ? "procede" : "não procede"}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <DisputeActions
-            disputeId={dispute.id}
-            canReply={isOwner && !dispute.reply}
-            canVote={!isOwner && result.status === "open" && !votes.some((v) => v.voter_id === me.user_id)}
-          />
-        </section>
       )}
-
+      {details}
       {canDispute && <DisputeActions checkinId={checkin.id} canDispute />}
-      {!dispute && isOwner && <p className="mt-3 text-center text-xs text-zinc-500">Prova enviada não pode ser editada.</p>}
+      {isOwner && <p className="text-sm text-muted">Provas enviadas não podem ser editadas, só contestadas pelo grupo.</p>}
     </>
   );
 }

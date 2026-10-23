@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Camera, Loader, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { formatDayPt, WEEKDAYS_PT } from "@/lib/dates";
@@ -66,40 +67,63 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
     router.refresh();
   }
 
+  const dirty = name.trim() !== initialName;
+  // Don't lose an unsaved name silently when leaving the page.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const failed = msg.startsWith("Erro");
+
   return (
-    <div className="space-y-3">
-      <section className="card space-y-3">
+    <div className="space-y-6">
+      <section aria-labelledby="identidade" className="card space-y-4">
+        <h2 id="identidade" className="text-lg font-semibold leading-6">
+          Identidade
+        </h2>
         <div className="flex items-center gap-4">
           <Avatar name={name || "?"} url={avatarUrl} size={64} />
-          <label className="btn-ghost cursor-pointer">
+          <label className="btn-secondary cursor-pointer">
+            {busy === "avatar" ? <Loader size={18} aria-hidden className="animate-spin motion-reduce:animate-none" /> : <Camera size={18} aria-hidden />}
             {busy === "avatar" ? "Enviando…" : "Trocar foto"}
             <input type="file" accept="image/*" className="sr-only" data-testid="avatar" onChange={(e) => saveAvatar(e.target.files?.[0])} />
           </label>
         </div>
         <div>
-          <label className="label" htmlFor="name">Nome</label>
+          <label className="label" htmlFor="name">
+            Nome
+          </label>
           <div className="flex gap-2">
             <input id="name" className="input" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
-            <button className="btn-primary" disabled={busy === "name" || !name.trim() || name === initialName} onClick={saveName}>
+            <button className="btn-primary" disabled={busy === "name" || !name.trim() || !dirty} onClick={saveName}>
               Salvar
             </button>
           </div>
+          {dirty && <p className="mt-1 text-sm text-warn">Alteração não salva.</p>}
         </div>
       </section>
 
-      <section className="card">
-        <h2 className="font-semibold">Dia de folga (6x1)</h2>
-        <p className="mb-3 text-xs text-zinc-400">
-          Nesta semana: {WEEKDAYS_PT[dayOffToday]}. A escolha vale a partir da próxima segunda ({formatDayPt(nextWeek).slice(4)}),
-          uma por semana, para manter exatamente 1 folga por semana.
+      <section aria-labelledby="folga" className="card">
+        <h2 id="folga" className="text-lg font-semibold leading-6">
+          Dia de folga
+        </h2>
+        <p className="mb-4 mt-1 text-sm text-muted">
+          Nesta semana: {WEEKDAYS_PT[dayOffToday]}. A escolha vale a partir da próxima segunda ({formatDayPt(nextWeek).slice(4)}), uma por semana,
+          para manter exatamente 1 folga por semana.
         </p>
-        <div className="grid grid-cols-4 gap-2">
+        <div role="radiogroup" aria-label="Dia de folga" className="grid grid-cols-4 gap-2">
           {WEEKDAYS_PT.map((label, i) => (
             <button
               key={label}
+              role="radio"
+              aria-checked={dayOff === i}
               disabled={busy === "dayoff"}
               onClick={() => saveDayOff(i)}
-              className={`rounded-xl py-2 text-sm ${dayOff === i ? "bg-emerald-500 font-semibold text-zinc-950" : "bg-zinc-800 text-zinc-300"}`}
+              className={`min-h-11 rounded-sm text-sm font-semibold transition-colors duration-150 ${
+                dayOff === i ? "bg-accent text-on-accent" : "bg-raised text-muted hover:text-fg"
+              }`}
             >
               {label.slice(0, 3)}
             </button>
@@ -107,9 +131,21 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
         </div>
       </section>
 
-      {msg && <p className="text-center text-sm text-emerald-300" role="status">{msg}</p>}
+      {msg && (
+        <p className={`text-center text-sm ${failed ? "text-fail" : "text-done"}`} role={failed ? "alert" : "status"}>
+          {msg}
+        </p>
+      )}
 
-      <button className="btn-ghost w-full" onClick={logout}>Sair</button>
+      <section aria-labelledby="sessao" className="border-t border-divider pt-6">
+        <h2 id="sessao" className="mb-3 text-sm font-semibold text-muted">
+          Sessão
+        </h2>
+        <button className="btn-secondary w-full" onClick={logout}>
+          <LogOut size={18} aria-hidden />
+          Sair
+        </button>
+      </section>
     </div>
   );
 }

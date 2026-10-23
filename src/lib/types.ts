@@ -8,18 +8,17 @@ interface GoalMeta {
   id: Goal;
   label: string;
   hint: string;
-  emoji: string;
 }
 
 /** The three daily goals; a day is complete only with all of them. */
 export const GOALS: (GoalMeta & { id: DailyGoal })[] = [
-  { id: "study", label: "Estudo", hint: "mínimo 60 min", emoji: "📚" },
-  { id: "typing", label: "Digitação", hint: "5 min", emoji: "⌨️" },
-  { id: "reading", label: "Leitura", hint: "15 min", emoji: "📖" },
+  { id: "study", label: "Estudo", hint: "Mínimo 60 min" },
+  { id: "typing", label: "Digitação", hint: "5 min" },
+  { id: "reading", label: "Leitura", hint: "15 min" },
 ];
 
 /** Optional, at most one per day; worth few ranking points. */
-export const PROJECT: GoalMeta = { id: "project", label: "Projeto concluído", hint: "opcional · 1 por dia", emoji: "🛠️" };
+export const PROJECT: GoalMeta = { id: "project", label: "Projeto", hint: "Opcional · 1 por dia" };
 
 export function goalMeta(goal: Goal): GoalMeta {
   return goal === "project" ? PROJECT : GOALS.find((g) => g.id === goal)!;
@@ -28,9 +27,9 @@ export function goalMeta(goal: Goal): GoalMeta {
 export const MIN_STUDY_MINUTES = 60;
 
 export function checkinNumbers(item: { goal: Goal; minutes: number | null; pages: number | null; title: string | null }): string | null {
-  if (item.goal === "study" && item.minutes) return `⏱️ ${item.minutes} min de estudo`;
-  if (item.goal === "reading" && item.pages) return `📄 ${item.pages} páginas`;
-  if (item.goal === "project" && item.title) return `🛠️ ${item.title}`;
+  if (item.goal === "study" && item.minutes) return `${item.minutes} min`;
+  if (item.goal === "reading" && item.pages) return `${item.pages} ${item.pages === 1 ? "página" : "páginas"}`;
+  if (item.goal === "project" && item.title) return item.title;
   return null;
 }
 
@@ -42,6 +41,7 @@ export interface Member {
   display_name: string;
   avatar_path: string | null;
   joined_on: ISODate;
+  created_at: string;
 }
 
 export interface Checkin {
@@ -63,7 +63,9 @@ export type DisputeStatus = "open" | "upheld" | "rejected";
 export interface Dispute {
   id: string;
   checkin_id: string;
-  author_id: string;
+  /** null when the AI judge opened the tribunal (by_ai). */
+  author_id: string | null;
+  by_ai: boolean;
   reason: string;
   reply: string | null;
   replied_at: string | null;
@@ -85,6 +87,8 @@ export interface DisputeVote {
   dispute_id: string;
   voter_id: string;
   upheld: boolean;
+  /** Why guilty / innocent. Null only for votes cast before reasons existed. */
+  reason: string | null;
   created_at: string;
 }
 
@@ -97,7 +101,6 @@ export interface PaymentRow {
   paid_at: string;
 }
 
-export const ITEM_LABEL: Record<DebtItem, string> = { coke: "Coca-Cola", snack: "Salgado" };
 
 export interface CheckinReview {
   checkin_id: string;
