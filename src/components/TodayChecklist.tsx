@@ -178,6 +178,8 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
         );
       }
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
+      // The server may nudge the group (this person closed the day / weekly challenge done).
+      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");

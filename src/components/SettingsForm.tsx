@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { formatDayPt, WEEKDAYS_PT } from "@/lib/dates";
+import { PushToggle } from "./PushToggle";
 import { compressImage, mediaPath } from "@/lib/image";
 
 interface Props {
@@ -136,6 +137,8 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
           {msg}
         </p>
       )}
+
+      <PushToggle />
 
       <section aria-labelledby="sessao" className="border-t border-divider pt-6">
         <h2 id="sessao" className="mb-3 text-sm font-semibold text-muted">

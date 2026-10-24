@@ -1,10 +1,12 @@
+import { ChestsPanel } from "@/components/ChestsPanel";
 import { PageHeader } from "@/components/PageHeader";
 import { GroupSidebar } from "@/components/GroupSidebar";
 import { PendingReviews } from "@/components/PendingReviews";
 import { Scoreboard, type GoalState } from "@/components/Scoreboard";
 import { TodayChecklist } from "@/components/TodayChecklist";
+import { collectible, weekStart } from "@/lib/collectibles";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
-import { embeddedVerdict, requireMember, signThumbs } from "@/lib/data";
+import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
 import { dayOffOn } from "@/lib/ledger";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
@@ -14,12 +16,25 @@ export default async function TodayPage() {
   const { supabase, me } = await requireMember();
   const today = spToday();
 
+  const monday = weekStart(today);
   // One round trip: the AI verdict comes embedded; the group's dispute results are few.
-  const [{ data: checkins }, { data: changes }, { data: results }] = await Promise.all([
+  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
+    getMembers(supabase),
+    supabase.from("chest_openings").select("kind, period, item_id").eq("user_id", me.user_id).in("period", [today, monday]),
+    supabase.rpc("my_weekly_progress"),
   ]);
+  const chestOf = (kind: "daily" | "weekly", period: string) => {
+    const row = (chests ?? []).find((c) => c.kind === kind && c.period === period);
+    const info = row ? collectible(row.item_id) : null;
+    return info ? { itemId: info.id, rarity: info.rarity } : null;
+  };
+  const nameOf = new Map(members.map((m) => [m.user_id, m.display_name]));
+  const week = ((weekRows ?? []) as { user_id: string; done_days: number }[])
+    .map((r) => ({ userId: r.user_id, name: nameOf.get(r.user_id) ?? "?", done: Number(r.done_days), me: r.user_id === me.user_id }))
+    .sort((a, b) => b.done - a.done || a.name.localeCompare(b.name));
   const mine = (checkins ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const urls = await signThumbs(supabase, mine.map((c) => c.photo_path));
   const statusOf = new Map((results ?? []).map((r) => [r.checkin_id as string, r.status as DisputeStatus]));
@@ -48,6 +63,13 @@ export default async function TodayPage() {
         <PendingReviews ids={unreviewed} />
         <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
         <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
+        <ChestsPanel
+          dayComplete={GOALS.every((g) => states[g.id] === "done")}
+          daily={chestOf("daily", today)}
+          weekly={chestOf("weekly", monday)}
+          week={week}
+          eligible={me.joined_on <= monday}
+        />
         <TodayChecklist
           groupId={me.group_id}
           userId={me.user_id}

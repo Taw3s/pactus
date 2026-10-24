@@ -14,7 +14,14 @@ if ! curl -s -o /dev/null "http://127.0.0.1:54400"; then
   trap 'kill $MOCK_PID 2>/dev/null' EXIT
   sleep 1
 fi
-rm -f gemini_calls.jsonl gemini_models.log
+rm -f gemini_calls.jsonl gemini_models.log push_calls.jsonl
+# Fake Web Push service (the app must run with PUSH_TEST_SERVICE=1, see README.md).
+if ! curl -s -o /dev/null "http://127.0.0.1:54500"; then
+  node push_mock.mjs > push_mock.log 2>&1 &
+  PUSH_PID=$!
+  trap 'kill ${MOCK_PID:-} ${PUSH_PID:-} 2>/dev/null' EXIT
+  sleep 1
+fi
 
 status=0
 run() {
@@ -23,7 +30,7 @@ run() {
 }
 for s in a b c; do run "$s"; done
 psql -q -f seed.sql
-for s in d f g e h; do run "$s"; done
+for s in d f g e h i; do run "$s"; done
 
 echo
 if [ "$status" -eq 0 ]; then echo "E2E: ALL STAGES PASSED"; else echo "E2E: FAILURES (see above)"; fi

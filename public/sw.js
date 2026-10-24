@@ -2,8 +2,7 @@
 // App data is never cached: check-ins must always hit the server (fresh day in
 // São Paulo, fresh auth). The only cached thing is a static "no connection" page,
 // shown when a page navigation fails because the phone is offline.
-// It also keeps the app installable and is where push notifications will live
-// (see src/lib/push/README.md).
+// It also keeps the app installable and shows push notifications (src/lib/push.ts).
 
 const OFFLINE_CACHE = "pacto-offline-v1";
 const OFFLINE_FILES = ["/offline.html", "/lowpoly/computer.png"];
@@ -39,20 +38,26 @@ self.addEventListener("fetch", (event) => {
   // Everything else: plain network.
 });
 
-// --- Push (disabled in the MVP) ---------------------------------------------
-// self.addEventListener("push", (event) => {
-//   const data = event.data ? event.data.json() : {};
-//   event.waitUntil(
-//     self.registration.showNotification(data.title ?? "Pacto", {
-//       body: data.body,
-//       icon: "/icons/icon-192.png",
-//       badge: "/icons/icon-192.png",
-//       data: { url: data.url ?? "/hoje" },
-//     }),
-//   );
-// });
-//
-// self.addEventListener("notificationclick", (event) => {
-//   event.notification.close();
-//   event.waitUntil(self.clients.openWindow(event.notification.data?.url ?? "/hoje"));
-// });
+// --- Push notifications ------------------------------------------------------
+self.addEventListener("push", (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "Pacto", {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url ?? "/hoje" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url ?? "/hoje", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      const open = wins.find((w) => w.url.startsWith(self.location.origin));
+      return open ? open.navigate(url).then((w) => w?.focus()) : self.clients.openWindow(url);
+    }),
+  );
+});
