@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- tiny pixel-art PNGs; next/image would smooth them */
+import type { CollectibleId } from "@/lib/collectibles";
 
 export type SpriteName =
   | "notebook"
@@ -15,7 +16,14 @@ export type SpriteName =
   | "trophy"
   | "scales"
   | "memoryCard"
-  | "calendar";
+  | "calendar"
+  | "chest1"
+  | "chest2"
+  | "chest3"
+  | "chest4"
+  | "chest5"
+  | "chest6"
+  | CollectibleId;
 
 /**
  * Pre-rendered 48×48 low-poly prop, scaled by a whole number (1×, 2×, 3×) to keep pixels sharp.

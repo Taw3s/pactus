@@ -18,7 +18,8 @@ ficam no artefato **e2e-screens-and-logs** da execução.
 | `e2e_f.mjs` | Projetos, ranking do mês, folga |
 | `e2e_g.mjs` | Juiz IA (simulado): confere, diverge, abre tribunal, selo VERIFICADO |
 | `e2e_e.mjs` | PWA instalável |
-| `e2e_h.mjs` | Acessibilidade (axe) em todas as telas e página "Sem conexão" |
+| `e2e_h.mjs` | Acessibilidade (axe) em todas as telas, desktop e página "Sem conexão" |
+| `e2e_i.mjs` | Baú do dia, coleção, desafio da semana e avisos push (servidor de push falso) |
 
 As etapas compartilham estado (usuários criados em `a`, histórico semeado antes de `d`): rode sempre
 o conjunto inteiro com `run.sh`, num banco recém-criado.
@@ -38,6 +39,7 @@ eval "$(supabase status -o env)"
 export SUPABASE_URL=$API_URL SUPABASE_ANON_KEY=$ANON_KEY SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
 export NEXT_PUBLIC_SUPABASE_URL=$API_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY NEXT_PUBLIC_SITE_URL=http://localhost:3000
 export GEMINI_API_KEY=test-key GEMINI_API_URL=http://127.0.0.1:54400
+export PUSH_TEST_SERVICE=1   # deixa o app entregar avisos ao servidor de push falso (nunca em produção)
 
 npm ci && npm run build && npx next start -p 3000 &   # o app, com essas variáveis
 cd e2e && npm ci && npx playwright install chromium

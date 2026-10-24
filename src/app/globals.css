@@ -193,3 +193,24 @@ body {
     margin-inline: auto;
   }
 }
+
+/* Chest: idle bob (2 steps) and the won item popping out. */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}

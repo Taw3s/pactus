@@ -43,6 +43,8 @@ jobs:
       # Fake Gemini started by e2e/run.sh: no real key is ever used in CI.
       GEMINI_API_KEY: test-key
       GEMINI_API_URL: http://127.0.0.1:54400
+      # Lets the app deliver to the fake push service on 127.0.0.1 (never set in production).
+      PUSH_TEST_SERVICE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

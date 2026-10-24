@@ -3,3 +3,5 @@ shots/
 gemini_calls.jsonl
 gemini_models.log
 gemini_mock.log
+push_calls.jsonl
+push_mock.log

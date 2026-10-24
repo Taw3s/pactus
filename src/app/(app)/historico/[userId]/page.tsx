@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
+import { CollectionShelf } from "@/components/CollectionShelf";
 import { MilestonePlaque } from "@/components/MilestonePlaque";
 import { PersonPicker } from "@/components/PersonPicker";
 import { Sprite } from "@/components/Sprite";
@@ -49,7 +50,12 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   const member = members.find((x) => x.user_id === userId);
   if (!member) notFound();
 
-  const { inputs } = await getLedgerInputs(supabase, [member]);
+  const [{ inputs }, { data: chestRows }] = await Promise.all([
+    getLedgerInputs(supabase, [member]),
+    supabase.from("chest_openings").select("item_id").eq("user_id", userId),
+  ]);
+  const counts = new Map<string, number>();
+  for (const r of chestRows ?? []) counts.set(r.item_id, (counts.get(r.item_id) ?? 0) + 1);
   const input = inputs.get(userId)!;
   const current = monthKey(today);
   const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
@@ -101,6 +107,8 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           <dd className="text-sm text-muted">{count("missed") === 1 ? "dia descumprido" : "dias descumpridos"}</dd>
         </div>
       </dl>
+
+      <CollectionShelf counts={counts} isMe={isMe} />
 
       <MonthNav month={month} current={current} hrefFor={(x) => `/historico/${userId}?m=${x}`} />
 
