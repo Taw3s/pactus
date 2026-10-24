@@ -72,7 +72,7 @@ await step("extra study sessions add minutes, need the study proof and show in t
   await davi.getByRole("button", { name: "Sessão extra de estudo" }).click();
   await send("study", "extra", async (card) => card.getByTestId("minutes").fill("45"));
   const extras = davi.getByTestId("extra-sessions");
-  await extras.getByText("Sessão extra").waitFor();
+  await extras.getByText("Sessão extra", { exact: true }).waitFor();
   await extras.getByText("45 min").waitFor();
   await davi.screenshot({ path: `${SHOTS}/j2-sessao-extra.png`, fullPage: true });
   await davi.goto(`${APP}/feed`);

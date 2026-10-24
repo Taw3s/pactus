@@ -1,0 +1,85 @@
+// Stage (k): the judge's animations and the courtroom interactions (after stages c and j).
+import { devices } from "playwright";
+import { APP, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
+
+const browser = await launch();
+const bia = sql(`select user_id from public.members where display_name = 'Bia'`);
+// Bia's typing proof, condemned in stage c (Caio voted "anular" with this reason).
+const condemned = sql(`select c.id from public.checkins c join public.dispute_results r on r.checkin_id = c.id
+  where c.user_id = '${bia}' and r.status = 'upheld' and c.goal = 'typing' limit 1`);
+const url = `${APP}/checkin/${condemned}`;
+
+/** Every frame the bench judge shows during `ms`. */
+async function framesFor(page, ms) {
+  return page.evaluate(async (ms) => {
+    const seen = [];
+    const end = performance.now() + ms;
+    while (performance.now() < end) {
+      const f = document.querySelector('[data-testid="dispute"] [data-judge]')?.getAttribute("data-frame");
+      if (f && seen.at(-1) !== f) seen.push(f);
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    return seen;
+  }, ms);
+}
+
+const eva = await loginAs(browser, "eva@pacto.test");
+
+await step("verdict: the result is readable at once while the judge strikes the gavel once", async () => {
+  await eva.goto(url);
+  await eva.getByTestId("verdict").getByText("Condenado").waitFor({ timeout: 2000 });
+  const frames = await framesFor(eva, 2500);
+  assert(frames.includes("gavel6"), `gavel never hit: ${frames.join(",")}`);
+  assert(frames.at(-1) === "gavel8", `ends on the still frame: ${frames.join(",")}`);
+  // Coming back does not replay the celebration.
+  await eva.reload();
+  await eva.getByTestId("verdict").waitFor();
+  const again = await framesFor(eva, 1200);
+  assert(again.every((f) => f === "gavel8"), `replayed: ${again.join(",")}`);
+});
+
+await step("each juror who voted opens their reason", async () => {
+  await eva.locator('[data-juror="Caio"] button').click();
+  await eva.getByTestId("jury-reason").getByText("O relógio da foto marca 23h de ontem").waitFor();
+  assert((await eva.locator('[data-juror="Caio"] button').getAttribute("aria-expanded")) === "true", "expanded state");
+});
+
+await step("the proof opens enlarged in the page; Esc closes it and focus returns", async () => {
+  const thumb = eva.getByTestId("dispute").getByRole("button", { name: /Ampliar a foto/ });
+  await thumb.click();
+  const dialog = eva.locator("dialog[open]");
+  await dialog.waitFor();
+  assert(await dialog.locator("img").evaluate((i) => i.naturalWidth > 0), "enlarged photo loads");
+  await eva.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached" });
+  const focused = await eva.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
+  assert(focused.startsWith("Ampliar a foto"), `focus went to: ${focused}`);
+});
+
+await step("reduced motion: the judge never changes frame", async () => {
+  const ctx = await browser.newContext({ ...devices["iPhone 13"], locale: "pt-BR", timezoneId: "America/Sao_Paulo", reducedMotion: "reduce" });
+  const p = await ctx.newPage();
+  await p.goto(`${APP}/login`);
+  await p.fill("#email", "fab@pacto.test");
+  await p.fill("#password", "senha123");
+  await p.click("button:has-text('Entrar')");
+  await p.waitForURL("**/hoje");
+  await p.goto(url);
+  await p.getByTestId("verdict").waitFor();
+  const frames = await framesFor(p, 1500);
+  assert(frames.length === 1 && frames[0] === "gavel8", `frames with reduced motion: ${frames.join(",")}`);
+  await ctx.close();
+});
+
+await step("Hoje: pending goals come before the chests", async () => {
+  const p = await loginAs(browser, "bia@pacto.test");
+  const order = await p.evaluate(() => {
+    const goals = document.getElementById("metas");
+    const chest = document.querySelector('[data-testid="daily-chest-card"]');
+    return goals && chest ? goals.compareDocumentPosition(chest) & Node.DOCUMENT_POSITION_FOLLOWING : -1;
+  });
+  assert(order > 0, "the daily chest is above the pending goals");
+});
+
+await browser.close();
+done();

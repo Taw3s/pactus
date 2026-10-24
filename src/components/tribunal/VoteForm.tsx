@@ -11,7 +11,7 @@ const ERRORS: Record<string, string> = {
   "reason required": "Explique seu voto em poucas palavras.",
 };
 
-/** Guilty / innocent, always with a reason the whole group will read. */
+/** Annul / keep the proof, always with a reason the whole group will read. */
 export function VoteForm({ disputeId, defendant }: { disputeId: string; defendant: string }) {
   const router = useRouter();
   const [choice, setChoice] = useState<"guilty" | "innocent" | null>(null);
@@ -39,8 +39,8 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
     router.refresh();
   }
 
-  // The game word plus its literal consequence: the group judges the proof, not the person.
-  const option = (value: "guilty" | "innocent", label: string, effect: string, Icon: typeof Gavel, on: string) => (
+  // The consequence first, the game word below: the group judges the proof, not the person.
+  const option = (value: "guilty" | "innocent", label: string, word: string, Icon: typeof Gavel, on: string) => (
     <button
       type="button"
       aria-pressed={choice === value}
@@ -51,7 +51,7 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
         <Icon size={18} aria-hidden />
         {label}
       </span>
-      <span className="font-sans text-xs font-medium normal-case">{effect}</span>
+      <span className="font-sans text-xs font-medium normal-case">{word}</span>
     </button>
   );
 
@@ -59,8 +59,8 @@ export function VoteForm({ disputeId, defendant }: { disputeId: string; defendan
     <div className="space-y-3" data-testid="vote-form">
       <p className="pixel text-lg uppercase">Seu veredito sobre {defendant}</p>
       <div className="flex gap-2">
-        {option("guilty", "Culpado", "anular a prova", Gavel, "!border-fail !bg-fail-bg !text-fail")}
-        {option("innocent", "Inocente", "manter a prova", ShieldCheck, "!border-done !bg-done-bg !text-done")}
+        {option("guilty", "Anular a prova", "culpado", Gavel, "!border-fail !bg-fail-bg !text-fail")}
+        {option("innocent", "Manter a prova", "inocente", ShieldCheck, "!border-done !bg-done-bg !text-done")}
       </div>
       {choice && (
         <div>

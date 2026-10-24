@@ -1,23 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sprite, type SpriteName } from "./Sprite";
-
-// The judge strikes the gavel twice; the stamp lands on the second impact.
-const FRAMES: { sprite: SpriteName; ms: number }[] = [
-  { sprite: "judgeUp", ms: 380 },
-  { sprite: "judgeMid", ms: 60 },
-  { sprite: "judgeDown", ms: 160 },
-  { sprite: "judgeMid", ms: 90 },
-  { sprite: "judgeUp", ms: 220 },
-  { sprite: "judgeMid", ms: 60 },
-  { sprite: "judgeDown", ms: 0 },
-];
+import type { JudgeAction } from "@/lib/judge";
+import { JudgeAnim } from "./JudgeAnim";
 
 const TONE = {
   done: "border-done bg-done-bg text-done",
   fail: "border-fail bg-fail-bg text-fail",
 } as const;
+
+/** The bench judge announces impacts with this event, so a stamp elsewhere on the page lands with it. */
+export const IMPACT_EVENT = "pacto:judge-impact";
 
 interface Props {
   stamp: string;
@@ -25,58 +18,40 @@ interface Props {
   tone: keyof typeof TONE;
   /** The animation plays once per device for this key: include the viewer (user + day, user + dispute). */
   playKey: string;
+  /** "stamp" for verifications, "gavel" for the jury's decision. */
+  action?: Extract<JudgeAction, "stamp" | "gavel">;
+  /** false when another judge on the page (the courtroom bench) plays the strike. */
+  showJudge?: boolean;
   testId?: string;
 }
 
-/** The judge strikes the gavel twice and a stamp lands. Static when already seen or with reduced motion. */
-export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
-  // Starts on the final, static state; only an unseen event replays the gavel and the stamp.
-  const [frame, setFrame] = useState(FRAMES.length - 1);
-  const [stamped, setStamped] = useState(true);
-  const [playing, setPlaying] = useState(false);
-  const [impact, setImpact] = useState(0);
+/**
+ * A result stamp. The text (result and consequence) is visible from the start; only the art moves:
+ * the judge strikes once and the stamp jolts on the impact frame.
+ */
+export function GavelStamp({ stamp, note, tone, playKey, action = "gavel", showJudge = true, testId }: Props) {
+  const [hits, setHits] = useState(0);
 
   useEffect(() => {
-    const key = `pacto:stamp:${playKey}`;
-    let seen = false;
-    try {
-      seen = localStorage.getItem(key) === "1";
-      localStorage.setItem(key, "1");
-    } catch {}
-    if (seen || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    setFrame(0);
-    setStamped(false);
-    setPlaying(true);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    let t = 0;
-    FRAMES.forEach((f, i) => {
-      timers.push(
-        setTimeout(() => {
-          setFrame(i);
-          if (f.sprite === "judgeDown") setImpact((n) => n + 1);
-          if (i === FRAMES.length - 1) setStamped(true);
-        }, t),
-      );
-      t += f.ms;
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [playKey]);
+    if (showJudge) return;
+    const on = (e: Event) => (e as CustomEvent<string>).detail === playKey && setHits((n) => n + 1);
+    window.addEventListener(IMPACT_EVENT, on);
+    return () => window.removeEventListener(IMPACT_EVENT, on);
+  }, [showJudge, playKey]);
 
   return (
     <div className="flex items-center gap-3" data-testid={testId} role="status">
-      <div key={impact} className={impact ? "animate-[thud_180ms_steps(3)]" : ""}>
-        <Sprite name={FRAMES[frame].sprite} scale={2} />
-      </div>
+      {showJudge && <JudgeAnim action={action} playKey={playKey} onImpact={() => setHits((n) => n + 1)} />}
       <div className="min-w-0">
         <p
+          key={hits}
           className={`pixel inline-block -rotate-6 rounded-sm border-[3px] px-3 py-1 text-2xl font-bold uppercase leading-7 shadow-[3px_3px_0_var(--color-hard-shadow)] ${TONE[tone]} ${
-            !stamped ? "invisible" : playing ? "animate-[stamp_260ms_steps(4)_both]" : ""
+            hits ? "animate-[thud_180ms_steps(3)] motion-reduce:animate-none" : ""
           }`}
         >
           {stamp}
         </p>
-        <p className={`mt-4 text-sm text-muted ${stamped ? "" : "invisible"}`}>{note}</p>
+        <p className="mt-4 text-sm text-muted">{note}</p>
       </div>
     </div>
   );

@@ -23,49 +23,91 @@ export function ChestOpener({ kind, opened, label }: { kind: "daily" | "weekly";
   const [frame, setFrame] = useState<SpriteName>(opened ? "chest6" : "chest1");
   const [phase, setPhase] = useState<"idle" | "spinning" | "opening" | "done">(opened ? "done" : "idle");
   const [error, setError] = useState("");
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  // Every timer of the opening (spin interval and reveal timeouts), cancelled together on unmount.
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    const all = timers.current;
+    return () => {
+      alive.current = false;
+      all.forEach((t) => clearTimeout(t));
+      all.clear();
+    };
+  }, []);
+  const wait = (ms: number) =>
+    new Promise<void>((done) => {
+      const t = setTimeout(() => {
+        timers.current.delete(t);
+        done();
+      }, ms);
+      timers.current.add(t);
+    });
 
   async function open() {
+    if (phase !== "idle") return;
     setError("");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setPhase("spinning");
-    let i = 0;
-    const spin = setInterval(() => setFrame(SPIN[++i % SPIN.length]), 140);
-    const started = Date.now();
-    const { data, error } = await createClient().rpc("open_chest", { p_kind: kind });
-    // Keep spinning for at least ~1 s so the reveal never feels instant.
-    await new Promise((r) => setTimeout(r, still ? 0 : Math.max(0, 1000 - (Date.now() - started))));
-    clearInterval(spin);
-    const row = Array.isArray(data) ? data[0] : null;
-    if (error || !row) {
+    // Reduced motion: no frame swapping at all, just the result.
+    let spin: ReturnType<typeof setInterval> | null = null;
+    if (!still) {
+      let i = 0;
+      spin = setInterval(() => setFrame(SPIN[++i % SPIN.length]), 140);
+      timers.current.add(spin);
+    }
+    const stopSpin = () => {
+      if (spin === null) return;
+      clearInterval(spin);
+      timers.current.delete(spin);
+      spin = null;
+    };
+    let won: OpenedItem | null = null;
+    try {
+      const started = Date.now();
+      // The draw is the server's: open_chest is idempotent, so asking again after a lost
+      // answer returns the item already stored instead of drawing a new one.
+      const { data, error } = await createClient().rpc("open_chest", { p_kind: kind });
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!error && row) won = { itemId: row.item_id as string, rarity: row.rarity as Rarity };
+      // Keep spinning for at least ~1 s so the reveal never feels instant.
+      if (!still) await wait(Math.max(0, 1000 - (Date.now() - started)));
+    } catch {
+      won = null;
+    } finally {
+      stopSpin();
+    }
+    if (!alive.current) return;
+    if (!won) {
       setFrame("chest1");
       setPhase("idle");
-      setError("Não foi possível abrir agora. Tente de novo.");
+      setError("Não foi possível abrir agora. Tente de novo: se o baú já tiver sido aberto, o mesmo item aparece.");
       return;
     }
-    const won = { itemId: row.item_id as string, rarity: row.rarity as Rarity };
+    const result = won;
     if (still) {
       setFrame("chest6");
-      setItem(won);
+      setItem(result);
       setPhase("done");
       return;
     }
     setPhase("opening");
-    OPEN.forEach((f, n) => timers.current.push(setTimeout(() => setFrame(f), n * 160)));
-    timers.current.push(
-      setTimeout(() => {
-        setItem(won);
-        setPhase("done");
-      }, OPEN.length * 160 + 120),
-    );
+    for (const f of OPEN) {
+      setFrame(f);
+      await wait(160);
+      if (!alive.current) return;
+    }
+    await wait(120);
+    if (!alive.current) return;
+    setItem(result);
+    setPhase("done");
   }
 
   const info = item ? collectible(item.itemId) : null;
   return (
     <div className="flex items-center gap-4" data-testid={`chest-${kind}`} data-phase={phase}>
       <div className="relative shrink-0">
-        <Sprite name={frame} scale={2} className={phase === "idle" ? "animate-[bob_1.2s_steps(2)_infinite] motion-reduce:animate-none" : ""} />
+        <Sprite name={frame} scale={2} className={phase === "idle" ? "animate-[bob_1.2s_steps(2)_3] motion-reduce:animate-none" : ""} />
         {item && info && (
           <span className="absolute -top-3 left-1/2 -translate-x-1/2 animate-[pop_240ms_steps(3)_both]">
             <Sprite name={info.id} />

@@ -87,11 +87,11 @@ await step("a vote needs guilty/innocent AND a reason", async () => {
   const p = await as("caio@pacto.test");
   await p.goto(url);
   await p.waitForLoadState("networkidle");
-  await p.getByTestId("vote-form").getByRole("button", { name: /^Culpado/ }).click();
+  await p.getByTestId("vote-form").getByRole("button", { name: /^Anular a prova/ }).click();
   assert(await p.getByRole("button", { name: "Confirmar voto" }).isDisabled(), "vote without reason enabled");
   await p.fill("#vote-reason", "O relógio da foto marca 23h de ontem");
   await p.getByRole("button", { name: "Confirmar voto" }).click();
-  await p.getByText("Seu voto: culpado").waitFor();
+  await p.getByText("Seu voto: anular a prova").waitFor();
   assert((await p.getByTestId("guilty-count").innerText()) === "2", "2 guilty");
   await p.getByText("Em votação").waitFor();
 });
@@ -99,7 +99,7 @@ await step("a vote needs guilty/innocent AND a reason", async () => {
 await step("Davi votes guilty — majority reached: gavel + CONDENADO, proof annulled", async () => {
   const p = await as("davi@pacto.test");
   await p.goto(url);
-  await vote(p, "Culpado", "Concordo com a Ana");
+  await vote(p, "Anular a prova", "Concordo com a Ana");
   await p.getByTestId("verdict").getByText("Condenado").waitFor();
   await p.getByText("esta prova não conta").waitFor();
   await p.waitForTimeout(1300); // let the gavel finish for the screenshot
@@ -113,7 +113,7 @@ await step("Eva can no longer vote; Votos tab shows who convicted and why; feed 
   assert((await p.getByTestId("vote-form").count()) === 0, "vote buttons after close");
   await p.getByRole("tab", { name: /Votos/ }).click();
   const caioVote = p.locator('[data-vote-by="Caio"]');
-  await caioVote.getByText("Culpado").waitFor();
+  await caioVote.getByText("Anular", { exact: true }).waitFor();
   await caioVote.getByText("O relógio da foto marca 23h de ontem").waitFor();
   await p.locator('[data-vote-by="Ana"]').getByText("A foto parece ser de ontem").waitFor();
   await p.screenshot({ path: `${SHOTS}/c3-votos.png`, fullPage: true });
@@ -143,7 +143,7 @@ await step("acquittal path: 3 'inocente' keeps the check-in (ABSOLVIDO)", async 
   for (const who of ["ana", "bia", "davi"]) {
     const p = who === "ana" ? ana : who === "bia" ? biaP : await as(`${who}@pacto.test`);
     await p.goto(u);
-    await vote(p, "Inocente", `Livro vale sim (${who})`);
+    await vote(p, "Manter a prova", `Livro vale sim (${who})`);
   }
   await ana.goto(u);
   await ana.getByText("a prova continua valendo.").waitFor();

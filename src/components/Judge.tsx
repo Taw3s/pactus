@@ -1,25 +1,14 @@
-import { Sprite, type SpriteName } from "./Sprite";
-
-/** The judge's moods, one per real state of the AI review or the tribunal (never improvised). */
-export type JudgeMood = "idle" | "think" | "ok" | "unsure" | "point" | "verdict";
-
-const SPRITE: Record<JudgeMood, SpriteName> = {
-  idle: "judgeIdle",
-  think: "judgeThink",
-  ok: "judgeOk",
-  unsure: "judgeUnsure",
-  point: "judgePoint",
-  verdict: "judgeDown",
-};
+import type { JudgeAction } from "@/lib/judge";
+import { JudgeAnim } from "./JudgeAnim";
 
 /**
  * The judge with a short speech bubble. The lines are fixed per state: the judge only points
  * out suspicions; decisions always come from the group's vote.
  */
-export function Judge({ mood, line, scale = 2, className = "" }: { mood: JudgeMood; line?: string; scale?: 1 | 2 | 3; className?: string }) {
+export function Judge({ action, line, playKey, still, scale = 2, className = "" }: { action: JudgeAction; line?: string; playKey?: string; still?: boolean; scale?: 1 | 2 | 3; className?: string }) {
   return (
-    <div className={`flex items-end gap-2 ${className}`} data-judge={mood}>
-      <Sprite name={SPRITE[mood]} scale={scale} className={mood === "think" ? "animate-[bob_1.2s_steps(2)_infinite] motion-reduce:animate-none" : ""} />
+    <div className={`flex items-end gap-2 ${className}`}>
+      <JudgeAnim action={action} playKey={playKey} still={still} scale={scale} />
       {line && <JudgeBubble>{line}</JudgeBubble>}
     </div>
   );
