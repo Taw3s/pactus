@@ -42,6 +42,9 @@
   --color-ai: #a3caff;
   --color-ai-bg: #22354d;
 
+  /* Desktop composition (side navigation, group column on "Hoje") */
+  --breakpoint-desk: 75rem;
+
   --color-gold: #ffcd38;
   --color-silver: #d4dae2;
   --color-bronze: #e0a87a;
@@ -177,5 +180,16 @@ body {
   }
   66% {
     transform: translate(2px, -1px);
+  }
+}
+
+/*
+ * Desktop: pages keep a readable 640 px column (no stretched cards); a page opts into the wide
+ * composition with data-wide on its top element (e.g. "Hoje" with the group column).
+ */
+@media (min-width: 75rem) {
+  .app-main > :not([data-wide]) {
+    max-width: 640px;
+    margin-inline: auto;
   }
 }

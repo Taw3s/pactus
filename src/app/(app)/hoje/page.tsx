@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/PageHeader";
+import { GroupSidebar } from "@/components/GroupSidebar";
 import { PendingReviews } from "@/components/PendingReviews";
 import { Scoreboard, type GoalState } from "@/components/Scoreboard";
 import { TodayChecklist } from "@/components/TodayChecklist";
@@ -42,25 +43,28 @@ export default async function TodayPage() {
   const unreviewed = mine.filter((c) => !reviewOf.get(c.id)).map((c) => c.id);
 
   return (
-    <>
-      <PendingReviews ids={unreviewed} />
-      <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
-      <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
-      <TodayChecklist
-        groupId={me.group_id}
-        userId={me.user_id}
-        done={mine.map((c) => ({
-          id: c.id,
-          goal: c.goal,
-          summary: c.summary,
-          minutes: c.minutes,
-          pages: c.pages,
-          title: c.title,
-          photoUrl: urls.get(c.photo_path) ?? null,
-          dispute: statusOf.get(c.id) ?? null,
-          review: reviewOf.get(c.id) ?? null,
-        }))}
-      />
-    </>
+    <div data-wide className="desk:grid desk:grid-cols-[minmax(0,1fr)_380px] desk:items-start desk:gap-10">
+      <div className="min-w-0">
+        <PendingReviews ids={unreviewed} />
+        <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
+        <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
+        <TodayChecklist
+          groupId={me.group_id}
+          userId={me.user_id}
+          done={mine.map((c) => ({
+            id: c.id,
+            goal: c.goal,
+            summary: c.summary,
+            minutes: c.minutes,
+            pages: c.pages,
+            title: c.title,
+            photoUrl: urls.get(c.photo_path) ?? null,
+            dispute: statusOf.get(c.id) ?? null,
+            review: reviewOf.get(c.id) ?? null,
+          }))}
+        />
+      </div>
+      <GroupSidebar />
+    </div>
   );
 }

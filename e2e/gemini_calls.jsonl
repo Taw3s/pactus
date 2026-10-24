@@ -1,0 +1,11 @@
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"study","declared_minutes":95,"study_summary":"Revisei funções afins e quadráticas, fiz 20 exercícios do capítulo 3."},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"typing"},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"reading","declared_pages":23},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"typing"},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"reading","declared_pages":5},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"project","project_title":"Calculadora em Python"},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"reading","declared_pages":12},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"study","declared_minutes":240,"study_summary":"Estudei geometria analítica, retas e circunferências por bastante tempo."},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"project","project_title":"Foto do meu gato"},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"study","declared_minutes":60,"study_summary":"Revisei funções do segundo grau e fiz a lista inteira de exercícios."},"imageBytes":188341,"mime":"image/jpeg","schema":true}
+{"url":"/models/gemini-flash-latest:generateContent","key":"test-key","claim":{"goal":"typing"},"imageBytes":188341,"mime":"image/jpeg","schema":true}
