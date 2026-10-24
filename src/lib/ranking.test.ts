@@ -33,6 +33,11 @@ describe("scoreMonth", () => {
     expect(ana.pages).toBe(SCORING.maxPagesPerDay);
   });
 
+  it("sums extra study sessions under the same daily cap", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 90 }), c({ minutes: 60 }), c({ minutes: 200 }), c({ day: "2026-10-27", minutes: 30 })], []);
+    expect(ana.studyMinutes).toBe(SCORING.maxStudyMinutesPerDay + 30);
+  });
+
   it("ignores annulled check-ins and counts legacy study as 60 min", () => {
     const [ana] = scoreMonth(["ana"], [c({ minutes: 120, annulled: true }), c({ day: "2026-10-27" })], []);
     expect(ana.studyMinutes).toBe(60);

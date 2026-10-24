@@ -42,11 +42,15 @@ export default async function FeedPage() {
   const rows = members.map((m) => {
     const changes = (changeRows ?? []).filter((c) => c.user_id === m.user_id) as DayOffChange[];
     const all = checkins.filter((c) => c.user_id === m.user_id);
-    const mine = all.filter((c) => c.goal !== "project");
-    const project = all.find((c) => c.goal === "project");
+    const mine = all.filter((c) => c.goal !== "project" && !c.extra);
+    const project = all.findLast((c) => c.goal === "project");
     const valid = mine.filter((c) => resultByCheckin.get(c.id)?.status !== "upheld");
     const done = new Set(valid.map((c) => c.goal)).size;
-    return { m, mine, project, done, off: weekdayOf(today) === dayOffOn(changes, today) };
+    // Valid extra study sessions, shown as "+N min" next to the study proof.
+    const extraMinutes = all
+      .filter((c) => c.extra && resultByCheckin.get(c.id)?.status !== "upheld")
+      .reduce((sum, c) => sum + (c.minutes ?? 0), 0);
+    return { m, mine, project, done, extraMinutes, off: weekdayOf(today) === dayOffOn(changes, today) };
   });
   rows.sort((a, b) => b.done - a.done || b.mine.length - a.mine.length);
 
@@ -76,7 +80,7 @@ export default async function FeedPage() {
       )}
 
       <div className="space-y-3">
-        {rows.map(({ m, mine, project, done, off }) => (
+        {rows.map(({ m, mine, project, done, extraMinutes, off }) => (
           <section key={m.user_id} className="card" data-member={m.display_name} aria-label={m.display_name}>
             <div className="flex items-center gap-3">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
@@ -99,7 +103,8 @@ export default async function FeedPage() {
 
             <ul className="mt-3 grid grid-cols-3 gap-2">
               {GOALS.map((g) => {
-                const c = mine.find((x) => x.goal === g.id);
+                // Rows come in creation order: a retake (after its annulled proof) wins.
+                const c = mine.findLast((x) => x.goal === g.id);
                 if (!c) {
                   return (
                     <li key={g.id}>
@@ -117,7 +122,12 @@ export default async function FeedPage() {
                     <Link href={`/checkin/${c.id}`} className="block">
                       <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
                       <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
-                      {value && <p className="tabular text-xs text-muted">{value}</p>}
+                      {value && (
+                        <p className="tabular text-xs text-muted">
+                          {value}
+                          {g.id === "study" && extraMinutes > 0 && ` + ${extraMinutes} extra`}
+                        </p>
+                      )}
                     </Link>
                     <div className="mt-1">
                       <PrimaryBadge dispute={resultByCheckin.get(c.id)?.status} ai={reviewOf.get(c.id)} />

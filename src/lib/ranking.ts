@@ -38,20 +38,29 @@ export function scoreMonth(userIds: string[], checkins: RankingCheckin[], comple
     userIds.map((id) => [id, { userId: id, points: 0, studyMinutes: 0, pages: 0, projects: 0, completedDays: 0 }]),
   );
 
+  // Study minutes and pages are capped per person and day (a day may hold several sessions).
+  const perDay = new Map<string, { minutes: number; pages: number }>();
   for (const c of checkins) {
     const s = scores.get(c.user_id);
     if (!s || c.annulled) continue;
+    if (c.goal === "project") {
+      s.projects += 1;
+      s.points += SCORING.perProject;
+      continue;
+    }
+    const key = `${c.user_id}|${c.day}`;
+    const day = perDay.get(key) ?? { minutes: 0, pages: 0 };
+    perDay.set(key, day);
     if (c.goal === "study") {
-      const minutes = Math.min(c.minutes ?? LEGACY_STUDY_MINUTES, SCORING.maxStudyMinutesPerDay);
+      const minutes = Math.min(c.minutes ?? LEGACY_STUDY_MINUTES, SCORING.maxStudyMinutesPerDay - day.minutes);
+      day.minutes += minutes;
       s.studyMinutes += minutes;
       s.points += minutes * SCORING.perStudyMinute;
     } else if (c.goal === "reading") {
-      const pages = Math.min(c.pages ?? 0, SCORING.maxPagesPerDay);
+      const pages = Math.min(c.pages ?? 0, SCORING.maxPagesPerDay - day.pages);
+      day.pages += pages;
       s.pages += pages;
       s.points += pages * SCORING.perPage;
-    } else if (c.goal === "project") {
-      s.projects += 1;
-      s.points += SCORING.perProject;
     }
   }
 

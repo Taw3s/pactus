@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- signed URLs */
-import { Maximize2 } from "lucide-react";
+import { ChevronRight, Maximize2, RotateCcw } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AiPanel } from "@/components/AiPanel";
 import { Avatar } from "@/components/Avatar";
@@ -23,12 +24,13 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const { supabase, me } = await requireMember();
 
   // One round trip for everything about this proof (RLS limits it to the caller's group).
-  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }] = await Promise.all([
+  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }] = await Promise.all([
     supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>(),
     getMembers(supabase),
     supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),
     supabase.from("checkin_reviews").select("*").eq("checkin_id", id).maybeSingle<CheckinReview>(),
+    supabase.from("checkins").select("id").eq("retake_of", id).maybeSingle<{ id: string }>(),
   ]);
   if (!checkin) notFound();
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -44,6 +46,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
   const value = checkinNumbers(checkin);
+  const kind = checkin.extra ? "Sessão extra de estudo" : checkin.retake_of ? `${goal.label} (refeita)` : goal.label;
   const isOwner = checkin.user_id === me.user_id;
   const recent = checkin.day >= addDays(spToday(), -1);
   const canDispute = !dispute && !isOwner && recent;
@@ -104,7 +107,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         <p className="pixel truncate text-[28px] font-bold uppercase leading-[34px]">{ownerName}</p>
         <p className="flex items-center gap-1.5 text-sm text-muted">
           <GoalIcon size={16} aria-hidden />
-          {goal.label} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
+          {kind} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
         </p>
       </div>
     </header>
@@ -187,6 +190,13 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
           me={{ id: me.user_id, isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
         />
+        {result.status === "upheld" && (retake || (isOwner && checkin.day === spToday() && !checkin.extra)) && (
+          <Link href={retake ? `/checkin/${retake.id}` : "/hoje"} className="card mb-4 flex min-h-12 items-center gap-2 !border-warn" data-testid="retake-link">
+            <RotateCcw size={20} aria-hidden className="shrink-0 text-warn" />
+            <span className="min-w-0 flex-1">{retake ? `${ownerName} refez esta prova. Ver a nova.` : "Você pode refazer esta prova até 23:59. Ir para Hoje."}</span>
+            <ChevronRight size={20} aria-hidden className="shrink-0 text-muted" />
+          </Link>
+        )}
         <TribunalTabs evidence={evidence} votes={voteList} voteCount={votes.length} />
       </>
     );

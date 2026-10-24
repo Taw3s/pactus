@@ -30,7 +30,7 @@ run() {
 }
 for s in a b c; do run "$s"; done
 psql -q -f seed.sql
-for s in d f g e h i; do run "$s"; done
+for s in d f g e h i j; do run "$s"; done
 
 echo
 if [ "$status" -eq 0 ]; then echo "E2E: ALL STAGES PASSED"; else echo "E2E: FAILURES (see above)"; fi
