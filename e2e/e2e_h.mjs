@@ -1,0 +1,88 @@
+// Stage (h): automated accessibility (axe, WCAG 2.1 AA) on every screen + offline page.
+import { spawn } from "node:child_process";
+import AxeBuilder from "@axe-core/playwright";
+import { APP, APP_DIR, SHOTS, assert, done, launch, newPhone, step } from "./lib.mjs";
+
+const browser = await launch();
+const { page } = await newPhone(browser);
+
+async function scan(name) {
+  await page.waitForLoadState("networkidle");
+  await page.evaluate(() => document.fonts.ready);
+  // axe cannot compute contrast over a background image and silently skips it ("incomplete").
+  // Replace the 2×2 dither with its lightest pixel (#26292e + 2.5% white): the worst case.
+  await page.addStyleTag({ content: "body{background-image:none!important;background-color:#2a2d32!important}" });
+  const { violations, incomplete } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  const unsure = incomplete.find((v) => v.id === "color-contrast");
+  if (unsure) console.log(`    [axe review] ${name}: color-contrast not computable on ${unsure.nodes.length} element(s): ${unsure.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`);
+  const bad = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  for (const v of violations) {
+    console.log(`    [axe ${v.impact}] ${name}: ${v.id} (${v.nodes.length}) ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
+  }
+  assert(bad.length === 0, `${name}: ${bad.map((v) => `${v.id}×${v.nodes.length}`).join(", ")}`);
+}
+
+await step("axe: login and join (logged out)", async () => {
+  await page.goto(`${APP}/login`);
+  await scan("login");
+  await page.goto(`${APP}/join`);
+  await scan("join");
+});
+
+await step("axe: every screen of a member with data", async () => {
+  await page.goto(`${APP}/login`);
+  await page.fill("#email", "ana@pacto.test");
+  await page.fill("#password", "senha123");
+  await page.click("button:has-text('Entrar')");
+  await page.waitForURL("**/hoje");
+  const failures = [];
+  for (const path of ["/hoje", "/feed", "/ranking", "/dividas", "/config"]) {
+    await page.goto(`${APP}${path}`);
+    try { await scan(path); } catch (e) { failures.push(e.message); }
+  }
+  await page.getByRole("link", { name: "Perfil" }).click();
+  await page.waitForURL("**/historico/**");
+  try { await scan("historico"); } catch (e) { failures.push(e.message); }
+  await page.goto(`${APP}/feed`);
+  await page.locator('[data-member=Bia] a[href^="/checkin/"]').first().click();
+  await page.waitForURL("**/checkin/**");
+  try { await scan("tribunal"); } catch (e) { failures.push(e.message); }
+  await page.getByRole("tab", { name: /Votos/ }).click();
+  try { await scan("tribunal-votos"); } catch (e) { failures.push(e.message); }
+  assert(failures.length === 0, failures.join(" / "));
+});
+
+await step("offline: a failed navigation shows the 'Sem conexão' page, not a browser error", async () => {
+  // Playwright's setOffline does not reach service-worker fetches, so run a second app server
+  // and really stop it: the worker's network request then fails like on a phone without signal.
+  const PORT = 3100;
+  const srv = spawn("npx", ["next", "start", "-p", String(PORT)], { cwd: APP_DIR, stdio: "ignore", detached: true });
+  try {
+    for (let i = 0; i < 60; i++) {
+      if (await fetch(`http://localhost:${PORT}/login`).then((r) => r.ok, () => false)) break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    const { page: p } = await newPhone(browser);
+    await p.goto(`http://localhost:${PORT}/login`);
+    await p.evaluate(() => navigator.serviceWorker.ready);
+    await p.reload();
+    await p.waitForFunction(() => !!navigator.serviceWorker.controller);
+    await p.waitForFunction(async () => !!(await caches.match("/offline.html")));
+    process.kill(-srv.pid, "SIGTERM");
+    for (let i = 0; i < 40; i++) {
+      if (!(await fetch(`http://localhost:${PORT}/login`).then(() => true, () => false))) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    await p.goto(`http://localhost:${PORT}/feed`);
+    await p.getByRole("heading", { name: "Sem conexão" }).waitFor();
+    assert(await p.locator("img").evaluate((img) => img.naturalWidth > 0), "offline sprite comes from the cache");
+    await p.screenshot({ path: `${SHOTS}/h1-offline.png` });
+    const { violations } = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa"]).analyze();
+    assert(!violations.some((v) => v.impact === "serious" || v.impact === "critical"), JSON.stringify(violations.map((v) => v.id)));
+  } finally {
+    try { process.kill(-srv.pid, "SIGTERM"); } catch {}
+  }
+});
+
+await browser.close();
+done();
