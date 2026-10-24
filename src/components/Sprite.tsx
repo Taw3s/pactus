@@ -23,15 +23,8 @@ export type SpriteName =
   | "chest4"
   | "chest5"
   | "chest6"
-  | "judgeIdle"
-  | "judgeThink"
-  | "judgeOk"
-  | "judgeUnsure"
-  | "judgePoint"
-  | "judgeUp"
-  | "judgeMid"
-  | "judgeDown"
   | "benchFront"
+  | `judge-${string}`
   | CollectibleId;
 
 /**

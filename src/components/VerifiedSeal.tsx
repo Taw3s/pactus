@@ -4,7 +4,7 @@ import { GavelStamp } from "./GavelStamp";
 export function VerifiedSeal({ day, userId }: { day: string; userId: string }) {
   return (
     <div className="mb-4 border-b-2 border-divider pb-4">
-      <GavelStamp stamp="Verificado!" note="O Juiz IA conferiu as 3 provas de hoje." tone="done" playKey={`verified:${userId}:${day}`} testId="verified" />
+      <GavelStamp stamp="Verificado!" note="O Juiz IA conferiu as 3 provas de hoje." tone="done" action="stamp" playKey={`verified:${userId}:${day}`} testId="verified" />
     </div>
   );
 }

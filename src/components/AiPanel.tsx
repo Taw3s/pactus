@@ -3,16 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Verdict } from "@/lib/ai-review";
-import { Judge, type JudgeMood } from "./Judge";
+import type { JudgeAction } from "@/lib/judge";
+import { Judge } from "./Judge";
 import { AiBadge, type AiState } from "./StatusBadges";
 
 // Fixed lines per state: the judge raises suspicions, the group decides.
-const JUDGE: Record<AiState, { mood: JudgeMood; line: string }> = {
-  analyzing: { mood: "think", line: "Hmm… deixa eu ver essa foto." },
-  match: { mood: "ok", line: "Confere. Pode seguir." },
-  unclear: { mood: "unsure", line: "Não deu para concluir. Fica com o grupo." },
-  mismatch: { mood: "point", line: "Algo aqui não bate. Levo ao júri." },
-  unavailable: { mood: "unsure", line: "Estou fora do ar agora." },
+const JUDGE: Record<AiState, { action: JudgeAction; line: string }> = {
+  analyzing: { action: "think", line: "Hmm… deixa eu ver essa foto." },
+  match: { action: "stamp", line: "Confere. Pode seguir." },
+  unclear: { action: "unsure", line: "Não deu para concluir. Fica com o grupo." },
+  mismatch: { action: "present", line: "Algo aqui não bate. Levo ao júri." },
+  unavailable: { action: "idle", line: "Estou fora do ar agora." },
 };
 
 interface Props {
@@ -64,7 +65,7 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
         </h2>
         <AiBadge state={state} />
       </div>
-      {!secondary && <Judge mood={JUDGE[state].mood} line={JUDGE[state].line} className="mt-2" />}
+      {!secondary && <Judge action={JUDGE[state].action} line={JUDGE[state].line} playKey={`ai:${checkinId}:${state}`} still={state === "unavailable"} className="mt-2" />}
       {review ? (
         <>
           {timerGap && <p className="mt-2 font-medium">{timerGap}</p>}

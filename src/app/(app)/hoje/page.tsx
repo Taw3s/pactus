@@ -68,6 +68,10 @@ export default async function TodayPage() {
     dispute: statusOf.get(c.id) ?? null,
     review: reviewOf.get(c.id) ?? null,
   });
+  const dayComplete = GOALS.every((g) => states[g.id] === "done");
+  const chestsPanel = (
+    <ChestsPanel dayComplete={dayComplete} daily={chestOf("daily", today)} weekly={chestOf("weekly", monday)} week={week} eligible={me.joined_on <= monday} />
+  );
   const unreviewed = mine.filter((c) => !reviewOf.get(c.id)).map((c) => c.id);
 
   return (
@@ -76,19 +80,15 @@ export default async function TodayPage() {
         <PendingReviews ids={unreviewed} />
         <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
         <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
-        <ChestsPanel
-          dayComplete={GOALS.every((g) => states[g.id] === "done")}
-          daily={chestOf("daily", today)}
-          weekly={chestOf("weekly", monday)}
-          week={week}
-          eligible={me.joined_on <= monday}
-        />
+        {/* With goals pending, sending proofs comes first; once the day is closed, the chest comes up. */}
+        {dayComplete && chestsPanel}
         <TodayChecklist
           groupId={me.group_id}
           userId={me.user_id}
           done={mine.filter((c) => !c.extra && latest(c.goal) === c).map(toDone)}
           extras={mine.filter((c) => c.extra).map(toDone)}
         />
+        {!dayComplete && <div className="mt-8">{chestsPanel}</div>}
       </div>
       <GroupSidebar />
     </div>

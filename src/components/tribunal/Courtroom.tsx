@@ -1,9 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- signed URL of the proof */
-import { Check, Maximize2, Minus, X } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { GavelStamp } from "../GavelStamp";
 import { JudgeBubble } from "../Judge";
+import { PhotoViewer } from "../PhotoViewer";
 import { Sprite } from "../Sprite";
+import { BenchJudge } from "./BenchJudge";
+import { JuryBench } from "./JuryBench";
 import { VoteForm } from "./VoteForm";
 import type { Verdict } from "@/lib/ai-review";
 import type { DisputeResult, DisputeVote, Member } from "@/lib/types";
@@ -32,11 +35,6 @@ interface Props {
 const when = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-const RING = {
-  guilty: "ring-fail",
-  innocent: "ring-done",
-  none: "ring-control/50",
-};
 
 const AI_WORD: Record<Verdict, string> = { match: "confere", mismatch: "não confere", unclear: "inconclusiva" };
 
@@ -57,6 +55,8 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
     : `O júri decidiu: prova ${upheld ? "anulada" : "mantida"}.`;
   const seated = jurors.slice(0, jurors.length > BENCH_SEATS ? BENCH_SEATS - 1 : BENCH_SEATS);
   const voted = jurors.filter((j) => j.vote).length;
+  // One key per viewer and dispute: the decision is announced once per device.
+  const verdictKey = `verdict:${me.id}:${disputeId}`;
 
   return (
     <section className="card relative overflow-hidden !p-0" data-testid="dispute" aria-labelledby="tribunal-title">
@@ -84,10 +84,10 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         <div className="relative mx-auto mt-1 flex w-fit flex-col items-center">
           <Crest name={groupName} />
           {/* the judge stands behind the bench: his lower half is hidden by it */}
-          <div className="relative -mt-1 h-[144px] w-[144px]">
-            <Sprite name={open ? (byAi ? "judgePoint" : "judgeIdle") : "judgeDown"} scale={2} className="absolute left-1/2 top-[10px] -translate-x-1/2" />
-            <Sprite name="benchFront" scale={3} className="absolute bottom-0 left-0" />
-          </div>
+          <BenchJudge
+            action={open ? (byAi ? "present" : "idle") : "gavel"}
+            playKey={open ? (byAi ? `present:${me.id}:${disputeId}` : undefined) : verdictKey}
+          />
         </div>
         <div className="relative z-10 mx-auto mt-2 flex max-w-xs justify-center pb-3">
           <JudgeBubble tail="up">{line}</JudgeBubble>
@@ -99,7 +99,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
       <div className="bg-[repeating-conic-gradient(#2e3238_0_25%,#33373e_0_50%)] bg-[length:24px_24px] px-3 pb-4 pt-4">
         <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
           <Podium label="Acusação" tone="fail">
-            {byAi ? <Sprite name="judgePoint" /> : <Avatar name={accuser} url={accuserAvatar} size={48} />}
+            {byAi ? <Sprite name="judge-present6" /> : <Avatar name={accuser} url={accuserAvatar} size={48} />}
             <p className="mt-1 w-full truncate text-center text-sm font-semibold" data-testid="accuser">
               {accuser}
             </p>
@@ -107,18 +107,17 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
 
           <div className="flex flex-col items-center">
             {proof.photoUrl ? (
-              <a
-                href={proof.photoUrl}
-                target="_blank"
-                rel="noreferrer"
+              <PhotoViewer
+                src={proof.photoUrl}
+                alt={`Prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
+                label={`Ampliar a foto da prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
                 className="group relative block h-20 w-20 overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface shadow-[3px_3px_0_var(--color-hard-shadow)] desk:h-28 desk:w-28"
-                aria-label={`Abrir a foto da prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
               >
                 <img src={proof.photoUrl} alt="" className="h-full w-full object-cover" />
                 <span className="absolute bottom-0.5 right-0.5 rounded-sm bg-bg/90 p-0.5">
                   <Maximize2 size={14} aria-hidden />
                 </span>
-              </a>
+              </PhotoViewer>
             ) : (
               <div className="h-20 w-20 rounded-sm bg-surface" />
             )}
@@ -152,14 +151,14 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           <p className="pixel tabular text-3xl font-bold leading-8 text-fail" data-testid="guilty-count">
             {result.yes}
           </p>
-          <p className="text-xs font-semibold text-muted">Culpado · anular</p>
+          <p className="text-xs font-semibold text-muted">Anular · culpado</p>
         </div>
         <p className="pixel text-xl text-muted">×</p>
         <div>
           <p className="pixel tabular text-3xl font-bold leading-8 text-done" data-testid="innocent-count">
             {result.no}
           </p>
-          <p className="text-xs font-semibold text-muted">Inocente · manter</p>
+          <p className="text-xs font-semibold text-muted">Manter · inocente</p>
         </div>
       </div>
       <p className="tabular mx-4 mt-2 text-center text-sm text-muted">
@@ -172,38 +171,10 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         <p className="pixel mb-2 text-center text-base uppercase text-muted">
           Júri <span className="tabular">· {voted}/{jurors.length} votaram</span>
         </p>
-        <ul className="flex flex-wrap justify-center gap-x-3 gap-y-3">
-          {seated.map(({ member, avatarUrl, vote }) => {
-            const state = !vote ? "none" : vote.upheld ? "guilty" : "innocent";
-            const Icon = state === "guilty" ? X : state === "innocent" ? Check : Minus;
-            const word = state === "guilty" ? "culpado" : state === "innocent" ? "inocente" : "ainda não votou";
-            return (
-              <li key={member.user_id} className="flex w-16 flex-col items-center" data-juror={member.display_name} data-vote={state}>
-                <div className="relative">
-                  <div className={`rounded-full ring-2 ring-offset-2 ring-offset-surface ${RING[state]} ${state === "none" ? "opacity-60" : ""}`}>
-                    <Avatar name={member.display_name} url={avatarUrl} size={40} />
-                  </div>
-                  <span
-                    aria-hidden
-                    className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-sm border-2 ${
-                      state === "guilty" ? "border-fail bg-fail-bg text-fail" : state === "innocent" ? "border-done bg-done-bg text-done" : "border-divider bg-raised text-muted"
-                    }`}
-                  >
-                    <Icon size={12} strokeWidth={3} />
-                  </span>
-                </div>
-                <p className="mt-1.5 w-full truncate text-center text-xs">{member.display_name}</p>
-                <p className="sr-only">{word}</p>
-              </li>
-            );
-          })}
-          {seated.length < jurors.length && (
-            <li className="flex w-16 flex-col items-center">
-              <span className="pixel tabular flex h-10 w-10 items-center justify-center rounded-full bg-raised text-base">+{jurors.length - seated.length}</span>
-              <p className="mt-1.5 text-center text-xs text-muted">na aba Votos</p>
-            </li>
-          )}
-        </ul>
+        <JuryBench
+          seats={seated.map(({ member, avatarUrl, vote }) => ({ id: member.user_id, name: member.display_name, avatarUrl, upheld: vote ? vote.upheld : null, reason: vote?.reason ?? null }))}
+          more={jurors.length - seated.length}
+        />
         {/* the bench they sit on */}
         <div aria-hidden className="mt-3 h-3 rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[0_3px_0_var(--color-hard-shadow)]" />
       </div>
@@ -212,7 +183,8 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
       <div className="p-4">
         {!open ? (
           <GavelStamp
-            playKey={`verdict:${me.id}:${disputeId}`}
+            playKey={verdictKey}
+            showJudge={false}
             tone={upheld ? "fail" : "done"}
             stamp={upheld ? "Condenado" : "Absolvido"}
             note={
@@ -224,8 +196,8 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           />
         ) : me.vote ? (
           <p className="font-medium">
-            Seu voto: <b className={me.vote.upheld ? "text-fail" : "text-done"}>{me.vote.upheld ? "culpado" : "inocente"}</b> (
-            {me.vote.upheld ? "anular a prova" : "manter a prova"}).
+            Seu voto: <b className={me.vote.upheld ? "text-fail" : "text-done"}>{me.vote.upheld ? "anular a prova" : "manter a prova"}</b> (
+            {me.vote.upheld ? "culpado" : "inocente"}).
           </p>
         ) : me.isOwner ? (
           <p className="text-sm text-muted">Você é o réu e não vota. Use a aba Provas para se defender.</p>

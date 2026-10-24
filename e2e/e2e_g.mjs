@@ -100,7 +100,7 @@ await step("3 proofs confirmed by the AI judge: gavel + VERIFICADO on Today", as
   // Seen once: on the next visit the seal is static (no replay).
   await eva.reload();
   await eva.getByTestId("verified").waitFor();
-  assert(await eva.evaluate(() => Object.keys(localStorage).some((k) => /^pacto:stamp:verified:[0-9a-f-]{36}:\d{4}-\d{2}-\d{2}$/.test(k))), "seen flag stored per user + day");
+  assert(await eva.evaluate(() => Object.keys(localStorage).some((k) => /^pacto:judge:verified:[0-9a-f-]{36}:\d{4}-\d{2}-\d{2}$/.test(k))), "seen flag stored per user + day");
   await eva.waitForTimeout(800);
   const cls = await eva.getByTestId("verified").getByText("Verificado!").getAttribute("class");
   assert(!cls.includes("animate-[stamp"), "stamp animated again on a seen event");

@@ -7,6 +7,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackButton } from "@/components/BackButton";
 import { DisputeActions } from "@/components/DisputeActions";
 import { Sprite } from "@/components/Sprite";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
@@ -59,12 +60,17 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const photoBlock = (
     <figure className="mb-4">
       {photo ? (
-        <a href={photo} target="_blank" rel="noreferrer" className="group relative block overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface">
+        <PhotoViewer
+          src={photo}
+          alt={`Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`}
+          label={`Ampliar a foto da prova de ${goal.label.toLowerCase()} de ${ownerName}`}
+          className="group relative block w-full overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface"
+        >
           <img src={photo} alt={`Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`} className="mx-auto max-h-[60dvh] w-full object-contain" />
           <span className="absolute bottom-2 right-2 inline-flex min-h-9 items-center gap-1 rounded-sm bg-bg/90 px-2 text-xs font-semibold">
-            <Maximize2 size={14} aria-hidden /> Abrir foto inteira
+            <Maximize2 size={14} aria-hidden /> Ampliar foto
           </span>
-        </a>
+        </PhotoViewer>
       ) : (
         <div className="flex h-40 items-center justify-center rounded-sm bg-surface text-sm text-muted">Foto indisponível no momento.</div>
       )}
@@ -120,7 +126,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
       <>
         <section className="card mb-4" aria-labelledby="acusacao">
           <h2 id="acusacao" className="pixel flex items-center gap-2 text-lg uppercase text-fail">
-            {dispute.by_ai ? <Sprite name="judgePoint" /> : <Avatar name={accuser} url={avatar(byId.get(dispute.author_id ?? ""))} size={32} />}
+            {dispute.by_ai ? <Sprite name="judge-present6" /> : <Avatar name={accuser} url={avatar(byId.get(dispute.author_id ?? ""))} size={32} />}
             Acusação · {accuser}
           </h2>
           <p className="mt-2">{dispute.reason}</p>
@@ -163,7 +169,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-x-2 font-semibold">
                       {m?.display_name}
-                      <span className={`pixel text-base uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Culpado" : "Inocente"}</span>
+                      <span className={`pixel text-base uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Anular" : "Manter"}</span>
                       <span className="text-xs font-normal text-muted">{time(v.created_at)}</span>
                     </p>
                     <p className="mt-1 break-words text-sm">{v.reason ?? <span className="text-muted">Sem motivo (voto antigo).</span>}</p>
