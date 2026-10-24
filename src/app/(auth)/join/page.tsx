@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { authErrorPt } from "@/lib/auth-errors";
 import { confirmUrl } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
+import { GoogleButton, googleEnabled } from "@/components/GoogleButton";
 
 function JoinForm() {
   const router = useRouter();
@@ -19,6 +20,18 @@ function JoinForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState<"" | "confirm" | "magic">("");
+
+  // Signed in with Google but not in a group yet: suggest the name from the Google account.
+  useEffect(() => {
+    if (!codeOnly) return;
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const meta = data.user?.user_metadata ?? {};
+        const suggested = String(meta.full_name ?? meta.name ?? "").trim().split(/\s+/)[0] ?? "";
+        if (suggested) setName((n) => n || suggested.slice(0, 40));
+      });
+  }, [codeOnly]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -81,6 +94,16 @@ function JoinForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      {codeOnly ? (
+        <p className="text-sm text-muted">Você entrou. Agora digite o código de convite do grupo.</p>
+      ) : (
+        googleEnabled && (
+          <>
+            <GoogleButton />
+            <p className="text-center text-sm text-muted">Com o Google, você digita o código depois. Ou crie a conta com e-mail:</p>
+          </>
+        )
+      )}
       <div>
         <label className="label" htmlFor="code">Código de convite</label>
         <input id="code" className="input uppercase tracking-widest" required autoCapitalize="characters" value={code} onChange={(e) => setCode(e.target.value)} />

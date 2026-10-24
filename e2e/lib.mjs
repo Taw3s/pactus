@@ -37,7 +37,7 @@ export async function loginAs(browser, email) {
   await s.page.goto(`${APP}/login`);
   await s.page.fill("#email", email);
   await s.page.fill("#password", "senha123");
-  await s.page.click("button:has-text('Entrar')");
+  await s.page.click("button:text-is('Entrar')");
   await s.page.waitForURL("**/hoje");
   return s.page;
 }

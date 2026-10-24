@@ -33,7 +33,7 @@ await step("axe: every screen of a member with data", async () => {
   await page.goto(`${APP}/login`);
   await page.fill("#email", "ana@pacto.test");
   await page.fill("#password", "senha123");
-  await page.click("button:has-text('Entrar')");
+  await page.click("button:text-is('Entrar')");
   await page.waitForURL("**/hoje");
   const failures = [];
   for (const path of ["/hoje", "/feed", "/ranking", "/dividas", "/config"]) {
@@ -58,7 +58,7 @@ await step("desktop (1920 px): side navigation + group column, axe clean; phones
   await d.goto(`${APP}/login`);
   await d.fill("#email", "fab@pacto.test");
   await d.fill("#password", "senha123");
-  await d.click("button:has-text('Entrar')");
+  await d.click("button:text-is('Entrar')");
   await d.waitForURL("**/hoje");
   const nav = d.getByRole("navigation", { name: "Principal" });
   const box = await nav.boundingBox();
@@ -81,7 +81,7 @@ await step("desktop (1920 px): side navigation + group column, axe clean; phones
   await m.goto(`${APP}/login`);
   await m.fill("#email", "fab@pacto.test");
   await m.fill("#password", "senha123");
-  await m.click("button:has-text('Entrar')");
+  await m.click("button:text-is('Entrar')");
   await m.waitForURL("**/hoje");
   await m.waitForLoadState("networkidle");
   assert(calls === 0, `phone fetched the desktop column ${calls}×`);

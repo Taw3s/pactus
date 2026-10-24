@@ -62,7 +62,7 @@ await step("reduced motion: the judge never changes frame", async () => {
   await p.goto(`${APP}/login`);
   await p.fill("#email", "fab@pacto.test");
   await p.fill("#password", "senha123");
-  await p.click("button:has-text('Entrar')");
+  await p.click("button:text-is('Entrar')");
   await p.waitForURL("**/hoje");
   await p.goto(url);
   await p.getByTestId("verdict").waitFor();
@@ -79,6 +79,20 @@ await step("Hoje: pending goals come before the chests", async () => {
     return goals && chest ? goals.compareDocumentPosition(chest) & Node.DOCUMENT_POSITION_FOLLOWING : -1;
   });
   assert(order > 0, "the daily chest is above the pending goals");
+});
+
+await step("Google sign-in sends the browser to Supabase's Google authorize page and back to /auth/confirm", async () => {
+  const ctx = await browser.newContext({ ...devices["iPhone 13"], locale: "pt-BR" });
+  const p = await ctx.newPage();
+  await p.goto(`${APP}/login`);
+  const google = p.getByTestId("google-login");
+  if ((await google.count()) === 0) throw new Error("no Google button: build the app with NEXT_PUBLIC_GOOGLE_LOGIN=1");
+  const [req] = await Promise.all([p.waitForRequest((r) => r.url().includes("/auth/v1/authorize")), google.click()]);
+  const u = new URL(req.url());
+  assert(u.searchParams.get("provider") === "google", `provider ${u.searchParams.get("provider")}`);
+  assert(new URL(u.searchParams.get("redirect_to")).pathname === "/auth/confirm", `redirect_to ${u.searchParams.get("redirect_to")}`);
+  assert(u.searchParams.get("code_challenge"), "PKCE challenge");
+  await ctx.close();
 });
 
 await browser.close();
