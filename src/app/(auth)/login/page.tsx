@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { authErrorPt } from "@/lib/auth-errors";
 import { confirmUrl } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
+import { GoogleButton, googleEnabled } from "@/components/GoogleButton";
 
 function LoginForm() {
   const router = useRouter();
@@ -55,6 +56,12 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      {googleEnabled && (
+        <>
+          <GoogleButton />
+          <p className="text-center text-sm text-muted">ou com e-mail</p>
+        </>
+      )}
       <div role="tablist" aria-label="Forma de entrar" className="grid grid-cols-2 gap-1 rounded-sm border-2 border-bevel-dark bg-bg p-1">
         {(["password", "magic"] as const).map((m) => (
           <button

@@ -40,6 +40,7 @@ export SUPABASE_URL=$API_URL SUPABASE_ANON_KEY=$ANON_KEY SUPABASE_SERVICE_ROLE_K
 export NEXT_PUBLIC_SUPABASE_URL=$API_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY NEXT_PUBLIC_SITE_URL=http://localhost:3000
 export GEMINI_API_KEY=test-key GEMINI_API_URL=http://127.0.0.1:54400
 export PUSH_TEST_SERVICE=1   # deixa o app entregar avisos ao servidor de push falso (nunca em produção)
+export NEXT_PUBLIC_GOOGLE_LOGIN=1   # mostra o botão do Google (o teste só confere o redirecionamento)
 
 npm ci && npm run build && npx next start -p 3000 &   # o app, com essas variáveis
 cd e2e && npm ci && npx playwright install chromium

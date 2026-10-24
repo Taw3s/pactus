@@ -34,10 +34,10 @@ await step("password login works in a fresh browser", async () => {
   await page.goto(`${APP}/login`);
   await page.fill("#email", "ana@pacto.test");
   await page.fill("#password", "errada");
-  await page.click("button:has-text('Entrar')");
+  await page.click("button:text-is('Entrar')");
   await page.getByText("E-mail ou senha incorretos.").waitFor();
   await page.fill("#password", "senha123");
-  await page.click("button:has-text('Entrar')");
+  await page.click("button:text-is('Entrar')");
   await page.waitForURL("**/hoje");
   await ctx.close();
 });
@@ -99,7 +99,7 @@ await step("account without valid code has no access and is sent to /join?step=c
   await page.goto(`${APP}/login`);
   await page.fill("#email", "intruso@pacto.test");
   await page.fill("#password", "senha123");
-  await page.click("button:has-text('Entrar')");
+  await page.click("button:text-is('Entrar')");
   await page.waitForURL("**/join?step=code");
   await ctx.close();
 });

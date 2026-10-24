@@ -9,7 +9,7 @@ async function login(page, email) {
   await page.goto(`${APP}/login`);
   await page.fill("#email", email);
   await page.fill("#password", "senha123");
-  await page.click("button:has-text('Entrar')");
+  await page.click("button:text-is('Entrar')");
   await page.waitForURL("**/hoje");
 }
 

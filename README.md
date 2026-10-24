@@ -122,6 +122,19 @@ Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **
 > Essas duas chaves são **segredos de servidor**: nunca use o prefixo `NEXT_PUBLIC_` nelas e nunca as coloque no código.
 > No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. O grupo concordou com isso.
 
+### Login com Google (opcional)
+
+O botão "Entrar com Google" só aparece com `NEXT_PUBLIC_GOOGLE_LOGIN=1`. O Google só confirma quem é a pessoa: quem ainda não está em um grupo cai na tela do código de convite. Se o Gmail for o mesmo e-mail de uma conta que já existe, o Supabase usa a mesma conta.
+
+1. **Google Cloud Console** → *APIs e serviços*:
+   - **Tela de consentimento OAuth:** público externo, com nome, e-mail de suporte e o domínio da Vercel.
+   - **Credenciais** → *Criar credenciais* → *ID do cliente OAuth* → *Aplicativo da Web*:
+     - **Origens JavaScript autorizadas:** o endereço do app na Vercel.
+     - **URIs de redirecionamento autorizados:** `https://SEU-PROJETO.supabase.co/auth/v1/callback`. O endereço exato aparece no Supabase, no passo 2.
+2. **Supabase** → *Authentication* → *Sign In / Providers* → **Google**: ative e cole o *Client ID* e o *Client Secret*. O segredo fica só no painel do Supabase, nunca no código nem em variável `NEXT_PUBLIC_`.
+3. **Supabase** → *Authentication* → *URL Configuration*: o endereço da Vercel com `/**` precisa estar nos *Redirect URLs*.
+4. **Vercel** → *Environment Variables*: `NEXT_PUBLIC_GOOGLE_LOGIN` = `1`, depois **Redeploy**.
+
 ### Instalar no celular
 
 - **iPhone (Safari):** botão Compartilhar → *Adicionar à Tela de Início*.
