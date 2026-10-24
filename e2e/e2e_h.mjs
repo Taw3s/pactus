@@ -52,6 +52,43 @@ await step("axe: every screen of a member with data", async () => {
   assert(failures.length === 0, failures.join(" / "));
 });
 
+await step("desktop (1920 px): side navigation + group column, axe clean; phones never fetch the column", async () => {
+  const wide = await browser.newContext({ viewport: { width: 1920, height: 1080 }, locale: "pt-BR", timezoneId: "America/Sao_Paulo" });
+  const d = await wide.newPage();
+  await d.goto(`${APP}/login`);
+  await d.fill("#email", "fab@pacto.test");
+  await d.fill("#password", "senha123");
+  await d.click("button:has-text('Entrar')");
+  await d.waitForURL("**/hoje");
+  const nav = d.getByRole("navigation", { name: "Principal" });
+  const box = await nav.boundingBox();
+  assert(box && box.x === 0 && box.height >= 1000 && box.width < 300, `side nav box ${JSON.stringify(box)}`);
+  const side = d.getByTestId("group-sidebar");
+  await side.getByText("Grupo hoje").waitFor();
+  await side.locator('a[href^="/historico/"]').first().waitFor();
+  assert((await side.locator('a[href^="/historico/"]').count()) === 6, "6 members in the group column");
+  await side.getByText(/Ranking/).waitFor();
+  await d.screenshot({ path: `${SHOTS}/h2-desktop-hoje.png` });
+  await d.addStyleTag({ content: "body{background-image:none!important;background-color:#2a2d32!important}" });
+  const { violations } = await new AxeBuilder({ page: d }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  const bad = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  assert(bad.length === 0, bad.map((v) => `${v.id}×${v.nodes.length}`).join(", "));
+  await wide.close();
+
+  const { ctx: phone, page: m } = await newPhone(browser);
+  let calls = 0;
+  m.on("request", (r) => r.url().includes("/api/group-summary") && calls++);
+  await m.goto(`${APP}/login`);
+  await m.fill("#email", "fab@pacto.test");
+  await m.fill("#password", "senha123");
+  await m.click("button:has-text('Entrar')");
+  await m.waitForURL("**/hoje");
+  await m.waitForLoadState("networkidle");
+  assert(calls === 0, `phone fetched the desktop column ${calls}×`);
+  assert(!(await m.getByTestId("group-sidebar").isVisible()), "group column visible on a phone");
+  await phone.close();
+});
+
 await step("offline: a failed navigation shows the 'Sem conexão' page, not a browser error", async () => {
   // Playwright's setOffline does not reach service-worker fetches, so run a second app server
   // and really stop it: the worker's network request then fails like on a phone without signal.
