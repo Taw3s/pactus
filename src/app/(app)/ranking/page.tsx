@@ -3,9 +3,9 @@ import { GroupTabs } from "@/components/GroupTabs";
 import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
 import { Sprite } from "@/components/Sprite";
-import { lastDayOfMonth, monthKey, spToday } from "@/lib/dates";
-import { fetchAll, getMembers, requireMember, signUrls } from "@/lib/data";
-import { positions, scoreMonth, SCORING, type RankingCheckin } from "@/lib/ranking";
+import { monthKey, spToday } from "@/lib/dates";
+import { getMembers, getMonthScores, requireMember, signUrls } from "@/lib/data";
+import { SCORING } from "@/lib/ranking";
 
 export const dynamic = "force-dynamic";
 
@@ -22,29 +22,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const { supabase, me } = await requireMember();
   const current = monthKey(spToday());
   const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
-  const from = `${month}-01`;
-  const to = lastDayOfMonth(from);
-
-  const [members, checkins, upheld, completed] = await Promise.all([
-    getMembers(supabase),
-    fetchAll<Omit<RankingCheckin, "annulled"> & { id: string }>((a, b) =>
-      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages").gte("day", from).lte("day", to).order("id").range(a, b),
-    ),
-    fetchAll<{ checkin_id: string }>((a, b) =>
-      supabase.from("dispute_results").select("checkin_id").eq("status", "upheld").order("checkin_id").range(a, b),
-    ),
-    fetchAll<{ user_id: string; day: string }>((a, b) =>
-      supabase.from("completed_days").select("user_id, day").gte("day", from).lte("day", to).order("user_id").order("day").range(a, b),
-    ),
-  ]);
-
-  const annulled = new Set(upheld.map((u) => u.checkin_id));
-  const scores = scoreMonth(
-    members.map((x) => x.user_id),
-    checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),
-    completed,
-  );
-  const pos = positions(scores);
+  const { members, scores, pos } = await getMonthScores(supabase, getMembers(supabase), month);
   const byId = new Map(members.map((x) => [x.user_id, x]));
   const urls = await signUrls(supabase, members.map((x) => x.avatar_path));
   const leader = (key: "studyMinutes" | "pages" | "projects") =>

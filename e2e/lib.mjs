@@ -112,7 +112,14 @@ export async function step(name, fn) {
     console.log(`✔ ${name}`);
   } catch (e) {
     failures++;
-    console.log(`✘ ${name}\n    ${e.message.split("\n").slice(0, 12).join("\n    ")}`);
+    const detail = e.message.split("\n").slice(0, 12);
+    console.log(`✘ ${name}\n    ${detail.join("\n    ")}`);
+    // On GitHub Actions, also publish the failure as an annotation shown on the pull request.
+    if (process.env.GITHUB_ACTIONS) {
+      const stage = path.basename(process.argv[1] ?? "e2e");
+      const esc = (t) => t.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+      console.log(`::error title=${esc(`${stage}: ${name}`).replace(/[:,]/g, " ")}::${esc(detail.join("\n"))}`);
+    }
   }
 }
 

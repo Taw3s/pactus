@@ -7,7 +7,9 @@ import { thumbPath } from "./image";
 import { createClient } from "./supabase/server";
 import type { Verdict } from "./ai-review";
 import type { DayOffChange, MemberLedgerInput, Payment } from "./ledger";
+import { positions, scoreMonth, type RankingCheckin } from "./ranking";
 import type { Member, PaymentRow } from "./types";
+import { lastDayOfMonth } from "./dates";
 
 const PAGE = 1000; // PostgREST default max rows
 
@@ -96,4 +98,32 @@ export async function signThumbs(supabase: SupabaseClient, paths: (string | null
 export function embeddedVerdict(embed: unknown): Verdict | null {
   const row = (Array.isArray(embed) ? embed[0] : embed) as { verdict?: Verdict } | null | undefined;
   return row?.verdict ?? null;
+}
+
+/**
+ * Monthly scores (same rules as the Ranking page) and competition positions ("1, 2, 2, 4").
+ * Takes the members as a promise so the caller can load them in the same round trip.
+ */
+export async function getMonthScores(supabase: SupabaseClient, membersPromise: Promise<Member[]>, month: string) {
+  const from = `${month}-01`;
+  const to = lastDayOfMonth(from);
+  const [members, checkins, upheld, completed] = await Promise.all([
+    membersPromise,
+    fetchAll<Omit<RankingCheckin, "annulled"> & { id: string }>((a, b) =>
+      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages").gte("day", from).lte("day", to).order("id").range(a, b),
+    ),
+    fetchAll<{ checkin_id: string }>((a, b) =>
+      supabase.from("dispute_results").select("checkin_id").eq("status", "upheld").order("checkin_id").range(a, b),
+    ),
+    fetchAll<{ user_id: string; day: string }>((a, b) =>
+      supabase.from("completed_days").select("user_id, day").gte("day", from).lte("day", to).order("user_id").order("day").range(a, b),
+    ),
+  ]);
+  const annulled = new Set(upheld.map((u) => u.checkin_id));
+  const scores = scoreMonth(
+    members.map((x) => x.user_id),
+    checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),
+    completed,
+  );
+  return { members, scores, pos: positions(scores) };
 }
