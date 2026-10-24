@@ -19,7 +19,7 @@ export default async function TodayPage() {
   const monday = weekStart(today);
   // One round trip: the AI verdict comes embedded; the group's dispute results are few.
   const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }] = await Promise.all([
-    supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today),
+    supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
     getMembers(supabase),
@@ -40,11 +40,13 @@ export default async function TodayPage() {
   const statusOf = new Map((results ?? []).map((r) => [r.checkin_id as string, r.status as DisputeStatus]));
   const reviewOf = new Map(mine.map((c) => [c.id, embeddedVerdict(c.checkin_reviews)]));
   const isOff = weekdayOf(today) === dayOffOn(changes ?? [], today);
+  // A retake comes after the proof it retakes, so the latest proof of a goal is the one that counts.
+  const latest = (goal: string) => mine.findLast((x) => x.goal === goal && !x.extra);
 
   // Same rule as the ledger: a goal counts only with a check-in not annulled by the tribunal.
   const states = Object.fromEntries(
     GOALS.map((g) => {
-      const c = mine.find((x) => x.goal === g.id);
+      const c = latest(g.id);
       const state: GoalState = !c ? "pending" : statusOf.get(c.id) === "upheld" ? "annulled" : "done";
       return [g.id, state];
     }),
@@ -52,8 +54,19 @@ export default async function TodayPage() {
 
   // The AI judge's seal: all 3 daily proofs reviewed as "match" and none annulled.
   const verified = GOALS.every((g) => {
-    const c = mine.find((x) => x.goal === g.id);
+    const c = latest(g.id);
     return c && states[g.id] === "done" && reviewOf.get(c.id) === "match";
+  });
+  const toDone = (c: Checkin) => ({
+    id: c.id,
+    goal: c.goal,
+    summary: c.summary,
+    minutes: c.minutes,
+    pages: c.pages,
+    title: c.title,
+    photoUrl: urls.get(c.photo_path) ?? null,
+    dispute: statusOf.get(c.id) ?? null,
+    review: reviewOf.get(c.id) ?? null,
   });
   const unreviewed = mine.filter((c) => !reviewOf.get(c.id)).map((c) => c.id);
 
@@ -73,17 +86,8 @@ export default async function TodayPage() {
         <TodayChecklist
           groupId={me.group_id}
           userId={me.user_id}
-          done={mine.map((c) => ({
-            id: c.id,
-            goal: c.goal,
-            summary: c.summary,
-            minutes: c.minutes,
-            pages: c.pages,
-            title: c.title,
-            photoUrl: urls.get(c.photo_path) ?? null,
-            dispute: statusOf.get(c.id) ?? null,
-            review: reviewOf.get(c.id) ?? null,
-          }))}
+          done={mine.filter((c) => !c.extra && latest(c.goal) === c).map(toDone)}
+          extras={mine.filter((c) => c.extra).map(toDone)}
         />
       </div>
       <GroupSidebar />

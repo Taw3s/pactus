@@ -25,6 +25,8 @@ export function goalMeta(goal: Goal): GoalMeta {
 }
 
 export const MIN_STUDY_MINUTES = 60;
+export const MIN_EXTRA_MINUTES = 10;
+export const MAX_EXTRA_SESSIONS = 5;
 
 export function checkinNumbers(item: { goal: Goal; minutes: number | null; pages: number | null; title: string | null }): string | null {
   if (item.goal === "study" && item.minutes) return `${item.minutes} min`;
@@ -55,6 +57,10 @@ export interface Checkin {
   minutes: number | null;
   pages: number | null;
   title: string | null;
+  /** An extra study session (adds minutes; never counts as the study goal itself). */
+  extra: boolean;
+  /** The annulled proof this one retakes (same goal, same day). */
+  retake_of: string | null;
   created_at: string;
 }
 

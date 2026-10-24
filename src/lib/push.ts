@@ -95,14 +95,14 @@ export async function groupToday(admin: SupabaseClient, groupId: string) {
   const today = spToday();
   const [{ data: members }, { data: checkins }, { data: changes }, { data: upheld }] = await Promise.all([
     admin.from("members").select("user_id, display_name, joined_on").eq("group_id", groupId),
-    admin.from("checkins").select("id, user_id, goal").eq("group_id", groupId).eq("day", today),
+    admin.from("checkins").select("id, user_id, goal, extra").eq("group_id", groupId).eq("day", today),
     admin.from("day_off_changes").select("user_id, weekday, effective_from"),
     admin.from("dispute_results").select("checkin_id").eq("group_id", groupId).eq("status", "upheld"),
   ]);
   const annulled = new Set((upheld ?? []).map((u) => u.checkin_id as string));
   return (members ?? []).map((m) => {
     const goals = new Set(
-      (checkins ?? []).filter((c) => c.user_id === m.user_id && c.goal !== "project" && !annulled.has(c.id)).map((c) => c.goal),
+      (checkins ?? []).filter((c) => c.user_id === m.user_id && c.goal !== "project" && !c.extra && !annulled.has(c.id)).map((c) => c.goal),
     );
     const mine = (changes ?? []).filter((c) => c.user_id === m.user_id) as DayOffChange[];
     return {

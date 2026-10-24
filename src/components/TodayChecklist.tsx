@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
-import { Camera, Check, ChevronRight, Loader } from "lucide-react";
+import { Camera, Check, ChevronRight, Loader, Plus, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
-import { checkinNumbers, goalMeta, GOALS, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
+import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
 export interface DoneGoal {
   id: string;
@@ -29,10 +29,15 @@ export interface DoneGoal {
 interface Props {
   groupId: string;
   userId: string;
+  /** The latest proof of each goal today (a retake replaces the proof it retakes). */
   done: DoneGoal[];
+  /** Extra study sessions sent today. */
+  extras: DoneGoal[];
 }
 
-export function TodayChecklist({ groupId, userId, done }: Props) {
+type FormMode = "first" | "retake" | "extra";
+
+export function TodayChecklist({ groupId, userId, done, extras }: Props) {
   const doneBy = new Map(done.map((d) => [d.goal, d]));
   const project = doneBy.get("project");
   const anyDone = GOALS.some((g) => doneBy.has(g.id));
@@ -46,7 +51,25 @@ export function TodayChecklist({ groupId, userId, done }: Props) {
         <div className="space-y-3">
           {GOALS.map((g) => {
             const d = doneBy.get(g.id);
-            return d ? <DoneRow key={g.id} item={d} /> : <GoalForm key={g.id} goal={g.id} groupId={groupId} userId={userId} />;
+            if (!d) return <GoalForm key={g.id} goal={g.id} groupId={groupId} userId={userId} />;
+            // Condemned today: the proof can be retaken until 23:59 (the database enforces the day).
+            if (d.dispute === "upheld") {
+              return (
+                <div key={g.id} className="space-y-2">
+                  <DoneRow item={d} />
+                  <GoalForm goal={g.id} groupId={groupId} userId={userId} mode="retake" />
+                </div>
+              );
+            }
+            if (g.id === "study") {
+              return (
+                <div key={g.id} className="space-y-2">
+                  <DoneRow item={d} />
+                  <ExtraSessions extras={extras} groupId={groupId} userId={userId} />
+                </div>
+              );
+            }
+            return <DoneRow key={g.id} item={d} />;
           })}
         </div>
         {anyDone && <p className="mt-3 text-sm text-muted">Provas enviadas não podem ser editadas, só contestadas pelo grupo.</p>}
@@ -63,7 +86,28 @@ export function TodayChecklist({ groupId, userId, done }: Props) {
   );
 }
 
-function DoneRow({ item }: { item: DoneGoal }) {
+function ExtraSessions({ extras, groupId, userId }: { extras: DoneGoal[]; groupId: string; userId: string }) {
+  const [open, setOpen] = useState(false);
+  const left = MAX_EXTRA_SESSIONS - extras.length;
+  return (
+    <div data-testid="extra-sessions" className="space-y-2">
+      {extras.map((e) => (
+        <DoneRow key={e.id} item={e} label="Sessão extra" />
+      ))}
+      {open ? (
+        <GoalForm goal="study" groupId={groupId} userId={userId} mode="extra" onDone={() => setOpen(false)} />
+      ) : (
+        left > 0 && (
+          <button className="btn-secondary w-full" onClick={() => setOpen(true)}>
+            <Plus size={18} aria-hidden /> Sessão extra de estudo
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+function DoneRow({ item, label }: { item: DoneGoal; label?: string }) {
   const g = goalMeta(item.goal);
   const value = checkinNumbers(item);
   const annulled = item.dispute === "upheld";
@@ -76,7 +120,7 @@ function DoneRow({ item }: { item: DoneGoal }) {
     >
       <Sprite name={GOAL_SPRITE[item.goal]} dim={annulled} />
       <span className="min-w-0 flex-1">
-        <span className="pixel block text-lg uppercase leading-5">{g.label}</span>
+        <span className="pixel block text-lg uppercase leading-5">{label ?? g.label}</span>
         {value && <span className="tabular mt-0.5 block break-words text-sm text-muted">{value}</span>}
         <span className="mt-1 flex flex-wrap gap-1">
           {item.dispute ? (
@@ -101,9 +145,11 @@ function DoneRow({ item }: { item: DoneGoal }) {
   );
 }
 
-function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; userId: string }) {
+function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goal; groupId: string; userId: string; mode?: FormMode; onDone?: () => void }) {
   const router = useRouter();
   const g = goalMeta(goal);
+  const extra = mode === "extra";
+  const minMinutes = extra ? MIN_EXTRA_MINUTES : MIN_STUDY_MINUTES;
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [summary, setSummary] = useState("");
@@ -114,17 +160,17 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const minutesOk = goal !== "study" || Number(minutes) >= MIN_STUDY_MINUTES;
+  const minutesOk = goal !== "study" || Number(minutes) >= minMinutes;
   const pagesOk = goal !== "reading" || Number(pages) >= 1;
   const titleOk = goal !== "project" || title.trim().length >= 3;
-  const summaryOk = goal !== "study" || summary.trim().length >= MIN_SUMMARY;
+  const summaryOk = goal !== "study" || extra || summary.trim().length >= MIN_SUMMARY;
   const ready = !!file && minutesOk && pagesOk && titleOk && summaryOk;
 
   // What is still missing, in words, next to the disabled button.
   const missing = [
     !titleOk && "dê um nome ao projeto",
     !file && "adicione a foto",
-    goal === "study" && !minutesOk && `informe pelo menos ${MIN_STUDY_MINUTES} min`,
+    goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
     goal === "reading" && !pagesOk && "informe as páginas lidas",
     goal === "study" && !summaryOk && "complete o resumo",
   ].filter(Boolean) as string[];
@@ -161,10 +207,11 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
         .insert({
           goal,
           photo_path: path,
-          summary: goal === "study" ? summary.trim() : null,
+          summary: goal === "study" && !extra ? summary.trim() : null,
           minutes: goal === "study" ? Number(minutes) : null,
           pages: goal === "reading" ? Number(pages) : null,
           title: goal === "project" ? title.trim() : null,
+          ...(extra ? { extra: true } : {}),
         });
       if (error) {
         throw new Error(
@@ -174,12 +221,17 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
               : "Essa meta já foi enviada hoje."
             : error.message.includes("photo not uploaded")
               ? "A foto não terminou de subir. Tente de novo."
-              : "Não foi possível enviar. Seus dados continuam aqui: tente de novo.",
+              : error.message.includes("too many extra sessions")
+                ? `Limite de ${MAX_EXTRA_SESSIONS} sessões extras por dia.`
+                : error.message.includes("study proof first")
+                  ? "A prova de estudo de hoje precisa estar valendo para somar sessões."
+                  : "Não foi possível enviar. Seus dados continuam aqui: tente de novo.",
         );
       }
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
       // The server may nudge the group (this person closed the day / weekly challenge done).
       fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
+      onDone?.();
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");
@@ -187,17 +239,29 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
     }
   }
 
-  const fieldId = (name: string) => `${goal}-${name}`;
+  const fieldId = (name: string) => `${goal}-${mode}-${name}`;
 
   return (
-    <section className="card" data-goal={goal} data-state="pending" aria-labelledby={fieldId("title")} onChange={() => setTouched(true)}>
+    <section
+      className={`card ${mode === "retake" ? "!border-warn" : ""}`}
+      data-goal={goal}
+      data-state={mode === "first" ? "pending" : mode}
+      aria-labelledby={fieldId("title")}
+      onChange={() => setTouched(true)}
+    >
       <div className="mb-3 flex items-center gap-3">
-        <Sprite name={GOAL_SPRITE[goal]} dim />
+        {mode === "retake" ? <RotateCcw size={24} aria-hidden className="shrink-0 text-warn" /> : <Sprite name={GOAL_SPRITE[goal]} dim />}
         <div className="min-w-0 flex-1">
           <h3 id={fieldId("title")} className="pixel text-xl uppercase leading-6">
-            {g.label}
+            {mode === "retake" ? `Refazer ${g.label.toLowerCase()}` : extra ? "Sessão extra" : g.label}
           </h3>
-          <p className="text-sm text-muted">{g.hint}</p>
+          <p className="text-sm text-muted">
+            {mode === "retake"
+              ? "O grupo condenou a prova. Mande uma nova até 23:59 e a meta volta a valer."
+              : extra
+                ? `Mínimo ${MIN_EXTRA_MINUTES} min. Soma minutos no ranking.`
+                : g.hint}
+          </p>
         </div>
       </div>
 
@@ -233,7 +297,8 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
 
       {goal === "study" && (
         <div className="mt-3 space-y-3">
-          <NumberField id={fieldId("minutes")} label="Minutos estudados" min={MIN_STUDY_MINUTES} max={1440} value={minutes} onChange={setMinutes} ok={minutesOk} testId="minutes" />
+          <NumberField id={fieldId("minutes")} label={extra ? "Minutos nesta sessão" : "Minutos estudados"} min={minMinutes} max={1440} value={minutes} onChange={setMinutes} ok={minutesOk} testId="minutes" />
+          {!extra && (
           <div>
             <label className="label" htmlFor={fieldId("summary")}>
               Resumo do que você estudou
@@ -250,6 +315,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
               {summary.trim().length} de {MIN_SUMMARY} caracteres mínimos
             </p>
           </div>
+          )}
         </div>
       )}
       {goal === "reading" && (
@@ -275,7 +341,7 @@ function GoalForm({ goal, groupId, userId }: { goal: Goal; groupId: string; user
         aria-describedby={missingText ? fieldId("missing") : undefined}
       >
         {busy && <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
-        {busy ? "Enviando…" : goal === "project" ? "Registrar projeto" : "Enviar prova"}
+        {busy ? "Enviando…" : goal === "project" ? "Registrar projeto" : extra ? "Somar sessão" : mode === "retake" ? "Enviar nova prova" : "Enviar prova"}
       </button>
     </section>
   );

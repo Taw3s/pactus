@@ -28,7 +28,7 @@ export async function GET() {
   const today = spToday();
   const [{ members, scores, pos }, { data: checkinRows }, { data: changeRows }, { data: resultRows }] = await Promise.all([
     getMonthScores(supabase, getMembers(supabase), monthKey(today)),
-    supabase.from("checkins").select("id, user_id, goal").eq("day", today),
+    supabase.from("checkins").select("id, user_id, goal, extra").eq("day", today),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("checkin_id, status"),
   ]);
@@ -44,13 +44,13 @@ export async function GET() {
     return path ? (urls.get(path) ?? null) : null;
   };
 
-  const checkins = (checkinRows ?? []) as Pick<Checkin, "id" | "user_id" | "goal">[];
+  const checkins = (checkinRows ?? []) as Pick<Checkin, "id" | "user_id" | "goal" | "extra">[];
   const todayRows = members
     .map((m) => {
       const changes = (changeRows ?? []).filter((c) => c.user_id === m.user_id) as DayOffChange[];
       // Same rule as the feed: a goal counts with a check-in the tribunal did not annul.
       const done = new Set(
-        checkins.filter((c) => c.user_id === m.user_id && c.goal !== "project" && statusOf.get(c.id) !== "upheld").map((c) => c.goal),
+        checkins.filter((c) => c.user_id === m.user_id && c.goal !== "project" && !c.extra && statusOf.get(c.id) !== "upheld").map((c) => c.goal),
       ).size;
       return { userId: m.user_id, name: m.display_name, avatarUrl: avatar(m.user_id), done, off: weekdayOf(today) === dayOffOn(changes, today), me: m.user_id === me };
     })
