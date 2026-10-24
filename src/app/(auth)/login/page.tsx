@@ -16,7 +16,13 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(params.get("error") === "link" ? "Link inválido ou expirado. Peça outro." : "");
+  const [error, setError] = useState(
+    params.get("error") === "link"
+      ? "Link inválido ou expirado. Peça outro."
+      : params.get("error") === "session"
+        ? "Sua sessão era de uma conta que não existe mais. Entre de novo."
+        : "",
+  );
   const [sent, setSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
