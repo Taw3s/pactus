@@ -65,8 +65,9 @@ await step("mismatch opens a tribunal with the AI as accuser, never annuls by it
   await davi.getByText("Tribunal em andamento").waitFor();
   await davi.screenshot({ path: `${SHOTS}/g2-feed.png`, fullPage: true });
   await openTile(davi, "Caio", "Estudo");
-  await davi.getByText("Juiz IA acusa").waitFor();
-  await davi.getByText("Acusado por Juiz IA").waitFor();
+  // The judge points at the proof from the bench, but leaves the decision to the jury.
+  await davi.getByTestId("dispute").getByText("A foto não bateu com a meta. Quem decide é o júri.").waitFor();
+  assert((await davi.getByTestId("accuser").innerText()) === "Juiz IA", "the AI is the accuser");
   assert((await davi.getByTestId("guilty-count").innerText()) === "0", "the AI does not vote");
   await davi.getByText(/Juiz IA: a foto não confere com a meta/).waitFor();
   await davi.getByTestId("vote-form").waitFor();

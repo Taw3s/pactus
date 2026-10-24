@@ -1,8 +1,11 @@
-import { Check, Minus, X } from "lucide-react";
+/* eslint-disable @next/next/no-img-element -- signed URL of the proof */
+import { Check, Maximize2, Minus, X } from "lucide-react";
 import { Avatar } from "../Avatar";
 import { GavelStamp } from "../GavelStamp";
+import { JudgeBubble } from "../Judge";
 import { Sprite } from "../Sprite";
 import { VoteForm } from "./VoteForm";
+import type { Verdict } from "@/lib/ai-review";
 import type { DisputeResult, DisputeVote, Member } from "@/lib/types";
 
 export interface Juror {
@@ -14,11 +17,15 @@ export interface Juror {
 interface Props {
   disputeId: string;
   result: DisputeResult;
+  groupName: string;
   defendant: Member;
   defendantAvatar: string | null;
   accuser: string; // a member's name, or "Juiz IA"
+  accuserAvatar: string | null;
   byAi: boolean;
   jurors: Juror[];
+  /** The proof on the evidence table. */
+  proof: { goal: string; day: string; value: string | null; photoUrl: string | null; ai: Verdict | null };
   me: { id: string; isOwner: boolean; canVote: boolean; vote: DisputeVote | null; joinedLate: boolean };
 }
 
@@ -31,42 +38,112 @@ const RING = {
   none: "ring-control/50",
 };
 
-/** The courtroom: judge's bench, the defendant in the middle, the jury around, the score and the verdict. */
-export function Courtroom({ disputeId, result, defendant, defendantAvatar, accuser, byAi, jurors, me }: Props) {
+const AI_WORD: Record<Verdict, string> = { match: "confere", mismatch: "não confere", unclear: "inconclusiva" };
+
+// Seats shown on the jury bench; bigger groups get a summary (everyone is listed in the Votos tab).
+const BENCH_SEATS = 8;
+
+/**
+ * The courtroom: the judge at the bench under the group's crest, accusation and defence on each side
+ * of the evidence table, the jury bench, the score and the verdict. Visual only: the rules live in the database.
+ */
+export function Courtroom({ disputeId, result, groupName, defendant, defendantAvatar, accuser, accuserAvatar, byAi, jurors, proof, me }: Props) {
   const open = result.status === "open";
-  const defendantRing = result.status === "upheld" ? "border-fail" : result.status === "rejected" ? "border-done" : "border-warn";
+  const upheld = result.status === "upheld";
+  const line = open
+    ? byAi
+      ? "A foto não bateu com a meta. Quem decide é o júri."
+      : "Acusação feita. Quem decide é o júri."
+    : `O júri decidiu: prova ${upheld ? "anulada" : "mantida"}.`;
+  const seated = jurors.slice(0, jurors.length > BENCH_SEATS ? BENCH_SEATS - 1 : BENCH_SEATS);
+  const voted = jurors.filter((j) => j.vote).length;
 
   return (
     <section className="card relative overflow-hidden !p-0" data-testid="dispute" aria-labelledby="tribunal-title">
-      {/* back wall: wood panels with the bench */}
-      <div className="relative flex flex-col items-center bg-[repeating-linear-gradient(90deg,#4a2a12_0_2px,#5e3518_2px_22px,#55301a_22px_24px)] px-4 pt-3">
-        <div className="flex w-full items-center justify-between">
-          <h1 id="tribunal-title" className="pixel text-2xl font-bold uppercase text-fg [text-shadow:2px_2px_0_var(--color-hard-shadow)]">
-            Tribunal
-          </h1>
+      {/* back wall: wood panels, banners, the group's crest and the judge at the bench */}
+      <div className="relative bg-[repeating-linear-gradient(90deg,#4a2a12_0_2px,#5e3518_2px_22px,#55301a_22px_24px)] px-4 pt-3">
+        <div className="relative z-10 flex items-start justify-between gap-2">
+          <div className="min-w-0 rounded-sm border-2 border-[#3d220e] bg-[#2b1a0c]/90 px-2 py-1 shadow-[2px_2px_0_var(--color-hard-shadow)]">
+            <h1 id="tribunal-title" className="pixel text-2xl font-bold uppercase leading-7 text-accent">
+              Tribunal
+            </h1>
+            <p className="truncate text-xs font-semibold text-muted">do grupo {groupName}</p>
+          </div>
           <span
-            className={`pixel rounded-sm border-2 px-2 text-base uppercase ${
-              open ? "border-warn bg-warn-bg text-warn" : result.status === "upheld" ? "border-fail bg-fail-bg text-fail" : "border-done bg-done-bg text-done"
+            className={`pixel shrink-0 rounded-sm border-2 px-2 text-base uppercase ${
+              open ? "border-warn bg-warn-bg text-warn" : upheld ? "border-fail bg-fail-bg text-fail" : "border-done bg-done-bg text-done"
             }`}
           >
             {open ? "Em votação" : "Encerrado"}
           </span>
         </div>
-        <Sprite name="judgeBench" scale={3} className="-mb-3 -mt-6" />
-        {byAi && <p className="pixel -mt-1 mb-2 text-base uppercase text-accent">Juiz IA acusa</p>}
+
+        <Banner side="left" />
+        <Banner side="right" />
+
+        <div className="relative mx-auto mt-1 flex w-fit flex-col items-center">
+          <Crest name={groupName} />
+          {/* the judge stands behind the bench: his lower half is hidden by it */}
+          <div className="relative -mt-1 h-[144px] w-[144px]">
+            <Sprite name={open ? (byAi ? "judgePoint" : "judgeIdle") : "judgeDown"} scale={2} className="absolute left-1/2 top-[10px] -translate-x-1/2" />
+            <Sprite name="benchFront" scale={3} className="absolute bottom-0 left-0" />
+          </div>
+        </div>
+        <div className="relative z-10 mx-auto mt-2 flex max-w-xs justify-center pb-3">
+          <JudgeBubble tail="up">{line}</JudgeBubble>
+        </div>
       </div>
       <div aria-hidden className="h-2 border-b-4 border-wood-dark bg-wood" />
 
-      {/* the defendant */}
-      <div className="flex flex-col items-center px-4 pt-5 text-center">
-        <div className={`rounded-full border-4 p-1 ${defendantRing}`}>
-          <Avatar name={defendant.display_name} url={defendantAvatar} size={88} />
+      {/* floor: accusation | evidence table | defence */}
+      <div className="bg-[repeating-conic-gradient(#2e3238_0_25%,#33373e_0_50%)] bg-[length:24px_24px] px-3 pb-4 pt-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+          <Podium label="Acusação" tone="fail">
+            {byAi ? <Sprite name="judgePoint" /> : <Avatar name={accuser} url={accuserAvatar} size={48} />}
+            <p className="mt-1 w-full truncate text-center text-sm font-semibold" data-testid="accuser">
+              {accuser}
+            </p>
+          </Podium>
+
+          <div className="flex flex-col items-center">
+            {proof.photoUrl ? (
+              <a
+                href={proof.photoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative block h-20 w-20 overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface shadow-[3px_3px_0_var(--color-hard-shadow)] desk:h-28 desk:w-28"
+                aria-label={`Abrir a foto da prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
+              >
+                <img src={proof.photoUrl} alt="" className="h-full w-full object-cover" />
+                <span className="absolute bottom-0.5 right-0.5 rounded-sm bg-bg/90 p-0.5">
+                  <Maximize2 size={14} aria-hidden />
+                </span>
+              </a>
+            ) : (
+              <div className="h-20 w-20 rounded-sm bg-surface" />
+            )}
+            {/* the evidence table */}
+            <div aria-hidden className="mt-1 h-3 w-24 rounded-[1px] border-b-4 border-wood-dark bg-wood desk:w-32" />
+            <p className="pixel mt-1 text-sm uppercase text-muted">Prova</p>
+          </div>
+
+          <Podium label="Defesa" tone="done">
+            <div className={`rounded-full border-[3px] ${upheld ? "border-fail" : result.status === "rejected" ? "border-done" : "border-warn"}`}>
+              <Avatar name={defendant.display_name} url={defendantAvatar} size={48} />
+            </div>
+            <p className="mt-1 w-full truncate text-center text-sm font-semibold" data-testid="defendant">
+              {defendant.display_name}
+            </p>
+          </Podium>
         </div>
-        <p className="pixel mt-2 text-base uppercase text-muted">Réu</p>
-        <p className="text-xl font-bold leading-6" data-testid="defendant">
-          {defendant.display_name}
-        </p>
-        <p className="mt-1 text-sm text-muted">Acusado por {accuser}</p>
+
+        {/* case file */}
+        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1 rounded-sm border-2 border-bevel-dark bg-bg px-3 py-2 text-sm desk:grid-cols-4">
+          <Fact label="Meta" value={proof.goal} />
+          <Fact label="Dia" value={proof.day} />
+          <Fact label="Informado" value={proof.value ?? "—"} />
+          <Fact label="Juiz IA" value={proof.ai ? AI_WORD[proof.ai] : "sem análise"} />
+        </dl>
       </div>
 
       {/* score */}
@@ -75,26 +152,28 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
           <p className="pixel tabular text-3xl font-bold leading-8 text-fail" data-testid="guilty-count">
             {result.yes}
           </p>
-          <p className="text-xs font-semibold text-muted">Culpado</p>
+          <p className="text-xs font-semibold text-muted">Culpado · anular</p>
         </div>
         <p className="pixel text-xl text-muted">×</p>
         <div>
           <p className="pixel tabular text-3xl font-bold leading-8 text-done" data-testid="innocent-count">
             {result.no}
           </p>
-          <p className="text-xs font-semibold text-muted">Inocente</p>
+          <p className="text-xs font-semibold text-muted">Inocente · manter</p>
         </div>
       </div>
       <p className="tabular mx-4 mt-2 text-center text-sm text-muted">
         Maioria: {result.majority} de {result.eligible} jurados.
-        {open && ` Se ninguém chegar lá até ${when(result.closes_at)}, vence quem tiver mais votos; empate absolve.`}
+        {open && ` Se ninguém chegar lá até ${when(result.closes_at)}, vence quem tiver mais votos; empate mantém a prova.`}
       </p>
 
-      {/* jury box */}
+      {/* jury bench */}
       <div className="mt-4 px-4">
-        <p className="pixel mb-2 text-center text-base uppercase text-muted">Júri</p>
+        <p className="pixel mb-2 text-center text-base uppercase text-muted">
+          Júri <span className="tabular">· {voted}/{jurors.length} votaram</span>
+        </p>
         <ul className="flex flex-wrap justify-center gap-x-3 gap-y-3">
-          {jurors.map(({ member, avatarUrl, vote }) => {
+          {seated.map(({ member, avatarUrl, vote }) => {
             const state = !vote ? "none" : vote.upheld ? "guilty" : "innocent";
             const Icon = state === "guilty" ? X : state === "innocent" ? Check : Minus;
             const word = state === "guilty" ? "culpado" : state === "innocent" ? "inocente" : "ainda não votou";
@@ -118,8 +197,15 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
               </li>
             );
           })}
+          {seated.length < jurors.length && (
+            <li className="flex w-16 flex-col items-center">
+              <span className="pixel tabular flex h-10 w-10 items-center justify-center rounded-full bg-raised text-base">+{jurors.length - seated.length}</span>
+              <p className="mt-1.5 text-center text-xs text-muted">na aba Votos</p>
+            </li>
+          )}
         </ul>
-        <div aria-hidden className="mt-3 h-2 rounded-[1px] border-b-4 border-wood-dark bg-wood" />
+        {/* the bench they sit on */}
+        <div aria-hidden className="mt-3 h-3 rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[0_3px_0_var(--color-hard-shadow)]" />
       </div>
 
       {/* verdict or my vote */}
@@ -127,12 +213,12 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
         {!open ? (
           <GavelStamp
             playKey={`verdict:${me.id}:${disputeId}`}
-            tone={result.status === "upheld" ? "fail" : "done"}
-            stamp={result.status === "upheld" ? "Condenado" : "Absolvido"}
+            tone={upheld ? "fail" : "done"}
+            stamp={upheld ? "Condenado" : "Absolvido"}
             note={
-              result.status === "upheld"
-                ? "Prova anulada. O júri decidiu: esta prova não conta e a meta deixa de valer."
-                : "Prova mantida. O júri decidiu: a prova continua valendo."
+              upheld
+                ? `${result.yes} a ${result.no}. Prova anulada: esta prova não conta e a meta deixa de valer.`
+                : `${result.no} a ${result.yes}. Prova mantida: a prova continua valendo.`
             }
             testId="verdict"
           />
@@ -150,5 +236,59 @@ export function Courtroom({ disputeId, result, defendant, defendantAvatar, accus
         ) : null}
       </div>
     </section>
+  );
+}
+
+function Podium({ label, tone, children }: { label: string; tone: "fail" | "done"; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center">
+      <p className={`pixel mb-1 text-sm uppercase ${tone === "fail" ? "text-fail" : "text-done"}`}>{label}</p>
+      {children}
+      {/* the stand */}
+      <div aria-hidden className="mt-1 h-6 w-full max-w-24 rounded-t-[2px] border-2 border-b-0 border-[#3d220e] bg-[repeating-linear-gradient(90deg,#5e3518_0_6px,#55301a_6px_8px)]" />
+    </div>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="truncate font-semibold">{value}</dd>
+    </div>
+  );
+}
+
+/** The group's crest: a pixel shield with the group's initial (same for every group, only the letter changes). */
+function Crest({ name }: { name: string }) {
+  const initial = (name.trim()[0] ?? "P").toUpperCase();
+  return (
+    <svg viewBox="0 0 16 18" width={48} height={54} className="sprite drop-shadow-[2px_2px_0_var(--color-hard-shadow)]" aria-hidden shapeRendering="crispEdges">
+      <path d="M1 1h14v9l-2 3-2 2-3 2-3-2-2-2-2-3z" fill="#e3b23c" />
+      <path d="M2 2h12v8l-2 3-2 1-2 2-2-2-2-1-2-3z" fill="#682f3c" />
+      <path d="M2 2h12v1H2z" fill="#7d3a49" />
+      <text x="8" y="11.5" textAnchor="middle" fontSize="8" fontFamily="var(--font-display)" fill="#e9dcc3">
+        {initial}
+      </text>
+    </svg>
+  );
+}
+
+/** A hanging pennant at the side of the back wall (decoration). */
+function Banner({ side }: { side: "left" | "right" }) {
+  return (
+    <svg
+      viewBox="0 0 10 22"
+      width={30}
+      height={66}
+      aria-hidden
+      shapeRendering="crispEdges"
+      className={`sprite absolute top-16 hidden min-[380px]:block ${side === "left" ? "left-4" : "right-4"}`}
+    >
+      <path d="M0 0h10v1H0z" fill="#e3b23c" />
+      <path d="M1 1h8v18l-4-3-4 3z" fill="#682f3c" />
+      <path d="M1 1h1v17H1z" fill="#7d3a49" />
+      <path d="M4 5h2v1H4zM3 6h4v1H3zM4 7h2v4H4z" fill="#e3b23c" />
+    </svg>
   );
 }

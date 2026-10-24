@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import { Sprite, type SpriteName } from "./Sprite";
 
-// Two strikes of the gavel; the stamp lands on the second impact.
+// The judge strikes the gavel twice; the stamp lands on the second impact.
 const FRAMES: { sprite: SpriteName; ms: number }[] = [
-  { sprite: "gavelUp", ms: 380 },
-  { sprite: "gavelMid", ms: 60 },
-  { sprite: "gavel", ms: 160 },
-  { sprite: "gavelMid", ms: 90 },
-  { sprite: "gavelUp", ms: 220 },
-  { sprite: "gavelMid", ms: 60 },
-  { sprite: "gavel", ms: 0 },
+  { sprite: "judgeUp", ms: 380 },
+  { sprite: "judgeMid", ms: 60 },
+  { sprite: "judgeDown", ms: 160 },
+  { sprite: "judgeMid", ms: 90 },
+  { sprite: "judgeUp", ms: 220 },
+  { sprite: "judgeMid", ms: 60 },
+  { sprite: "judgeDown", ms: 0 },
 ];
 
 const TONE = {
@@ -28,7 +28,7 @@ interface Props {
   testId?: string;
 }
 
-/** A judge's gavel strikes twice and a stamp lands. Static when already seen or with reduced motion. */
+/** The judge strikes the gavel twice and a stamp lands. Static when already seen or with reduced motion. */
 export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
   // Starts on the final, static state; only an unseen event replays the gavel and the stamp.
   const [frame, setFrame] = useState(FRAMES.length - 1);
@@ -54,7 +54,7 @@ export function GavelStamp({ stamp, note, tone, playKey, testId }: Props) {
       timers.push(
         setTimeout(() => {
           setFrame(i);
-          if (f.sprite === "gavel") setImpact((n) => n + 1);
+          if (f.sprite === "judgeDown") setImpact((n) => n + 1);
           if (i === FRAMES.length - 1) setStamped(true);
         }, t),
       );

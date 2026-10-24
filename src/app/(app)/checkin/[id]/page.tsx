@@ -24,13 +24,14 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const { supabase, me } = await requireMember();
 
   // One round trip for everything about this proof (RLS limits it to the caller's group).
-  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }] = await Promise.all([
+  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }, { data: group }] = await Promise.all([
     supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>(),
     getMembers(supabase),
     supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),
     supabase.from("checkin_reviews").select("*").eq("checkin_id", id).maybeSingle<CheckinReview>(),
     supabase.from("checkins").select("id").eq("retake_of", id).maybeSingle<{ id: string }>(),
+    supabase.from("groups").select("name").maybeSingle<{ name: string }>(),
   ]);
   if (!checkin) notFound();
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -40,7 +41,8 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const ownerName = owner?.display_name ?? "?";
   // Jurors: everyone but the defendant who was in the group when the tribunal opened.
   const jurors = dispute ? members.filter((m) => m.user_id !== checkin.user_id && m.created_at <= dispute.created_at) : [];
-  const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
+  const accuserMember = dispute?.author_id ? byId.get(dispute.author_id) : undefined;
+  const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
   const photo = urls.get(checkin.photo_path);
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
@@ -118,7 +120,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
       <>
         <section className="card mb-4" aria-labelledby="acusacao">
           <h2 id="acusacao" className="pixel flex items-center gap-2 text-lg uppercase text-fail">
-            {dispute.by_ai ? <Sprite name="gavel" /> : <Avatar name={accuser} url={avatar(byId.get(dispute.author_id ?? ""))} size={32} />}
+            {dispute.by_ai ? <Sprite name="judgePoint" /> : <Avatar name={accuser} url={avatar(byId.get(dispute.author_id ?? ""))} size={32} />}
             Acusação · {accuser}
           </h2>
           <p className="mt-2">{dispute.reason}</p>
@@ -178,15 +180,19 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     );
 
     return (
-      <>
+      <div data-wide className="desk:grid desk:grid-cols-[minmax(0,1fr)_420px] desk:items-start desk:gap-8">
+        <div className="min-w-0">
         <BackButton fallback="/feed" />
         <Courtroom
           disputeId={dispute.id}
           result={result}
+          groupName={group?.name ?? "Pacto"}
           defendant={owner}
           defendantAvatar={avatar(owner)}
           accuser={accuser}
+          accuserAvatar={avatar(accuserMember)}
           byAi={dispute.by_ai}
+          proof={{ goal: kind, day: formatDayPt(checkin.day), value, photoUrl: photo ?? null, ai: review?.verdict ?? null }}
           jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
           me={{ id: me.user_id, isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
         />
@@ -197,8 +203,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
             <ChevronRight size={20} aria-hidden className="shrink-0 text-muted" />
           </Link>
         )}
-        <TribunalTabs evidence={evidence} votes={voteList} voteCount={votes.length} />
-      </>
+        </div>
+        <div className="desk:sticky desk:top-6">
+          <TribunalTabs evidence={evidence} votes={voteList} voteCount={votes.length} />
+        </div>
+      </div>
     );
   }
 
