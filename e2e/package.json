@@ -1,0 +1,13 @@
+{
+  "name": "pacto-e2e",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end tests for Pacto (Playwright + axe) against a local Supabase. See README.md.",
+  "scripts": {
+    "test": "bash run.sh"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "playwright": "1.56.1"
+  }
+}
