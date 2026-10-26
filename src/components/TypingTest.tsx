@@ -473,7 +473,11 @@ function TextPicker({
             type="button"
             role="tab"
             aria-selected={c === category}
-            onClick={() => setCat(c)}
+            onClick={() => {
+              setCat(c);
+              // The chosen text always belongs to the topic on screen (the preview describes it).
+              if (chosen.category !== c) onPick(texts.find((t) => t.category === c)!.id);
+            }}
             className={`min-h-11 shrink-0 rounded-sm border-2 px-3 text-sm font-semibold ${
               c === category ? "border-accent bg-raised text-accent" : "border-bevel-dark bg-bg text-muted hover:text-fg"
             }`}
