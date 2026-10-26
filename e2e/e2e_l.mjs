@@ -144,5 +144,20 @@ await step("typing: another attempt over a text keeps the place, English is offe
   assert((await p.getByRole("button", { name: /Tentar de novo/ }).count()) === 0, "a fourth attempt is offered");
 });
 
+await step("typing: a 5-minute test is timed by the server for its length and keeps its own record", async () => {
+  const p = await loginAs(browser, "caio@pacto.test");
+  await p.getByRole("button", { name: /Tentar de novo/ }).click();
+  const again = p.locator("[data-goal=typing][data-state=again]");
+  await again.getByTestId("typing-minutes-5").click();
+  await again.getByText(/5 minutos digitando/).waitFor();
+  await typingTest(p, again);
+  await p.getByTestId("typing-moved").or(p.getByRole("button", { name: /Tentar de novo/ })).first().waitFor();
+  const row = sql("select t.minutes || '|' || t.seconds from typing_tests t join members m using (user_id) where m.display_name = 'Caio' order by t.started_at desc limit 1");
+  // e2e/setup.sql makes a "minute" last 3 seconds.
+  assert(row === "5|15", `last test ${row}`);
+  await p.goto(`${APP}/ranking`);
+  await p.getByTestId("typing-records").locator('[data-minutes="5"]').getByText(/Caio/).first().waitFor();
+});
+
 await browser.close();
 done();

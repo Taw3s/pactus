@@ -29,7 +29,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
 
   // One round trip for everything about this proof (RLS limits it to the caller's group).
   const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }, { data: group }, { data: reactionRows }] = await Promise.all([
-    supabase.from("checkins").select("*, typing_tests(wpm, accuracy, device)").eq("id", id).maybeSingle<Checkin & { typing_tests: { wpm: number; accuracy: number; device: "pc" | "mobile" } | null }>(),
+    supabase.from("checkins").select("*, typing_tests(wpm, accuracy, device, minutes)").eq("id", id).maybeSingle<Checkin & { typing_tests: { wpm: number; accuracy: number; device: "pc" | "mobile"; minutes: number } | null }>(),
     getMembers(supabase),
     supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),

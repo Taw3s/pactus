@@ -229,7 +229,7 @@ async function resultCard(r: TypingResult): Promise<Blob> {
   g.fillText("WPM", 240, 315);
   g.fillStyle = "#f5f1e6";
   g.font = "28px sans-serif";
-  g.fillText(`${Math.round(r.accuracy * 100)}% de precisão · ${DEVICE_LABEL[r.device]}`, 240, 380);
+  g.fillText(`${Math.round(r.accuracy * 100)}% de precisão · ${DEVICE_LABEL[r.device]}${r.minutes === 5 ? " · 5 min" : ""}`, 240, 380);
   g.fillStyle = "#bdb7a8";
   g.font = "22px sans-serif";
   g.fillText(new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }), 240, 425);

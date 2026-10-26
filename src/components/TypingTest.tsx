@@ -4,7 +4,7 @@ import { BookOpen, Check, Keyboard, Loader, Shuffle } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel, type TypingLang } from "@/lib/typing";
-import { progressAfter, textWords, TYPING_CATEGORIES, TYPING_TEXTS, typingText, wordsFrom, type TypingText } from "@/lib/typing-texts";
+import { loadTypingTexts, progressAfter, textWords, TYPING_CATEGORIES, wordsFrom, type TypingText } from "@/lib/typing-texts";
 
 export interface TypingResult {
   testId: string;
@@ -12,21 +12,25 @@ export interface TypingResult {
   accuracy: number;
   score: number;
   device: "pc" | "mobile";
+  minutes: 1 | 5;
   /** Texto mode: how far the person got in the text, to show after the result. */
   moved?: string;
 }
 
 type Mode = "words" | "text";
+type Minutes = 1 | 5;
+// Before a language's texts are loaded, the first text of each one.
+const FIRST_TEXT: Record<TypingLang, string> = { pt: "algoritmo", en: "en-algorithm" };
 const PREF = "pacto:typing";
 
 const ERRORS: [string, string][] = [
   ["no attempts left", "Você já usou as 3 tentativas de hoje."],
   ["timing", "O tempo do teste não bateu (o app ficou em segundo plano?). Faça outro."],
-  ["implausible", "Resultado impossível para 1 minuto. Faça outro."],
+  ["implausible", "Resultado impossível para esse tempo. Faça outro."],
 ];
 
 /**
- * One-minute typing test. The server starts and ends the clock (start/finish_typing_test) and
+ * Typing test of 1 or 5 minutes. The server starts and ends the clock (start/finish_typing_test) and
  * computes the result; this screen shows the words and counts what was typed. Random words or a
  * text about programming, which continues where the person stopped last time; in Portuguese or
  * English. While typing, the text itself is the field: letters light up as they are typed and a
@@ -42,15 +46,14 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   const [error, setError] = useState("");
   const [mode, setMode] = useState<Mode>("words");
   const [lang, setLang] = useState<TypingLang>("pt");
-  // The chosen text of each language.
-  const [texts, setTexts] = useState<Record<TypingLang, string>>(() => ({
-    pt: TYPING_TEXTS.find((t) => t.lang === "pt")!.id,
-    en: TYPING_TEXTS.find((t) => t.lang === "en")!.id,
-  }));
+  const [minutes, setMinutes] = useState<Minutes>(1);
+  // The chosen text of each language, and each language's texts once loaded.
+  const [texts, setTexts] = useState<Record<TypingLang, string>>(FIRST_TEXT);
   const textId = texts[lang];
+  const [catalog, setCatalog] = useState<Partial<Record<TypingLang, TypingText[]>>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [title, setTitle] = useState("");
-  const test = useRef<{ id: string; seconds: number; started: number; device: "pc" | "mobile"; text: string | null; start: number } | null>(null);
+  const test = useRef<{ id: string; seconds: number; started: number; device: "pc" | "mobile"; minutes: Minutes; text: TypingText | null; start: number } | null>(null);
   const [typingLang, setTypingLang] = useState<TypingLang>("pt");
   const [focused, setFocused] = useState(false);
   const run = useRef({ committed: [] as string[], current: "", words: [] as string[] });
@@ -59,29 +62,40 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
 
   useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
 
-  // The last choice (mode, language, texts) is remembered on this device; the place in each text is on the server.
+  // The last choice (mode, language, length, texts) is remembered on this device; the place in each text is on the server.
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}");
       if (saved.mode === "text" || saved.mode === "words") setMode(saved.mode);
       if (saved.lang === "pt" || saved.lang === "en") setLang(saved.lang);
-      for (const id of Object.values(saved.texts ?? {})) {
-        const t = typingText(id as string);
-        if (t) setTexts((cur) => ({ ...cur, [t.lang]: t.id }));
-      }
+      if (saved.minutes === 1 || saved.minutes === 5) setMinutes(saved.minutes);
+      const pt = saved.texts?.pt;
+      const en = saved.texts?.en;
+      setTexts({
+        pt: typeof pt === "string" && !pt.startsWith("en-") ? pt : FIRST_TEXT.pt,
+        en: typeof en === "string" && en.startsWith("en-") ? en : FIRST_TEXT.en,
+      });
     } catch {}
     loadProgress();
   }, []);
 
-  function choose(next: { mode?: Mode; lang?: TypingLang; text?: string }) {
+  // A language's texts are fetched the first time Texto is chosen in it.
+  useEffect(() => {
+    if (mode !== "text" || catalog[lang]) return;
+    loadTypingTexts(lang).then((list) => setCatalog((c) => ({ ...c, [lang]: list })));
+  }, [mode, lang, catalog]);
+
+  function choose(next: { mode?: Mode; lang?: TypingLang; text?: string; minutes?: Minutes }) {
     const m = next.mode ?? mode;
     const l = next.lang ?? lang;
+    const len = next.minutes ?? minutes;
     const ts = next.text ? { ...texts, [l]: next.text } : texts;
     setMode(m);
     setLang(l);
+    setMinutes(len);
     setTexts(ts);
     try {
-      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, texts: ts }));
+      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, minutes: len, texts: ts }));
     } catch {}
   }
 
@@ -94,8 +108,18 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setError("");
     setPhase("starting");
     const device = deviceKind();
-    const text = mode === "text" ? typingText(textId) : null;
-    const { data, error } = await createClient().rpc("start_typing_test", { p_device: device, p_mode: text ? "text" : "words", p_text: text?.id ?? null, p_lang: lang });
+    let text: TypingText | null = null;
+    if (mode === "text") {
+      const list = catalog[lang] ?? (await loadTypingTexts(lang));
+      text = list.find((t) => t.id === textId) ?? list[0];
+    }
+    const { data, error } = await createClient().rpc("start_typing_test", {
+      p_device: device,
+      p_mode: text ? "text" : "words",
+      p_text: text?.id ?? null,
+      p_lang: lang,
+      p_minutes: minutes,
+    });
     const row = Array.isArray(data) ? data[0] : null;
     if (error || !row) {
       setError(ERRORS.find(([k]) => error?.message.includes(k))?.[1] ?? "Não foi possível começar. Tente de novo.");
@@ -103,14 +127,15 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       return;
     }
     const start = Number(row.start_word ?? 0);
-    const list = text ? wordsFrom(text, start).words : makeWords(120, Math.random, lang);
+    // Enough words for a very fast typist: the test never runs out.
+    const list = text ? wordsFrom(text, start, 200 * minutes).words : makeWords(200 * minutes, Math.random, lang);
     setTitle(text?.title ?? "");
     setTypingLang(lang);
     run.current = { committed: [], current: "", words: list };
     setWords(list);
     setCommitted([]);
     setCurrent("");
-    test.current = { id: row.test_id, seconds: row.seconds, started: Date.now(), device, text: text?.id ?? null, start };
+    test.current = { id: row.test_id, seconds: row.seconds, started: Date.now(), device, minutes, text, start };
     setLeft(row.seconds);
     setPhase("running");
     requestAnimationFrame(() => input.current?.focus());
@@ -130,7 +155,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     test.current = null;
     setPhase("sending");
     const { correct, typed } = countRun(run.current.words, run.current.committed, run.current.current);
-    const text = typingText(t.text);
+    const text = t.text;
     const words = run.current.committed.length;
     const place = text ? progressAfter(text, t.start, words) : null;
     const { data, error } = await createClient().rpc("finish_typing_test", {
@@ -138,7 +163,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       p_correct: correct,
       p_typed: typed,
       p_words: words,
-      p_restart: place?.restart ?? false,
+      p_text_words: place?.total ?? null,
     });
     const row = Array.isArray(data) ? data[0] : null;
     if (error || !row) {
@@ -146,11 +171,12 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       setPhase("idle");
       return;
     }
-    const r: TypingResult = { testId: t.id, wpm: Number(row.wpm), accuracy: Number(row.accuracy), score: Number(row.score), device: t.device };
+    const r: TypingResult = { testId: t.id, wpm: Number(row.wpm), accuracy: Number(row.accuracy), score: Number(row.score), device: t.device, minutes: t.minutes };
     if (text && place) {
-      r.moved = place.restart
-        ? `Você terminou “${text.title}”. No próximo teste ele recomeça.`
-        : `Avançou ${words} ${words === 1 ? "palavra" : "palavras"} em “${text.title}” (${Math.round((place.words / textWords(text).length) * 100)}%).`;
+      const pct = Math.round((place.words / place.total) * 100);
+      r.moved = place.laps
+        ? `Você chegou ao fim de “${text.title}”${place.words ? ` e seguiu para a volta seguinte (${pct}%)` : ""}.`
+        : `Avançou ${words} ${words === 1 ? "palavra" : "palavras"} em “${text.title}” (${pct}%).`;
       setProgress((p) => ({ ...p, [text.id]: place.words }));
     }
     setResult(r);
@@ -182,22 +208,29 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
         <>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Idioma</span>
-            <div className="flex rounded-sm border-2 border-bevel-dark bg-bg p-0.5" role="radiogroup" aria-label="Idioma">
-              {(["pt", "en"] as const).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  role="radio"
-                  aria-checked={lang === l}
-                  className={`min-h-11 rounded-sm px-3 text-sm font-semibold ${lang === l ? "bg-accent text-on-accent" : "text-muted hover:text-fg"}`}
-                  onClick={() => choose({ lang: l })}
-                  data-testid={`typing-lang-${l}`}
-                  lang={l === "en" ? "en" : "pt-BR"}
-                >
-                  {l === "pt" ? "Português" : "English"}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              label="Idioma"
+              value={lang}
+              options={[
+                ["pt", "Português"],
+                ["en", "English"],
+              ]}
+              onChange={(l) => choose({ lang: l })}
+              testid="typing-lang"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted">Duração</span>
+            <Segmented
+              label="Duração"
+              value={minutes}
+              options={[
+                [1, "1 min"],
+                [5, "5 min"],
+              ]}
+              onChange={(m) => choose({ minutes: m })}
+              testid="typing-minutes"
+            />
           </div>
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="O que digitar">
             {(
@@ -224,9 +257,10 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               </button>
             ))}
           </div>
-          {mode === "text" && <TextPicker lang={lang} selected={textId} progress={progress} onPick={(id) => choose({ text: id })} />}
+          {mode === "text" && <TextPicker texts={catalog[lang]} lang={lang} selected={textId} progress={progress} onPick={(id) => choose({ text: id })} />}
           <p className="text-sm text-muted">
-            1 minuto digitando {mode === "text" ? "o texto, lendo enquanto digita" : "as palavras que aparecem"}. Vale a melhor de {attemptsLeft === 3 ? "3 tentativas" : `${attemptsLeft} ${attemptsLeft === 1 ? "tentativa restante" : "tentativas restantes"}`} hoje. Colar não funciona.
+            {minutes === 5 ? "5 minutos" : "1 minuto"} digitando {mode === "text" ? "o texto, lendo enquanto digita" : "as palavras que aparecem"}.
+            {minutes === 5 && " O recorde de 5 minutos é separado; nos pontos do dia vale o seu melhor teste."} Vale a melhor de {attemptsLeft === 3 ? "3 tentativas" : `${attemptsLeft} ${attemptsLeft === 1 ? "tentativa restante" : "tentativas restantes"}`} hoje. Colar não funciona.
           </p>
           <button className="btn-primary w-full" onClick={start} disabled={attemptsLeft <= 0 || phase === "starting"}>
             {phase === "starting" ? <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" /> : <Keyboard size={18} aria-hidden />}
@@ -242,7 +276,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="pixel tabular text-4xl font-bold leading-10 text-accent" aria-live="off">
-                {phase === "sending" ? "…" : left}
+                {phase === "sending" ? "…" : left >= 60 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : left}
               </p>
               {title && <p className="truncate text-sm text-muted">{title}</p>}
             </div>
@@ -373,15 +407,62 @@ function Board({
   );
 }
 
+/** A small two-option switch (language, length). */
+function Segmented<T extends string | number>({
+  label,
+  value,
+  options,
+  onChange,
+  testid,
+}: {
+  label: string;
+  value: T;
+  options: [T, string][];
+  onChange: (v: T) => void;
+  testid: string;
+}) {
+  return (
+    <div className="flex rounded-sm border-2 border-bevel-dark bg-bg p-0.5" role="radiogroup" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button
+          key={String(v)}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          className={`min-h-11 min-w-20 rounded-sm px-3 text-sm font-semibold ${value === v ? "bg-accent text-on-accent" : "text-muted hover:text-fg"}`}
+          onClick={() => onChange(v)}
+          data-testid={`${testid}-${v}`}
+          lang={v === "en" ? "en" : undefined}
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const pct = (t: TypingText, words: number | undefined) => Math.round(((words ?? 0) / textWords(t).length) * 100);
 
 /** The texts of one language, filtered by a category chip, each with how far the person got. */
-function TextPicker({ lang, selected, progress, onPick }: { lang: TypingLang; selected: string; progress: Record<string, number>; onPick: (id: string) => void }) {
+function TextPicker({
+  texts,
+  lang,
+  selected,
+  progress,
+  onPick,
+}: {
+  texts: TypingText[] | undefined;
+  lang: TypingLang;
+  selected: string;
+  progress: Record<string, number>;
+  onPick: (id: string) => void;
+}) {
   const [cat, setCat] = useState<string | null>(null);
-  const chosen = typingText(selected);
-  const category = cat ?? chosen?.category ?? TYPING_CATEGORIES[0];
-  const list = TYPING_TEXTS.filter((t) => t.lang === lang && t.category === category);
-  const preview = chosen && chosen.lang === lang ? wordsFrom(chosen, progress[chosen.id] ?? 0, 9).words.join(" ") : null;
+  if (!texts) return <p className="text-sm text-muted" role="status">Carregando os textos…</p>;
+  const chosen = texts.find((t) => t.id === selected) ?? texts[0];
+  const category = cat ?? chosen.category;
+  const list = texts.filter((t) => t.category === category);
+  const preview = wordsFrom(chosen, progress[chosen.id] ?? 0, 9).words.join(" ");
 
   return (
     <div className="space-y-2" data-testid="typing-texts">
@@ -392,7 +473,11 @@ function TextPicker({ lang, selected, progress, onPick }: { lang: TypingLang; se
             type="button"
             role="tab"
             aria-selected={c === category}
-            onClick={() => setCat(c)}
+            onClick={() => {
+              setCat(c);
+              // The chosen text always belongs to the topic on screen (the preview describes it).
+              if (chosen.category !== c) onPick(texts.find((t) => t.category === c)!.id);
+            }}
             className={`min-h-11 shrink-0 rounded-sm border-2 px-3 text-sm font-semibold ${
               c === category ? "border-accent bg-raised text-accent" : "border-bevel-dark bg-bg text-muted hover:text-fg"
             }`}
@@ -404,7 +489,7 @@ function TextPicker({ lang, selected, progress, onPick }: { lang: TypingLang; se
       <ul className="space-y-1.5" role="radiogroup" aria-label={`Textos de ${category}`}>
         {list.map((t) => {
           const p = pct(t, progress[t.id]);
-          const on = t.id === selected;
+          const on = t.id === chosen.id;
           return (
             <li key={t.id}>
               <button
@@ -433,7 +518,7 @@ function TextPicker({ lang, selected, progress, onPick }: { lang: TypingLang; se
       </ul>
       {preview && (
         <p className="rounded-sm border-l-[3px] border-accent bg-bg px-3 py-2 text-sm text-muted" data-testid="typing-preview">
-          {progress[chosen!.id] ? "Continua em: " : "Começa com: "}
+          {progress[chosen.id] ? "Continua em: " : "Começa com: "}
           <span className="text-fg" lang={lang === "en" ? "en" : "pt-BR"}>
             {preview}…
           </span>
