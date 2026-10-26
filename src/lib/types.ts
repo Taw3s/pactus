@@ -64,6 +64,8 @@ export interface Checkin {
   retake_of: string | null;
   /** Up to 3 more photos besides photo_path (4 in total). */
   extra_photos: string[];
+  /** When the phone says the photos were taken (oldest); only a hint. */
+  photo_taken_at: string | null;
   created_at: string;
 }
 

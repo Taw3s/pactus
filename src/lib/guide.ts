@@ -85,10 +85,26 @@ export const GUIDE: GuideEntry[] = [
     ],
   },
   {
+    id: "carimbos",
+    q: "Para que servem os carimbos?",
+    a: [
+      "Na página da prova de um amigo, carimbe Respeito, Monstro ou Lenda. O grupo vê quem carimbou e o feed mostra o total.",
+      "Carimbo é só elogio. Desconfiou da prova? Isso é com o tribunal.",
+    ],
+  },
+  {
+    id: "foto-antiga",
+    q: "O que é o aviso de foto antiga?",
+    a: [
+      "O celular guarda quando cada foto foi tirada. Se a foto é de antes do dia da prova, todos veem algo como \"Foto de 3 dias atrás\".",
+      "Não bloqueia nada: a data pode estar errada (prints, fotos editadas). Serve para o grupo conferir e, se quiser, levar ao tribunal.",
+    ],
+  },
+  {
     id: "avisos",
     q: "Como recebo avisos?",
     a: [
-      'Em Configurações, toque em "Ativar avisos neste aparelho". O app lembra às 20h quem ainda tem meta pendente.',
+      'Em Configurações, toque em "Ativar avisos neste aparelho". O app lembra às 20h quem ainda tem meta pendente e manda um resumo da semana no domingo às 21h.',
       "No iPhone, os avisos só funcionam com o app instalado na Tela de Início (Compartilhar → Adicionar à Tela de Início).",
     ],
   },

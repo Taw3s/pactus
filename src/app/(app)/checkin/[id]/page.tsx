@@ -8,6 +8,8 @@ import { BackButton } from "@/components/BackButton";
 import { DisputeActions } from "@/components/DisputeActions";
 import { Sprite } from "@/components/Sprite";
 import { PhotoViewer } from "@/components/PhotoViewer";
+import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
+import { photoAgeLabel } from "@/lib/photo-date";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
@@ -25,7 +27,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const { supabase, me } = await requireMember();
 
   // One round trip for everything about this proof (RLS limits it to the caller's group).
-  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }, { data: group }] = await Promise.all([
+  const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }, { data: group }, { data: reactionRows }] = await Promise.all([
     supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>(),
     getMembers(supabase),
     supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
@@ -33,6 +35,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     supabase.from("checkin_reviews").select("*").eq("checkin_id", id).maybeSingle<CheckinReview>(),
     supabase.from("checkins").select("id").eq("retake_of", id).maybeSingle<{ id: string }>(),
     supabase.from("groups").select("name").maybeSingle<{ name: string }>(),
+    supabase.from("checkin_reactions").select("user_id, kind").eq("checkin_id", id).order("created_at"),
   ]);
   if (!checkin) notFound();
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -51,6 +54,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
   const value = checkinNumbers(checkin);
+  const photoAge = photoAgeLabel(checkin.photo_taken_at, checkin.day);
   const kind = checkin.extra ? "Sessão extra de estudo" : checkin.retake_of ? `${goal.label} (refeita)` : goal.label;
   const isOwner = checkin.user_id === me.user_id;
   const recent = checkin.day >= addDays(spToday(), -1);
@@ -62,6 +66,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const proofAlt = `Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`;
   const photoBlock = (
     <figure className="mb-4">
+      {photoAge && (
+        <p className="mb-2 rounded-sm border-2 border-warn bg-warn-bg px-3 py-2 text-sm font-semibold text-warn" data-testid="photo-age">
+          {photoAge}, segundo o celular de {ownerName}. A data pode estar errada, mas vale conferir.
+        </p>
+      )}
       {photo ? (
         <>
           <PhotoViewer
@@ -108,6 +117,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         </dl>
       )}
       {photoBlock}
+      <ReactionBar
+        checkinId={checkin.id}
+        canReact={!isOwner}
+        initial={(reactionRows ?? []).map((r) => ({ kind: r.kind as ReactionKind, name: byId.get(r.user_id)?.display_name ?? "?", mine: r.user_id === me.user_id }))}
+      />
       {checkin.summary && (
         <section className="mb-4" aria-labelledby="resumo">
           <h2 id="resumo" className="pixel mb-1 text-base uppercase text-muted">
@@ -220,7 +234,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           accuser={accuser}
           accuserAvatar={avatar(accuserMember)}
           byAi={dispute.by_ai}
-          proof={{ goal: kind, day: formatDayPt(checkin.day), value, photos, ai: review?.verdict ?? null }}
+          proof={{ goal: kind, day: formatDayPt(checkin.day), value, photos, ai: review?.verdict ?? null, photoAge }}
           jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
           me={{ id: me.user_id, isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
         />
