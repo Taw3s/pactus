@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   // Typing made in the app: the server measured it, so the judge only records the result.
   if (checkin.typing_test_id) {
-    const { data: t } = await admin.from("typing_tests").select("wpm, accuracy, device").eq("id", checkin.typing_test_id).maybeSingle();
+    const { data: t } = await admin.from("typing_tests").select("wpm, accuracy, device, minutes").eq("id", checkin.typing_test_id).maybeSingle();
     if (!t) return NextResponse.json({ error: "test not found" }, { status: 404 });
     const { error } = await admin.from("checkin_reviews").insert({
       checkin_id: checkin.id,

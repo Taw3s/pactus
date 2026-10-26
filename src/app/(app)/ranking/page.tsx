@@ -27,29 +27,34 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
     getMonthScores(supabase, getMembers(supabase), month),
     supabase
       .from("typing_tests")
-      .select("user_id, device, mode, lang, wpm, accuracy")
+      .select("user_id, device, mode, lang, minutes, wpm, accuracy")
       .gte("day", `${month}-01`)
       .lte("day", lastDayOfMonth(`${month}-01`))
       .not("wpm", "is", null),
   ]);
-  // Best wpm of the month per person: phones and computers apart, words and texts apart, each language apart.
-  const KINDS = [
-    ["words", "pt", "Palavras"],
-    ["text", "pt", "Texto"],
-    ["words", "en", "Palavras · inglês"],
-    ["text", "en", "Texto · inglês"],
-  ] as const;
-  const records = (device: "pc" | "mobile", mode: "words" | "text", lang: "pt" | "en") => {
+  // Best wpm of the month per person: phones and computers apart, and apart per mode, language and length.
+  const KINDS = ([1, 5] as const).flatMap((minutes) =>
+    (
+      [
+        ["words", "pt", "Palavras"],
+        ["text", "pt", "Texto"],
+        ["words", "en", "Palavras · inglês"],
+        ["text", "en", "Texto · inglês"],
+      ] as const
+    ).map(([mode, lang, label]) => [mode, lang, minutes, minutes === 5 ? `${label} · 5 min` : label] as const),
+  );
+  const records = (device: "pc" | "mobile", mode: "words" | "text", lang: "pt" | "en", minutes: 1 | 5) => {
     const best = new Map<string, { wpm: number; accuracy: number }>();
     for (const t of (typingRows ?? []) as {
       user_id: string;
       device: string;
       mode: string;
       lang: string;
+      minutes: number;
       wpm: number;
       accuracy: number;
     }[]) {
-      if (t.device !== device || t.mode !== mode || t.lang !== lang) continue;
+      if (t.device !== device || t.mode !== mode || t.lang !== lang || Number(t.minutes) !== minutes) continue;
       const cur = best.get(t.user_id);
       if (!cur || Number(t.wpm) > cur.wpm)
         best.set(t.user_id, {
@@ -175,11 +180,12 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           </h2>
           <div className="grid gap-4 min-[420px]:grid-cols-2">
             {(["pc", "mobile"] as const).map((device) => {
-              const lists = KINDS.map(([mode, lang, label]) => ({
+              const lists = KINDS.map(([mode, lang, minutes, label]) => ({
                 mode,
                 lang,
+                minutes,
                 label,
-                list: records(device, mode, lang),
+                list: records(device, mode, lang, minutes),
               })).filter((k) => k.list.length > 0);
               return (
                 <div key={device} data-device={device}>
@@ -187,8 +193,8 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                   {lists.length === 0 ? (
                     <p className="text-sm text-muted">Ninguém fez teste ainda.</p>
                   ) : (
-                    lists.map(({ mode, lang, label, list }) => (
-                      <div key={`${mode}-${lang}`} data-mode={mode} data-lang={lang} className="mb-2">
+                    lists.map(({ mode, lang, minutes, label, list }) => (
+                      <div key={`${mode}-${lang}-${minutes}`} data-mode={mode} data-lang={lang} data-minutes={minutes} className="mb-2">
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
                         <ol className="space-y-1 text-sm">
                           {list.map(([id, r], n) => (

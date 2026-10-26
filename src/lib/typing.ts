@@ -64,6 +64,7 @@ export function deviceKind(): "pc" | "mobile" {
 
 export const DEVICE_LABEL = { pc: "PC", mobile: "Celular" } as const;
 
-export function typingLabel(t: { wpm: number; accuracy: number }) {
-  return `${Number(t.wpm).toFixed(0)} WPM · ${Math.round(Number(t.accuracy) * 100)}%`;
+/** "72 WPM · 96%", plus "· 5 min" for a 5-minute test. */
+export function typingLabel(t: { wpm: number; accuracy: number; minutes?: number | null }) {
+  return `${Number(t.wpm).toFixed(0)} WPM · ${Math.round(Number(t.accuracy) * 100)}%${Number(t.minutes) === 5 ? " · 5 min" : ""}`;
 }

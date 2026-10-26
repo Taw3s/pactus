@@ -26,13 +26,14 @@ export default async function FeedPage() {
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("*"),
-    supabase.from("typing_tests").select("user_id, wpm, accuracy, score").eq("day", today).not("score", "is", null),
+    supabase.from("typing_tests").select("user_id, wpm, accuracy, score, minutes").eq("day", today).not("score", "is", null),
   ]);
   // Today's best typing test per person (what scores), shown on the typing tile.
-  const typingBest = new Map<string, { wpm: number; accuracy: number; score: number }>();
-  for (const t of (typingRows ?? []) as { user_id: string; wpm: number; accuracy: number; score: number }[]) {
+  const typingBest = new Map<string, { wpm: number; accuracy: number; score: number; minutes: number }>();
+  for (const t of (typingRows ?? []) as { user_id: string; wpm: number; accuracy: number; score: number; minutes: number }[]) {
     const cur = typingBest.get(t.user_id);
-    if (!cur || Number(t.score) > cur.score) typingBest.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score) });
+    if (!cur || Number(t.score) > cur.score)
+      typingBest.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score), minutes: Number(t.minutes) });
   }
   const checkins = (checkinRows ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const results = (resultRows ?? []) as DisputeResult[];

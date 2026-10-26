@@ -27,7 +27,7 @@ export default async function TodayPage() {
     getMembers(supabase),
     supabase.from("chest_openings").select("kind, period, item_id").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
-    supabase.from("typing_tests").select("wpm, accuracy, score, device, finished_at").eq("user_id", me.user_id).eq("day", today),
+    supabase.from("typing_tests").select("wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
   ]);
   const completedDays = new Set((doneRows ?? []).map((r) => r.day as string));
@@ -111,7 +111,9 @@ export default async function TodayPage() {
 }
 
 /** Attempts used today and the best finished one ("72 WPM · 96% · PC"). */
-function typingToday(rows: { wpm: number | null; accuracy: number | null; score: number | null; device: "pc" | "mobile"; finished_at: string | null }[]) {
+function typingToday(
+  rows: { wpm: number | null; accuracy: number | null; score: number | null; device: "pc" | "mobile"; minutes: number; finished_at: string | null }[],
+) {
   const best = rows.filter((r) => r.finished_at && r.score !== null).sort((a, b) => Number(b.score) - Number(a.score))[0];
-  return { used: rows.length, best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy! })} · ${DEVICE_LABEL[best.device]}` : null };
+  return { used: rows.length, best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy!, minutes: best.minutes })} · ${DEVICE_LABEL[best.device]}` : null };
 }
