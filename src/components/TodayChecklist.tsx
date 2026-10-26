@@ -125,12 +125,14 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
   const router = useRouter();
   const [again, setAgain] = useState(false);
   const [error, setError] = useState("");
+  const [moved, setMoved] = useState("");
   const left = Math.max(0, 3 - typing.used);
   const retake = done?.dispute === "upheld";
   const needsProof = !done || retake;
 
   async function sendProof(r: TypingResult) {
     setError("");
+    setMoved(r.moved ?? "");
     try {
       const card = await resultCard(r);
       const supabase = createClient();
@@ -178,12 +180,18 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
   return (
     <div className="space-y-2">
       <DoneRow item={{ ...done!, typingBest: typing.best }} />
+      {moved && !again && (
+        <p className="px-1 text-sm text-muted" role="status" data-testid="typing-moved">
+          {moved}
+        </p>
+      )}
       {again ? (
         <section className="card" data-goal="typing" data-state="again" aria-label="Tentar de novo">
           <TypingTest
             attemptsLeft={left}
-            onResult={() => {
+            onResult={(r) => {
               // Back to the summary row, now with the new best (if it is better).
+              setMoved(r.moved ?? "");
               setAgain(false);
               router.refresh();
             }}
@@ -191,7 +199,7 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
         </section>
       ) : (
         left > 0 && (
-          <button className="btn-secondary w-full" onClick={() => setAgain(true)}>
+          <button className="btn-secondary w-full" onClick={() => (setAgain(true), setMoved(""))}>
             <Keyboard size={18} aria-hidden /> Tentar de novo ({left} {left === 1 ? "restante" : "restantes"})
           </button>
         )

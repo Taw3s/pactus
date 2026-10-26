@@ -25,13 +25,19 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
   const [{ members, scores, pos }, { data: typingRows }] = await Promise.all([
     getMonthScores(supabase, getMembers(supabase), month),
-    supabase.from("typing_tests").select("user_id, device, wpm, accuracy").gte("day", `${month}-01`).lte("day", lastDayOfMonth(`${month}-01`)).not("wpm", "is", null),
+    supabase.from("typing_tests").select("user_id, device, mode, lang, wpm, accuracy").gte("day", `${month}-01`).lte("day", lastDayOfMonth(`${month}-01`)).not("wpm", "is", null),
   ]);
-  // Best wpm of the month per person, phones and computers apart.
-  const records = (device: "pc" | "mobile") => {
+  // Best wpm of the month per person: phones and computers apart, words and texts apart, each language apart.
+  const KINDS = [
+    ["words", "pt", "Palavras"],
+    ["text", "pt", "Texto"],
+    ["words", "en", "Palavras · inglês"],
+    ["text", "en", "Texto · inglês"],
+  ] as const;
+  const records = (device: "pc" | "mobile", mode: "words" | "text", lang: "pt" | "en") => {
     const best = new Map<string, { wpm: number; accuracy: number }>();
-    for (const t of (typingRows ?? []) as { user_id: string; device: string; wpm: number; accuracy: number }[]) {
-      if (t.device !== device) continue;
+    for (const t of (typingRows ?? []) as { user_id: string; device: string; mode: string; lang: string; wpm: number; accuracy: number }[]) {
+      if (t.device !== device || t.mode !== mode || t.lang !== lang) continue;
       const cur = best.get(t.user_id);
       if (!cur || Number(t.wpm) > cur.wpm) best.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy) });
     }
@@ -127,23 +133,28 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         </h2>
         <div className="grid gap-4 min-[420px]:grid-cols-2">
           {(["pc", "mobile"] as const).map((device) => {
-            const list = records(device);
+            const lists = KINDS.map(([mode, lang, label]) => ({ mode, lang, label, list: records(device, mode, lang) })).filter((k) => k.list.length > 0);
             return (
               <div key={device} data-device={device}>
                 <h3 className="pixel mb-1 text-base uppercase text-muted">{device === "pc" ? "PC" : "Celular"}</h3>
-                {list.length === 0 ? (
+                {lists.length === 0 ? (
                   <p className="text-sm text-muted">Ninguém fez teste ainda.</p>
                 ) : (
-                  <ol className="space-y-1 text-sm">
-                    {list.map(([id, r], n) => (
-                      <li key={id} className="flex justify-between gap-2">
-                        <span className="truncate">
-                          {n + 1}. {byId.get(id)?.display_name ?? "?"}
-                        </span>
-                        <span className="tabular shrink-0 font-semibold">{typingLabel(r)}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  lists.map(({ mode, lang, label, list }) => (
+                    <div key={`${mode}-${lang}`} data-mode={mode} data-lang={lang} className="mb-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+                      <ol className="space-y-1 text-sm">
+                        {list.map(([id, r], n) => (
+                          <li key={id} className="flex justify-between gap-2">
+                            <span className="truncate">
+                              {n + 1}. {byId.get(id)?.display_name ?? "?"}
+                            </span>
+                            <span className="tabular shrink-0 font-semibold">{typingLabel(r)}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))
                 )}
               </div>
             );

@@ -18,6 +18,7 @@ export const GUIDE: GuideEntry[] = [
       "O prazo é 23:59, horário de São Paulo. O dia só vale com as três.",
       `Cada prova com foto aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
       "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e vale a melhor.",
+      "No teste dá para escolher Palavras (aleatórias) ou Texto: explicações curtas sobre programação, SQL, Python, JavaScript e web. Cada texto continua de onde você parou no teste anterior. Dá para fazer tudo em português ou em inglês.",
     ],
   },
   {
@@ -74,7 +75,7 @@ export const GUIDE: GuideEntry[] = [
     q: "Como funciona o ranking?",
     a: [
       `Dia cumprido: ${SCORING.completedDay} pontos. Estudo: ${SCORING.perStudyMinute} ponto por minuto (até ${SCORING.maxStudyMinutesPerDay} min por dia). Leitura: ${SCORING.perPage} pontos por página (até ${SCORING.maxPagesPerDay} por dia). Digitação: o melhor teste do dia vale WPM × precisão (60 WPM com 95% = 57). Projeto: ${SCORING.perProject} pontos.`,
-      "Os recordes de digitação ficam separados entre PC e celular.",
+      "Os recordes de digitação ficam separados entre PC e celular, entre Palavras e Texto e entre português e inglês. Para os pontos do dia vale o melhor teste, de qualquer modo.",
       "Provas anuladas pelo tribunal não contam. O ranking recomeça todo mês.",
     ],
   },
