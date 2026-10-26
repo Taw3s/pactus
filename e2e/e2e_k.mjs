@@ -169,7 +169,7 @@ await step("anyone without an invite creates a challenge, picks the debt menu, a
   await p.getByRole("button", { name: "Criar desafio" }).click();
   await p.waitForURL("**/hoje");
   const group = sql("select g.name || '|' || g.invite_code || '|' || (g.owner_id = m.user_id) from groups g join members m on m.group_id = g.id where m.display_name = 'Rui'");
-  assert(/^Pacto do Rui\|[A-HJ-NP-Z2-9]{8}\|t$/.test(group), `group ${group}`);
+  assert(/^Pacto do Rui\|[A-HJ-NP-Z2-9]{8}\|true$/.test(group), `group ${group}`);
 
   await p.goto(`${APP}/config`);
   const settings = p.getByTestId("group-settings");
