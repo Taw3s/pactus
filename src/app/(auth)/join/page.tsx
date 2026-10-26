@@ -21,17 +21,25 @@ function JoinForm() {
   const [error, setError] = useState("");
   const [sent, setSent] = useState<"" | "confirm" | "magic">("");
 
-  // Signed in with Google but not in a group yet: suggest the name from the Google account.
+  // Signed in but not in a group yet. Ask the server who this is: a session left over from a
+  // deleted account still looks valid in the browser, so send it back to the login.
+  // Otherwise suggest the name from the Google account.
   useEffect(() => {
     if (!codeOnly) return;
-    createClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        const meta = data.user?.user_metadata ?? {};
-        const suggested = String(meta.full_name ?? meta.name ?? "").trim().split(/\s+/)[0] ?? "";
-        if (suggested) setName((n) => n || suggested.slice(0, 40));
-      });
-  }, [codeOnly]);
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data, error }) => {
+      // Only a definite "this account/session does not exist" logs out (never a network hiccup).
+      const gone = error && (["user_not_found", "session_not_found", "bad_jwt"].includes(error.code ?? "") || error.name === "AuthSessionMissingError");
+      if (gone) {
+        await supabase.auth.signOut({ scope: "local" });
+        router.replace("/login?error=session");
+        return;
+      }
+      const meta = data.user?.user_metadata ?? {};
+      const suggested = String(meta.full_name ?? meta.name ?? "").trim().split(/\s+/)[0] ?? "";
+      if (suggested) setName((n) => n || suggested.slice(0, 40));
+    });
+  }, [codeOnly, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,8 +50,20 @@ function JoinForm() {
 
     if (codeOnly) {
       const { error } = await supabase.rpc("join_group", { p_code: invite, p_name: name });
+      if (error?.message.includes("already a member")) {
+        // Already in the group (e.g. joined in another tab): just go in.
+        router.replace("/hoje");
+        router.refresh();
+        return;
+      }
+      if (error && (error.code === "23503" || error.message.includes("not authenticated"))) {
+        // The account behind this session no longer exists.
+        await supabase.auth.signOut({ scope: "local" });
+        router.replace("/login?error=session");
+        return;
+      }
       if (error) {
-        setError(error.message.includes("invalid") ? "Código de convite inválido." : "Não foi possível entrar no grupo.");
+        setError(error.message.includes("invalid") ? "Código de convite inválido." : "Não foi possível entrar no grupo. Tente de novo.");
         setBusy(false);
         return;
       }

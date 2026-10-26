@@ -95,5 +95,15 @@ await step("Google sign-in sends the browser to Supabase's Google authorize page
   await ctx.close();
 });
 
+await step("a session left from a deleted account goes back to the login instead of failing to join", async () => {
+  const p = await loginAs(browser, "fab@pacto.test");
+  sql(`delete from auth.users where email = 'fab@pacto.test'`);
+  // Production verifies the session token locally and lands here (the case that hit a real user);
+  // locally the middleware already asks the auth server, so open the join step directly.
+  await p.goto(`${APP}/join?step=code`);
+  await p.waitForURL("**/login?error=session");
+  await p.getByText("Sua sessão era de uma conta que não existe mais").waitFor();
+});
+
 await browser.close();
 done();
