@@ -10,8 +10,19 @@ import { VerifiedSeal } from "./VerifiedSeal";
 
 export type GoalState = "done" | "pending" | "annulled";
 
+/** The official streak (lib/ledger.ts currentStreak), computed by the page. */
+export interface StreakInfo {
+  days: number;
+  /** Ever completed a day: zero then reads "Um novo começo" instead of "primeiro dia". */
+  hasHistory: boolean;
+  /** Set on the day the streak reaches a milestone (lib/ledger.ts STREAK_MILESTONES). */
+  milestone: number | null;
+  userId: string;
+}
+
 interface Props {
   isOff: boolean;
+  streak: StreakInfo;
   states: Record<DailyGoal, GoalState>;
   /** Set when the AI judge confirmed all 3 proofs today (shows the "Verificado!" seal). */
   verified?: { day: string; userId: string } | null;
@@ -77,8 +88,66 @@ function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
   );
 }
 
+/**
+ * The streak as a calendar page: the value is the ledger's, never recounted here. Zero is a fresh
+ * start, not a loss. A milestone shows a number plate that drops in once per person and milestone
+ * (static with reduced motion, or when the verified seal is already celebrating).
+ */
+function StreakStrip({ streak, isOff, quiet }: { streak: StreakInfo; isOff: boolean; quiet: boolean }) {
+  const [play, setPlay] = useState(false);
+  const { days, milestone, userId } = streak;
+  useEffect(() => {
+    if (!milestone || quiet) return;
+    const key = `pacto:streak-plate:${userId}:${milestone}`;
+    try {
+      if (localStorage.getItem(key) === "1") return;
+      localStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) setPlay(true);
+  }, [milestone, userId, quiet]);
+
+  const title = days > 0 ? (
+    <>
+      <span className="text-accent">{days}</span> {days === 1 ? "dia em sequência" : "dias em sequência"}
+    </>
+  ) : streak.hasHistory ? (
+    "Um novo começo"
+  ) : (
+    "Seu primeiro dia começa aqui"
+  );
+  const line = isOff ? "Hoje é folga" : days > 0 ? "Seu ritmo, um dia de cada vez." : streak.hasHistory ? "Seu histórico continua guardado." : null;
+
+  return (
+    <div className="mt-4 flex min-h-[72px] items-center gap-3 rounded-sm border-2 border-divider bg-bg p-3" data-testid="streak-strip" data-streak={days}>
+      <div className="relative shrink-0">
+        <Sprite name="calendar" />
+        {milestone && (
+          <span
+            className={`pixel tabular absolute -bottom-1 -right-2 rounded-sm border-2 border-bevel-dark bg-accent px-1 text-sm font-bold leading-4 text-on-accent ${
+              play ? "animate-[plate-in_450ms_steps(3)_both]" : ""
+            }`}
+            data-testid="streak-plate"
+          >
+            {milestone}
+          </span>
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="pixel text-xl uppercase leading-6">{title}</p>
+        {milestone ? (
+          <p className="text-sm text-muted">Marco de {milestone} dias alcançado.</p>
+        ) : (
+          line && <p className="text-sm text-muted">{line}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Answers "how much is left?" in one glance: count, next pending goal, deadline. */
-export function Scoreboard({ isOff, states, verified }: Props) {
+export function Scoreboard({ isOff, states, verified, streak }: Props) {
   const [ms, setMs] = useState<number | null>(null);
   useEffect(() => {
     const tick = () => setMs(msUntilEndOfDay());
@@ -103,6 +172,7 @@ export function Scoreboard({ isOff, states, verified }: Props) {
             <p className="mt-1 text-sm text-muted">Nada é obrigatório. Se quiser fazer as metas, elas continuam pontuando.</p>
           </div>
         </div>
+        <StreakStrip streak={streak} isOff quiet={!!verified} />
       </section>
     );
   }
@@ -125,6 +195,7 @@ export function Scoreboard({ isOff, states, verified }: Props) {
       </div>
 
       <Shelf states={states} />
+      <StreakStrip streak={streak} isOff={false} quiet={!!verified} />
 
       {ms !== null &&
         (complete ? (

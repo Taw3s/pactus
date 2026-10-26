@@ -33,7 +33,7 @@ await step("last month's unpaid debts are flagged 'atrasada' but still owed", as
   const caio = davi.locator("[data-debtor=Caio]");
   const overdueDays = owedDays(CAIO_JOIN, lastOfPrevMonth).length;
   const allDays = owedDays(CAIO_JOIN).length;
-  assert((await text(caio)).includes(plural(overdueDays * 2, "atrasada", "atrasadas")), await text(caio));
+  assert((await text(caio)).includes(plural(overdueDays * 2, "item atrasado", "itens atrasados")), await text(caio));
   assert((await text(caio.getByTestId("summary"))).startsWith(`${allDays} Cocas`), `${await text(caio.getByTestId("summary"))} vs ${allDays}`);
 });
 

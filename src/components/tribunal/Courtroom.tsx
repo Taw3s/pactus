@@ -144,7 +144,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           <Fact label="Informado" value={proof.value ?? "—"} />
           <Fact label="Juiz IA" value={proof.ai ? AI_WORD[proof.ai] : "sem análise"} />
         </dl>
-        {proof.photoAge && <p className="mt-2 text-sm font-semibold text-warn">{proof.photoAge}, segundo o celular.</p>}
+        {proof.photoAge && <p className="mt-2 border-l-[3px] border-warn pl-2 text-sm">{proof.photoAge}</p>}
       </div>
 
       {/* score */}

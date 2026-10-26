@@ -214,3 +214,23 @@ body {
     transform: translate(-50%, 0) scale(1);
   }
 }
+
+/* Streak milestone plate on "Hoje": drops in 3 steps (450 ms). */
+@keyframes plate-in {
+  0% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Social stamp: the seal settles into its button in 3 steps, after the server confirms. */
+@keyframes seal-in {
+  0% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+}

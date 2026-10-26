@@ -7,7 +7,7 @@ import { TodayChecklist } from "@/components/TodayChecklist";
 import { collectible, weekStart } from "@/lib/collectibles";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
-import { dayOffOn } from "@/lib/ledger";
+import { currentStreak, dayOffOn, STREAK_MILESTONES } from "@/lib/ledger";
 import { photoAgeLabel } from "@/lib/photo-date";
 import { typingLabel, DEVICE_LABEL } from "@/lib/typing";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
@@ -20,7 +20,7 @@ export default async function TodayPage() {
 
   const monday = weekStart(today);
   // One round trip: the AI verdict comes embedded; the group's dispute results are few.
-  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }, { data: typingRows }] = await Promise.all([
+  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }, { data: typingRows }, { data: doneRows }] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
@@ -28,7 +28,16 @@ export default async function TodayPage() {
     supabase.from("chest_openings").select("kind, period, item_id").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
     supabase.from("typing_tests").select("wpm, accuracy, score, device, finished_at").eq("user_id", me.user_id).eq("day", today),
+    supabase.from("completed_days").select("day").eq("user_id", me.user_id),
   ]);
+  const completedDays = new Set((doneRows ?? []).map((r) => r.day as string));
+  const streakDays = currentStreak({ joinedOn: me.joined_on, dayOffChanges: changes ?? [], completedDays }, today);
+  const streak = {
+    days: streakDays,
+    hasHistory: completedDays.size > 0,
+    milestone: (STREAK_MILESTONES as readonly number[]).includes(streakDays) ? streakDays : null,
+    userId: me.user_id,
+  };
   const chestOf = (kind: "daily" | "weekly", period: string) => {
     const row = (chests ?? []).find((c) => c.kind === kind && c.period === period);
     const info = row ? collectible(row.item_id) : null;
@@ -83,7 +92,7 @@ export default async function TodayPage() {
       <div className="min-w-0">
         <PendingReviews ids={unreviewed} />
         <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
-        <Scoreboard isOff={isOff} states={states} verified={verified ? { day: today, userId: me.user_id } : null} />
+        <Scoreboard isOff={isOff} states={states} streak={streak} verified={verified ? { day: today, userId: me.user_id } : null} />
         {/* With goals pending, sending proofs comes first; once the day is closed, the chest comes up. */}
         {dayComplete && chestsPanel}
         <TodayChecklist

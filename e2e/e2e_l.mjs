@@ -57,7 +57,7 @@ await step("a photo the phone dates 3 days back: warned before sending, flagged 
   await row.click();
   await p.waitForURL("**/checkin/**");
   proofUrl = p.url();
-  await p.getByTestId("photo-age").getByText("Foto de 3 dias atrás").waitFor();
+  await p.getByTestId("photo-age").getByText(/o envio foi em .* \(3 dias antes\)/).waitFor();
   // The owner sees the stamps but cannot stamp their own proof.
   assert(await p.getByTestId("reactions").locator('[data-reaction="respeito"]').isDisabled(), "owner can stamp own proof");
 });
@@ -71,11 +71,12 @@ await step("friends stamp the proof; it stays after reload and the feed counts i
   await p.waitForFunction(() => document.querySelector('[data-reaction="respeito"]')?.getAttribute("aria-pressed") === "true");
   await p.waitForTimeout(500);
   await p.reload();
-  await p.getByTestId("reactions").getByText(/Respeito: .*você/).waitFor();
+  await p.getByTestId("reactions").getByRole("button", { name: /Ver quem carimbou · 1/ }).click();
+  await p.getByTestId("stamp-names").getByText(/Respeito:\s*você/).waitFor();
   await p.goto(`${APP}/feed`);
   await p.getByTestId("stamp-count").getByText("1 carimbo").first().waitFor();
-  const feedAge = await p.getByText("Foto de 3 dias atrás").count();
-  assert(feedAge >= 1, "feed shows the photo age");
+  // The feed marks the file's earlier date beside the metadata, never over the photo.
+  assert((await p.getByTestId("photo-older").count()) >= 1, "feed shows the earlier date");
 });
 
 await step("weekly summary: one push per subscribed member a day", async () => {

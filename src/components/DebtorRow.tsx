@@ -30,7 +30,10 @@ interface Props {
 const SPRITE = { coke: "sodaCan", snack: "coxinha" } as const;
 const NAME = { coke: "Coca", snack: "Salgado" };
 
-/** One line per person; expanding reveals each day and item, each with its own "Recebi". */
+/**
+ * One card per person: the open Cocas and salgados on a small wooden shelf (counted apart, they
+ * can differ after partial payments); expanding reveals each day and item, each with its own "Recebi".
+ */
 export function DebtorRow({ debtorId, name, avatarUrl, isMe, cokes, snacks, overdue, days }: Props) {
   // Client state survives router.refresh(), so confirming a payment keeps the row open and in place.
   const [open, setOpen] = useState(false);
@@ -38,7 +41,7 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, cokes, snacks, over
   const panelId = `debts-${debtorId}`;
 
   return (
-    <li className="card !p-0" data-debtor={name}>
+    <li className={`card !p-0 ${isMe ? "!border-accent" : ""}`} data-debtor={name}>
       <button
         className="flex min-h-16 w-full items-center gap-3 p-3 text-left"
         aria-expanded={open}
@@ -48,17 +51,35 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, cokes, snacks, over
       >
         <Avatar name={name} url={avatarUrl} />
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold">
+          <span className="block break-words font-semibold">
             {name}
-            {isMe && <span className="text-sm font-normal text-muted"> · você</span>}
+            {isMe && <span className="ml-1.5 rounded-sm bg-accent px-1 text-xs font-bold uppercase text-on-accent">Você</span>}
           </span>
           <span className="tabular block text-sm text-muted" data-testid="summary">
             {owes ? `${plural(cokes, "Coca", "Cocas")} · ${plural(snacks, "salgado", "salgados")}` : "Em dia"}
           </span>
         </span>
-        {overdue > 0 && <Badge tone="fail">{plural(overdue, "atrasada", "atrasadas")}</Badge>}
         {days.length > 0 && <ChevronDown size={20} aria-hidden className={`shrink-0 text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`} />}
       </button>
+      {owes && (
+        <div className="px-3 pb-3">
+          <div aria-hidden className="flex items-end gap-4 px-2">
+            {(["coke", "snack"] as const).map((item) => (
+              <span key={item} className="flex items-end">
+                <Sprite name={SPRITE[item]} />
+                <span className="pixel tabular -ml-1 text-2xl font-bold leading-7 text-accent">×{item === "coke" ? cokes : snacks}</span>
+              </span>
+            ))}
+          </div>
+          <div aria-hidden className="h-2 rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[3px_3px_0_var(--color-hard-shadow)]" />
+          {/* The ledger counts open items (a day = 1 Coca + 1 salgado) from previous months. */}
+          {overdue > 0 && (
+            <p className="mt-2">
+              <Badge tone="fail">{plural(overdue, "item atrasado", "itens atrasados")}</Badge>
+            </p>
+          )}
+        </div>
+      )}
 
       {open && (
         <div id={panelId} className="border-t border-divider px-3 pb-2">

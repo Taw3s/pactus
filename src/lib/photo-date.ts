@@ -70,6 +70,17 @@ export async function photoTakenAt(file: File): Promise<Date | null> {
 }
 
 /** "Foto de ontem" / "Foto de 3 dias atrás" when the photo was taken before the proof's day. */
+/** The file says it is from a day before the proof (EXIF date or, without one, the file's own date). */
+export function photoIsOlder(takenAt: string | null | undefined, day: ISODate) {
+  return !!takenAt && spToday(new Date(takenAt)) < day;
+}
+
+/** Whole days between the date the file reports and the proof's day (0 when not older). */
+export function photoDaysBefore(takenAt: string | null | undefined, day: ISODate) {
+  if (!photoIsOlder(takenAt, day)) return 0;
+  return Math.round((Date.parse(day) - Date.parse(spToday(new Date(takenAt!)))) / 86_400_000);
+}
+
 export function photoAgeLabel(takenAt: string | null | undefined, day: ISODate): string | null {
   if (!takenAt) return null;
   const taken = spToday(new Date(takenAt));
