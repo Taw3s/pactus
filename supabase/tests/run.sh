@@ -23,3 +23,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f chests_test.sql
 "${PSQL[@]}" -f ../migrations/0007_retake_extra_study.sql
 "${PSQL[@]}" -f retake_test.sql
+"${PSQL[@]}" -f ../migrations/0008_extra_photos.sql
+"${PSQL[@]}" -f photos_test.sql

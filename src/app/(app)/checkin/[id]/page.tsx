@@ -43,8 +43,10 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   // Jurors: everyone but the defendant who was in the group when the tribunal opened.
   const jurors = dispute ? members.filter((m) => m.user_id !== checkin.user_id && m.created_at <= dispute.created_at) : [];
   const accuserMember = dispute?.author_id ? byId.get(dispute.author_id) : undefined;
-  const urls = await signUrls(supabase, [checkin.photo_path, owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
-  const photo = urls.get(checkin.photo_path);
+  const photoPaths = [checkin.photo_path, ...(checkin.extra_photos ?? [])];
+  const urls = await signUrls(supabase, [...photoPaths, owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
+  const photos = photoPaths.map((p) => urls.get(p)).filter((u): u is string => !!u);
+  const photo = photos[0];
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
@@ -57,20 +59,40 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const joinedLate = !!dispute && me.created_at > dispute.created_at;
   const accuser = dispute ? (dispute.by_ai ? "Juiz IA" : (byId.get(dispute.author_id ?? "")?.display_name ?? "?")) : "";
 
+  const proofAlt = `Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`;
   const photoBlock = (
     <figure className="mb-4">
       {photo ? (
-        <PhotoViewer
-          src={photo}
-          alt={`Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`}
-          label={`Ampliar a foto da prova de ${goal.label.toLowerCase()} de ${ownerName}`}
-          className="group relative block w-full overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface"
-        >
-          <img src={photo} alt={`Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`} className="mx-auto max-h-[60dvh] w-full object-contain" />
-          <span className="absolute bottom-2 right-2 inline-flex min-h-9 items-center gap-1 rounded-sm bg-bg/90 px-2 text-xs font-semibold">
-            <Maximize2 size={14} aria-hidden /> Ampliar foto
-          </span>
-        </PhotoViewer>
+        <>
+          <PhotoViewer
+            photos={photos}
+            alt={proofAlt}
+            label={`Ampliar a foto da prova de ${goal.label.toLowerCase()} de ${ownerName}`}
+            className="group relative block w-full overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface"
+          >
+            <img src={photo} alt={proofAlt} className="mx-auto max-h-[60dvh] w-full object-contain" />
+            <span className="absolute bottom-2 right-2 inline-flex min-h-9 items-center gap-1 rounded-sm bg-bg/90 px-2 text-xs font-semibold">
+              <Maximize2 size={14} aria-hidden /> Ampliar foto
+            </span>
+          </PhotoViewer>
+          {photos.length > 1 && (
+            <ul className="mt-2 grid grid-cols-4 gap-2" data-testid="proof-photos">
+              {photos.map((src, n) => (
+                <li key={src}>
+                  <PhotoViewer
+                    photos={photos}
+                    start={n}
+                    alt={proofAlt}
+                    label={`Ampliar a foto ${n + 1} de ${photos.length}`}
+                    className="block aspect-square w-full overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface"
+                  >
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  </PhotoViewer>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       ) : (
         <div className="flex h-40 items-center justify-center rounded-sm bg-surface text-sm text-muted">Foto indisponível no momento.</div>
       )}
@@ -198,7 +220,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           accuser={accuser}
           accuserAvatar={avatar(accuserMember)}
           byAi={dispute.by_ai}
-          proof={{ goal: kind, day: formatDayPt(checkin.day), value, photoUrl: photo ?? null, ai: review?.verdict ?? null }}
+          proof={{ goal: kind, day: formatDayPt(checkin.day), value, photos, ai: review?.verdict ?? null }}
           jurors={jurors.map((m) => ({ member: m, avatarUrl: avatar(m), vote: votes.find((v) => v.voter_id === m.user_id) ?? null }))}
           me={{ id: me.user_id, isOwner, canVote: !isOwner && !joinedLate && !myVote, vote: myVote, joinedLate }}
         />

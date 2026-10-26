@@ -1,10 +1,10 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
-import { Camera, Check, ChevronRight, Loader, Plus, RotateCcw } from "lucide-react";
+import { Camera, Check, ChevronRight, Loader, Plus, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AiBadge, TribunalBadge } from "@/components/StatusBadges";
 import { Badge } from "@/components/ui/Badge";
 import type { Verdict } from "@/lib/ai-review";
@@ -12,7 +12,7 @@ import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
-import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
+import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
 export interface DoneGoal {
   id: string;
@@ -150,8 +150,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const g = goalMeta(goal);
   const extra = mode === "extra";
   const minMinutes = extra ? MIN_EXTRA_MINUTES : MIN_STUDY_MINUTES;
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // Up to MAX_PHOTOS photos; the first one is the main photo (lists and thumbnails).
+  const [shots, setShots] = useState<{ file: File; url: string }[]>([]);
   const [summary, setSummary] = useState("");
   const [minutes, setMinutes] = useState("");
   const [pages, setPages] = useState("");
@@ -164,12 +164,12 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const pagesOk = goal !== "reading" || Number(pages) >= 1;
   const titleOk = goal !== "project" || title.trim().length >= 3;
   const summaryOk = goal !== "study" || extra || summary.trim().length >= MIN_SUMMARY;
-  const ready = !!file && minutesOk && pagesOk && titleOk && summaryOk;
+  const ready = shots.length > 0 && minutesOk && pagesOk && titleOk && summaryOk;
 
   // What is still missing, in words, next to the disabled button.
   const missing = [
     !titleOk && "dê um nome ao projeto",
-    !file && "adicione a foto",
+    shots.length === 0 && "adicione a foto",
     goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
     goal === "reading" && !pagesOk && "informe as páginas lidas",
     goal === "study" && !summaryOk && "complete o resumo",
@@ -177,30 +177,57 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const missingText =
     missing.length === 0 ? "" : `Para enviar: ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} e ${missing.at(-1)}`}.`;
 
-  useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+  // Free every local preview when the form goes away.
+  const urls = useRef(new Set<string>());
+  useEffect(() => {
+    const all = urls.current;
+    return () => all.forEach((u) => URL.revokeObjectURL(u));
+  }, []);
 
-  function pick(f: File | undefined) {
-    if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+  function pick(list: FileList | null) {
+    const picked = Array.from(list ?? []).filter((f) => f.type.startsWith("image/"));
+    if (!picked.length) return;
+    setShots((cur) => {
+      const room = MAX_PHOTOS - cur.length;
+      if (picked.length > room) setError(`Até ${MAX_PHOTOS} fotos por prova: usamos as ${room} primeiras.`);
+      else setError("");
+      return [
+        ...cur,
+        ...picked.slice(0, Math.max(0, room)).map((file) => {
+          const url = URL.createObjectURL(file);
+          urls.current.add(url);
+          return { file, url };
+        }),
+      ];
+    });
+  }
+
+  function remove(n: number) {
+    setShots((cur) => {
+      URL.revokeObjectURL(cur[n].url);
+      urls.current.delete(cur[n].url);
+      return cur.filter((_, i) => i !== n);
+    });
     setError("");
   }
 
   async function submit() {
-    if (!file || !ready) return;
+    if (!shots.length || !ready) return;
     setBusy(true);
     setError("");
     try {
       const supabase = createClient();
-      const [blob, thumb] = await Promise.all([compressImage(file), compressImage(file, THUMB_SIDE)]);
-      const path = mediaPath(groupId, userId, goal);
       const media = supabase.storage.from("media");
+      const paths = shots.map(() => mediaPath(groupId, userId, goal));
+      const blobs = await Promise.all(shots.map((s) => compressImage(s.file)));
+      const thumb = await compressImage(shots[0].file, THUMB_SIDE);
       // The thumbnail only speeds up lists; if it fails, lists fall back to the full photo.
-      const [up] = await Promise.all([
-        media.upload(path, blob, { contentType: "image/jpeg", upsert: false }),
-        media.upload(thumbPath(path), thumb, { contentType: "image/jpeg", upsert: false }).catch(() => null),
+      const [ups] = await Promise.all([
+        Promise.all(paths.map((p, n) => media.upload(p, blobs[n], { contentType: "image/jpeg", upsert: false }))),
+        media.upload(thumbPath(paths[0]), thumb, { contentType: "image/jpeg", upsert: false }).catch(() => null),
       ]);
-      if (up.error) throw new Error("A foto não subiu. Seus dados continuam aqui: tente de novo.");
+      if (ups.some((u) => u.error)) throw new Error(`${shots.length > 1 ? "Uma das fotos" : "A foto"} não subiu. Seus dados continuam aqui: tente de novo.`);
+      const [path, ...extraPhotos] = paths;
       // The database sets the day (São Paulo) and the owner; the client only sends the content.
       const { error } = await supabase
         .from("checkins")
@@ -212,6 +239,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           pages: goal === "reading" ? Number(pages) : null,
           title: goal === "project" ? title.trim() : null,
           ...(extra ? { extra: true } : {}),
+          ...(extraPhotos.length ? { extra_photos: extraPhotos } : {}),
         });
       if (error) {
         throw new Error(
@@ -282,18 +310,45 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
         </div>
       )}
 
-      {/* No `capture` attribute: phones offer both camera and gallery. */}
-      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
-        {preview ? (
-          <img src={preview} alt="Prévia da prova" className="max-h-64 w-full object-contain" />
-        ) : (
-          <span className="flex items-center gap-2 py-8 font-medium">
+      {/* No `capture` attribute: phones offer both camera and gallery. Several photos at once are fine. */}
+      {shots.length === 0 ? (
+        <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
+          <span className="flex items-center gap-2 pt-8 font-medium">
             <Camera size={20} aria-hidden />
             Tirar ou escolher foto da prova
           </span>
-        )}
-        <input type="file" accept="image/*" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-      </label>
+          <span className="pb-8 pt-1 text-xs">Até {MAX_PHOTOS} fotos{goal === "reading" ? " (ex.: página inicial e final)" : ""}</span>
+          <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
+        </label>
+      ) : (
+        <ul className="grid grid-cols-2 gap-2" data-testid="photo-previews">
+          {shots.map((s, n) => (
+            <li key={s.url} className="relative">
+              <img src={s.url} alt={`Prévia da foto ${n + 1}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-bg object-cover" />
+              <button
+                type="button"
+                onClick={() => remove(n)}
+                aria-label={`Tirar a foto ${n + 1}`}
+                className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-sm border-2 border-bevel-dark bg-bg/90 text-fg"
+              >
+                <X size={18} aria-hidden />
+              </button>
+            </li>
+          ))}
+          {shots.length < MAX_PHOTOS && (
+            <li>
+              <label className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted hover:text-fg">
+                <Plus size={20} aria-hidden />
+                Mais uma foto
+                <span className="tabular text-xs">
+                  {shots.length} de {MAX_PHOTOS}
+                </span>
+                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
+              </label>
+            </li>
+          )}
+        </ul>
+      )}
 
       {goal === "study" && (
         <div className="mt-3 space-y-3">
