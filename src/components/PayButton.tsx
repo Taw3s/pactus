@@ -4,9 +4,7 @@ import { Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { DebtItem } from "@/lib/ledger";
-
-const ONE: Record<DebtItem, string> = { coke: "1 Coca", snack: "1 salgado" };
+import { itemCount, type DebtItem } from "@/lib/debt-items";
 
 /** The receiver marks a single item of a missed day as paid. */
 export function PayButton({ debtorId, debtorName, day, item }: { debtorId: string; debtorName: string; day: string; item: DebtItem }) {
@@ -16,7 +14,7 @@ export function PayButton({ debtorId, debtorName, day, item }: { debtorId: strin
   const [, m, d] = day.split("-");
 
   async function pay() {
-    if (!confirm(`Confirmar recebimento de ${ONE[item]} de ${debtorName}, referente a ${d}/${m}?`)) return;
+    if (!confirm(`Confirmar recebimento de ${itemCount(item, 1)} de ${debtorName}, referente a ${d}/${m}?`)) return;
     setBusy(true);
     setError(false);
     const { error } = await createClient().from("payments").insert({ debtor_id: debtorId, day, item });
@@ -32,7 +30,7 @@ export function PayButton({ debtorId, debtorName, day, item }: { debtorId: strin
           Falhou
         </span>
       )}
-      <button className="btn-secondary min-h-11 shrink-0 px-4 text-sm" disabled={busy} onClick={pay} aria-label={`Recebi ${ONE[item]} de ${debtorName}, ${d}/${m}`}>
+      <button className="btn-secondary min-h-11 shrink-0 px-4 text-sm" disabled={busy} onClick={pay} aria-label={`Recebi ${itemCount(item, 1)} de ${debtorName}, ${d}/${m}`}>
         {busy && <Loader size={16} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
         Recebi
       </button>
