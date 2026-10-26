@@ -105,19 +105,23 @@ await step("offline: a failed navigation shows the 'Sem conexão' page, not a br
     await p.reload();
     await p.waitForFunction(() => !!navigator.serviceWorker.controller);
     await p.waitForFunction(async () => !!(await caches.match("/offline.html")));
-    process.kill(-srv.pid, "SIGTERM");
+    // SIGKILL, not SIGTERM: a graceful stop keeps already-open keep-alive connections answering,
+    // so the browser could still get a real response (a redirect) instead of a network error.
+    process.kill(-srv.pid, "SIGKILL");
     for (let i = 0; i < 40; i++) {
       if (!(await fetch(`http://localhost:${PORT}/login`).then(() => true, () => false))) break;
       await new Promise((r) => setTimeout(r, 250));
     }
     await p.goto(`http://localhost:${PORT}/feed`);
-    await p.getByRole("heading", { name: "Sem conexão" }).waitFor();
+    await p.getByRole("heading", { name: "Sem conexão" }).waitFor({ timeout: 15000 }).catch(async (e) => {
+      throw new Error(`${e.message.split("\n")[0]} — page was ${p.url()}: ${(await p.locator("body").innerText()).slice(0, 120)}`);
+    });
     assert(await p.locator("img").evaluate((img) => img.naturalWidth > 0), "offline sprite comes from the cache");
     await p.screenshot({ path: `${SHOTS}/h1-offline.png` });
     const { violations } = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa"]).analyze();
     assert(!violations.some((v) => v.impact === "serious" || v.impact === "critical"), JSON.stringify(violations.map((v) => v.id)));
   } finally {
-    try { process.kill(-srv.pid, "SIGTERM"); } catch {}
+    try { process.kill(-srv.pid, "SIGKILL"); } catch {}
   }
 });
 
