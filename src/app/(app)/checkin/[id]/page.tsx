@@ -8,6 +8,7 @@ import { BackBar } from "@/components/PageHeader";
 import { DisputeActions } from "@/components/DisputeActions";
 import { Sprite } from "@/components/Sprite";
 import { PhotoViewer } from "@/components/PhotoViewer";
+import { TypingCard, type TypingScore } from "@/components/TypingCard";
 import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
 import { photoDaysBefore } from "@/lib/photo-date";
 import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
@@ -39,6 +40,19 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     supabase.from("checkin_reactions").select("user_id, kind").eq("checkin_id", id).order("created_at"),
   ]);
   if (!checkin) notFound();
+  // Typing: the proof shows the day's best test (what scores), not only the first one it was sent with.
+  const { data: bestTest } = checkin.typing_tests
+    ? await supabase
+        .from("typing_tests")
+        .select("wpm, accuracy, device, minutes")
+        .eq("user_id", checkin.user_id)
+        .eq("day", checkin.day)
+        .not("score", "is", null)
+        .order("score", { ascending: false })
+        .limit(1)
+        .maybeSingle<TypingScore>()
+    : { data: null };
+  const typingShown = bestTest ?? checkin.typing_tests;
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const byId = new Map(members.map((m) => [m.user_id, m]));
@@ -54,8 +68,8 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
-  // Typing made in the app shows the server-measured result of the test it comes from.
-  const value = checkin.typing_tests ? `${typingLabel(checkin.typing_tests)} · ${DEVICE_LABEL[checkin.typing_tests.device]}` : checkinNumbers(checkin);
+  // Typing made in the app shows the server-measured result of the day's best test.
+  const value = typingShown ? `${typingLabel(typingShown)} · ${DEVICE_LABEL[typingShown.device]}` : checkinNumbers(checkin);
   // The date the file reports (EXIF, or the file's own date): context, never proof either way.
   const daysBefore = photoDaysBefore(checkin.photo_taken_at, checkin.day);
   const photoAge = daysBefore > 0 ? `O arquivo informa uma data de ${daysBefore === 1 ? "1 dia" : `${daysBefore} dias`} antes do envio.` : null;
@@ -71,7 +85,9 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const proofAlt = `Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`;
   const photoBlock = (
     <figure className="mb-4">
-      {photo ? (
+      {typingShown ? (
+        <TypingCard t={typingShown} size="full" />
+      ) : photo ? (
         <>
           <PhotoViewer
             photos={photos}

@@ -5,6 +5,7 @@ import { Avatar } from "@/components/Avatar";
 import { GroupTabs } from "@/components/GroupTabs";
 import { PageHeader } from "@/components/PageHeader";
 import { Sprite } from "@/components/Sprite";
+import { TypingCard, type TypingScore } from "@/components/TypingCard";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Badge } from "@/components/ui/Badge";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
@@ -26,14 +27,14 @@ export default async function FeedPage() {
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("*"),
-    supabase.from("typing_tests").select("user_id, wpm, accuracy, score, minutes").eq("day", today).not("score", "is", null),
+    supabase.from("typing_tests").select("user_id, wpm, accuracy, score, minutes, device").eq("day", today).not("score", "is", null),
   ]);
   // Today's best typing test per person (what scores), shown on the typing tile.
-  const typingBest = new Map<string, { wpm: number; accuracy: number; score: number; minutes: number }>();
-  for (const t of (typingRows ?? []) as { user_id: string; wpm: number; accuracy: number; score: number; minutes: number }[]) {
+  const typingBest = new Map<string, TypingScore & { score: number }>();
+  for (const t of (typingRows ?? []) as { user_id: string; wpm: number; accuracy: number; score: number; minutes: number; device: "pc" | "mobile" }[]) {
     const cur = typingBest.get(t.user_id);
     if (!cur || Number(t.score) > cur.score)
-      typingBest.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score), minutes: Number(t.minutes) });
+      typingBest.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score), minutes: Number(t.minutes), device: t.device });
   }
   const checkins = (checkinRows ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const results = (resultRows ?? []) as DisputeResult[];
@@ -142,7 +143,11 @@ export default async function FeedPage() {
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
                       <span className="relative block">
-                        <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
+                        {best ? (
+                          <TypingCard t={best} size="tile" />
+                        ) : (
+                          <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
+                        )}
                         {(c.extra_photos?.length ?? 0) > 0 && (
                           <span className="tabular absolute bottom-1 right-1 rounded-sm bg-bg/90 px-1 text-xs font-semibold">{c.extra_photos.length + 1} fotos</span>
                         )}

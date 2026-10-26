@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
+import { TypingCard, type TypingScore } from "@/components/TypingCard";
 import { TypingTest, type TypingResult } from "@/components/TypingTest";
 import { DEVICE_LABEL } from "@/lib/typing";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
@@ -40,7 +41,7 @@ interface Props {
   /** Extra study sessions sent today. */
   extras: DoneGoal[];
   /** Today's typing tests: how many were used and the best result. */
-  typing: { used: number; best: string | null };
+  typing: { used: number; best: string | null; bestScore: TypingScore | null };
 }
 
 type FormMode = "first" | "retake" | "extra";
@@ -179,7 +180,7 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
 
   return (
     <div className="space-y-2">
-      <DoneRow item={{ ...done!, typingBest: typing.best }} />
+      <DoneRow item={{ ...done!, typingBest: typing.best, typingScore: typing.bestScore }} />
       {moved && !again && (
         <p className="px-1 text-sm text-muted" role="status" data-testid="typing-moved">
           {moved}
@@ -236,7 +237,7 @@ async function resultCard(r: TypingResult): Promise<Blob> {
   return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("card"))), "image/jpeg", 0.85));
 }
 
-function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | null }; label?: string }) {
+function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | null; typingScore?: TypingScore | null }; label?: string }) {
   const g = goalMeta(item.goal);
   const value = item.typingBest ?? checkinNumbers(item);
   const annulled = item.dispute === "upheld";
@@ -269,7 +270,9 @@ function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | nul
           )}
         </span>
       </span>
-      {item.photoUrl ? (
+      {item.typingScore ? (
+        <TypingCard t={item.typingScore} size="thumb" />
+      ) : item.photoUrl ? (
         <img src={item.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-sm border-2 border-bevel-dark object-cover" />
       ) : (
         <span className="h-14 w-14 shrink-0 rounded-sm bg-raised" />
