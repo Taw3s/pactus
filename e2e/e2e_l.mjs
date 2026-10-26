@@ -53,7 +53,7 @@ await step("a photo the phone dates 3 days back: warned before sending, flagged 
   await card.getByTestId("pages").fill("7");
   await card.getByRole("button", { name: "Enviar prova" }).click();
   const row = p.locator("[data-goal=reading][data-state=done]");
-  await row.getByText("Foto de 3 dias atrás").waitFor();
+  await row.getByText("Data anterior").waitFor();
   await row.click();
   await p.waitForURL("**/checkin/**");
   proofUrl = p.url();
