@@ -28,7 +28,7 @@ interface Props {
   byAi: boolean;
   jurors: Juror[];
   /** The proof on the evidence table. */
-  proof: { goal: string; day: string; value: string | null; photos: string[]; ai: Verdict | null };
+  proof: { goal: string; day: string; value: string | null; photos: string[]; ai: Verdict | null; photoAge: string | null };
   me: { id: string; isOwner: boolean; canVote: boolean; vote: DisputeVote | null; joinedLate: boolean };
 }
 
@@ -144,6 +144,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           <Fact label="Informado" value={proof.value ?? "—"} />
           <Fact label="Juiz IA" value={proof.ai ? AI_WORD[proof.ai] : "sem análise"} />
         </dl>
+        {proof.photoAge && <p className="mt-2 text-sm font-semibold text-warn">{proof.photoAge}, segundo o celular.</p>}
       </div>
 
       {/* score */}

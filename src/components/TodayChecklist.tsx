@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
-import { Camera, Check, ChevronRight, Loader, Plus, RotateCcw, X } from "lucide-react";
+import { Camera, Check, ChevronRight, Clock, Loader, Plus, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +11,8 @@ import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
+import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
+import { spToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/client";
 import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
@@ -24,6 +26,8 @@ export interface DoneGoal {
   pages: number | null;
   title: string | null;
   photoUrl: string | null;
+  /** "Foto de 3 dias atrás" when the photo predates the proof's day. */
+  photoAge: string | null;
 }
 
 interface Props {
@@ -131,6 +135,11 @@ function DoneRow({ item, label }: { item: DoneGoal; label?: string }) {
                 Enviado
               </Badge>
               {item.review && <AiBadge state={item.review} />}
+              {item.photoAge && (
+                <Badge tone="pending" icon={Clock}>
+                  {item.photoAge}
+                </Badge>
+              )}
             </>
           )}
         </span>
@@ -151,7 +160,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const extra = mode === "extra";
   const minMinutes = extra ? MIN_EXTRA_MINUTES : MIN_STUDY_MINUTES;
   // Up to MAX_PHOTOS photos; the first one is the main photo (lists and thumbnails).
-  const [shots, setShots] = useState<{ file: File; url: string }[]>([]);
+  const [shots, setShots] = useState<{ file: File; url: string; takenAt?: Date | null }[]>([]);
   const [summary, setSummary] = useState("");
   const [minutes, setMinutes] = useState("");
   const [pages, setPages] = useState("");
@@ -196,6 +205,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
         ...picked.slice(0, Math.max(0, room)).map((file) => {
           const url = URL.createObjectURL(file);
           urls.current.add(url);
+          // Read when the photo was taken (EXIF or file date) in the background.
+          photoTakenAt(file).then((takenAt) => setShots((now) => now.map((s) => (s.url === url ? { ...s, takenAt } : s))));
           return { file, url };
         }),
       ];
@@ -228,6 +239,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       ]);
       if (ups.some((u) => u.error)) throw new Error(`${shots.length > 1 ? "Uma das fotos" : "A foto"} não subiu. Seus dados continuam aqui: tente de novo.`);
       const [path, ...extraPhotos] = paths;
+      const dates = (await Promise.all(shots.map((s) => (s.takenAt !== undefined ? s.takenAt : photoTakenAt(s.file))))).filter((d): d is Date => !!d);
+      const oldest = dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : null;
       // The database sets the day (São Paulo) and the owner; the client only sends the content.
       const { error } = await supabase
         .from("checkins")
@@ -240,6 +253,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           title: goal === "project" ? title.trim() : null,
           ...(extra ? { extra: true } : {}),
           ...(extraPhotos.length ? { extra_photos: extraPhotos } : {}),
+          ...(oldest ? { photo_taken_at: oldest.toISOString() } : {}),
         });
       if (error) {
         throw new Error(
@@ -266,6 +280,10 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       setBusy(false);
     }
   }
+
+  // A photo the phone dates before today: told before sending, shown to the group after.
+  const oldestPicked = shots.map((s) => s.takenAt?.toISOString()).filter((d): d is string => !!d).sort()[0];
+  const staleNote = photoAgeLabel(oldestPicked, spToday());
 
   const fieldId = (name: string) => `${goal}-${mode}-${name}`;
 
@@ -348,6 +366,12 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
             </li>
           )}
         </ul>
+      )}
+      {staleNote && (
+        <p className="mt-2 flex items-start gap-1.5 text-sm text-warn" data-testid="photo-age-note">
+          <Clock size={16} aria-hidden className="mt-0.5 shrink-0" />
+          {staleNote}. Pode enviar, mas o grupo vai ver essa data.
+        </p>
       )}
 
       {goal === "study" && (

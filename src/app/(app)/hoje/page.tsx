@@ -8,6 +8,7 @@ import { collectible, weekStart } from "@/lib/collectibles";
 import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
 import { dayOffOn } from "@/lib/ledger";
+import { photoAgeLabel } from "@/lib/photo-date";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,7 @@ export default async function TodayPage() {
     photoUrl: urls.get(c.photo_path) ?? null,
     dispute: statusOf.get(c.id) ?? null,
     review: reviewOf.get(c.id) ?? null,
+    photoAge: photoAgeLabel(c.photo_taken_at, c.day),
   });
   const dayComplete = GOALS.every((g) => states[g.id] === "done");
   const chestsPanel = (
