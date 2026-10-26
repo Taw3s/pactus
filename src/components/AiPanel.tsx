@@ -36,14 +36,25 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
 
   useEffect(() => {
     if (review || !canRequest) return;
-    fetch("/api/review", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ checkinId }) })
-      .then(async (r) => {
-        const body = (await r.json().catch(() => ({}))) as { status?: string };
-        if (r.status === 501) setState("off"); // feature not configured: show nothing
-        else if (body.status === "reviewed" || body.status === "exists") router.refresh();
-        else setState("unavailable");
-      })
-      .catch(() => setState("unavailable"));
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // "busy": a review of this proof is already running (or was just tried); ask again shortly.
+    const ask = (n: number) =>
+      fetch("/api/review", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ checkinId }) })
+        .then(async (r) => {
+          const body = (await r.json().catch(() => ({}))) as { status?: string };
+          if (cancelled) return;
+          if (r.status === 501) setState("off"); // feature not configured: show nothing
+          else if (body.status === "reviewed" || body.status === "exists") router.refresh();
+          else if (body.status === "busy" && n < 12) timer = setTimeout(() => ask(n + 1), 5000);
+          else setState("unavailable");
+        })
+        .catch(() => !cancelled && setState("unavailable"));
+    ask(0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [checkinId, review, canRequest, router]);
 
   if (!state || state === "off") return null;
