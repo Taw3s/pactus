@@ -234,3 +234,15 @@ body {
     transform: translateY(0) rotate(-2deg);
   }
 }
+
+/* Typing test caret: a hard blink, like a terminal. */
+@keyframes caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}

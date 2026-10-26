@@ -94,7 +94,9 @@ await step("typing: another attempt over a text keeps the place, English is offe
   await p.getByRole("button", { name: /Tentar de novo \(2 restantes\)/ }).click();
   const again = p.locator("[data-goal=typing][data-state=again]");
   await again.getByTestId("typing-mode-text").click();
-  await again.getByTestId("typing-text-select").selectOption("sql-o-que-e");
+  await again.getByTestId("typing-texts").getByRole("tab", { name: "SQL e dados" }).click();
+  await again.getByTestId("typing-text-sql-o-que-e").click();
+  await again.getByTestId("typing-preview").getByText(/SQL é a linguagem/).waitFor();
   await typingTest(p, again);
   await p.getByTestId("typing-moved").getByText(/Avançou \d+ palavras? em “O que é SQL”/).waitFor();
   await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
@@ -106,12 +108,17 @@ await step("typing: another attempt over a text keeps the place, English is offe
   await again.locator('[data-testid="typing-mode-text"][aria-checked="true"]').waitFor({ timeout: 5000 }).catch(() => {
     throw new Error("mode remembered");
   });
-  assert((await again.getByTestId("typing-text-select").inputValue()) === "sql-o-que-e", "text remembered");
-  await again.getByTestId("typing-text-select").locator("option:checked").getByText(/O que é SQL · \d+%/).waitFor({ state: "attached" });
+  const sqlText = again.getByTestId("typing-text-sql-o-que-e");
+  await again.locator('[data-testid="typing-text-sql-o-que-e"][aria-checked="true"]').waitFor({ timeout: 5000 }).catch(() => {
+    throw new Error("text remembered");
+  });
+  await sqlText.getByText(/^\d+%$/).waitFor();
+  await again.getByTestId("typing-preview").getByText(/^Continua em:/).waitFor();
   // In English the list shows the English texts.
   await again.getByTestId("typing-lang-en").click();
-  await again.getByTestId("typing-text-select").locator("option", { hasText: "What is SQL" }).waitFor({ state: "attached" });
-  assert((await again.getByTestId("typing-text-select").locator("option", { hasText: "O que é SQL" }).count()) === 0, "Portuguese texts in the English list");
+  await again.getByTestId("typing-texts").getByRole("tab", { name: "SQL e dados" }).click();
+  await again.getByTestId("typing-text-en-sql-what").waitFor();
+  assert((await again.getByTestId("typing-text-sql-o-que-e").count()) === 0, "Portuguese texts in the English list");
   await again.getByTestId("typing-lang-pt").click();
   await p.goto(`${APP}/ranking`);
   // Stage b typed on a computer, this attempt on a phone.
