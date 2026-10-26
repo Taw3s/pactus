@@ -102,7 +102,10 @@ await step("typing: another attempt over a text keeps the place, English is offe
   assert(place > 0, `place ${place}`);
   // The choice is remembered, with the place shown next to the text.
   await p.getByRole("button", { name: /Tentar de novo/ }).click();
-  assert((await again.getByTestId("typing-mode-text").getAttribute("aria-checked")) === "true", "mode remembered");
+  // The saved choice is applied right after the panel mounts: wait for it rather than read once.
+  await again.locator('[data-testid="typing-mode-text"][aria-checked="true"]').waitFor({ timeout: 5000 }).catch(() => {
+    throw new Error("mode remembered");
+  });
   assert((await again.getByTestId("typing-text-select").inputValue()) === "sql-o-que-e", "text remembered");
   await again.getByTestId("typing-text-select").locator("option:checked").getByText(/O que é SQL · \d+%/).waitFor({ state: "attached" });
   // In English the list shows the English texts.
