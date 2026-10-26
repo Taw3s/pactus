@@ -1,6 +1,6 @@
 // Stage (b): today's check-in
 import fs from "node:fs";
-import { ANON, APP, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, jpegSize, launch, newPhone, sql, step, storedFile } from "./lib.mjs";
+import { ANON, APP, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, jpegSize, launch, newPhone, sql, step, storedFile, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const { page: p } = await newPhone(browser);
@@ -57,7 +57,12 @@ await step("check-in day is today in São Paulo (set by the database)", async ()
 });
 
 await step("typing + reading complete the day", async () => {
-  for (const goal of ["typing", "reading"]) {
+  // Typing is a test inside the app: no photo, no form.
+  const typing = p.locator("[data-goal=typing][data-state=pending]");
+  assert((await typing.locator("input[type=file]").count()) === 0, "typing still asks for a photo");
+  await typingTest(p, typing);
+  await p.locator("[data-goal=typing][data-state=done]").waitFor();
+  for (const goal of ["reading"]) {
     const card = p.locator(`[data-goal=${goal}]`);
     assert((await card.locator("textarea").count()) === 0, "no summary field");
     await card.locator("input[type=file]").setInputFiles(FIXTURE);

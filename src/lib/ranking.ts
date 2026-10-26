@@ -10,6 +10,8 @@ export const SCORING = {
   perPage: 2,
   maxPagesPerDay: 50,
   perProject: 10, // projects are deliberately cheap so nobody farms them
+  perTypingScore: 1, // 1 point per wpm × accuracy of the day's best test (60 wpm at 95% = 57)
+  maxTypingPointsPerDay: 240,
 };
 
 /** Check-ins made before minutes were recorded count as the goal's minimum. */
@@ -33,13 +35,22 @@ export interface Score {
   completedDays: number;
 }
 
-export function scoreMonth(userIds: string[], checkins: RankingCheckin[], completedDays: { user_id: string; day: ISODate }[]): Score[] {
+/**
+ * `typingBest`: the best typing test score of each person and day ("user|day" -> wpm × accuracy).
+ * It scores once a day, and only with a typing proof the tribunal did not annul.
+ */
+export function scoreMonth(
+  userIds: string[],
+  checkins: RankingCheckin[],
+  completedDays: { user_id: string; day: ISODate }[],
+  typingBest: Map<string, number> = new Map(),
+): Score[] {
   const scores = new Map<string, Score>(
     userIds.map((id) => [id, { userId: id, points: 0, studyMinutes: 0, pages: 0, projects: 0, completedDays: 0 }]),
   );
 
   // Study minutes and pages are capped per person and day (a day may hold several sessions).
-  const perDay = new Map<string, { minutes: number; pages: number }>();
+  const perDay = new Map<string, { minutes: number; pages: number; typing: boolean }>();
   for (const c of checkins) {
     const s = scores.get(c.user_id);
     if (!s || c.annulled) continue;
@@ -49,13 +60,16 @@ export function scoreMonth(userIds: string[], checkins: RankingCheckin[], comple
       continue;
     }
     const key = `${c.user_id}|${c.day}`;
-    const day = perDay.get(key) ?? { minutes: 0, pages: 0 };
+    const day = perDay.get(key) ?? { minutes: 0, pages: 0, typing: false };
     perDay.set(key, day);
     if (c.goal === "study") {
       const minutes = Math.min(c.minutes ?? LEGACY_STUDY_MINUTES, SCORING.maxStudyMinutesPerDay - day.minutes);
       day.minutes += minutes;
       s.studyMinutes += minutes;
       s.points += minutes * SCORING.perStudyMinute;
+    } else if (c.goal === "typing" && !day.typing) {
+      day.typing = true;
+      s.points += Math.round(Math.min(typingBest.get(key) ?? 0, SCORING.maxTypingPointsPerDay) * SCORING.perTypingScore);
     } else if (c.goal === "reading") {
       const pages = Math.min(c.pages ?? 0, SCORING.maxPagesPerDay - day.pages);
       day.pages += pages;

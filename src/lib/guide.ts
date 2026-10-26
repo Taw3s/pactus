@@ -14,9 +14,10 @@ export const GUIDE: GuideEntry[] = [
     id: "metas",
     q: "O que preciso fazer todo dia?",
     a: [
-      `Três metas com foto de prova: estudo (mínimo ${MIN_STUDY_MINUTES} min, com um resumo de pelo menos ${MIN_SUMMARY} caracteres), digitação e leitura (informe as páginas).`,
+      `Três metas: estudo (foto + mínimo ${MIN_STUDY_MINUTES} min + um resumo de pelo menos ${MIN_SUMMARY} caracteres), digitação (um teste de 1 minuto aqui no app) e leitura (foto + páginas lidas).`,
       "O prazo é 23:59, horário de São Paulo. O dia só vale com as três.",
-      `Cada prova aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
+      `Cada prova com foto aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
+      "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e vale a melhor.",
     ],
   },
   {
@@ -72,7 +73,8 @@ export const GUIDE: GuideEntry[] = [
     id: "ranking",
     q: "Como funciona o ranking?",
     a: [
-      `Dia cumprido: ${SCORING.completedDay} pontos. Estudo: ${SCORING.perStudyMinute} ponto por minuto (até ${SCORING.maxStudyMinutesPerDay} min por dia). Leitura: ${SCORING.perPage} pontos por página (até ${SCORING.maxPagesPerDay} por dia). Projeto: ${SCORING.perProject} pontos.`,
+      `Dia cumprido: ${SCORING.completedDay} pontos. Estudo: ${SCORING.perStudyMinute} ponto por minuto (até ${SCORING.maxStudyMinutesPerDay} min por dia). Leitura: ${SCORING.perPage} pontos por página (até ${SCORING.maxPagesPerDay} por dia). Digitação: o melhor teste do dia vale WPM × precisão (60 WPM com 95% = 57). Projeto: ${SCORING.perProject} pontos.`,
+      "Os recordes de digitação ficam separados entre PC e celular.",
       "Provas anuladas pelo tribunal não contam. O ranking recomeça todo mês.",
     ],
   },

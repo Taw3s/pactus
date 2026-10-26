@@ -9,6 +9,7 @@ import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
 import { dayOffOn } from "@/lib/ledger";
 import { photoAgeLabel } from "@/lib/photo-date";
+import { typingLabel, DEVICE_LABEL } from "@/lib/typing";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -19,13 +20,14 @@ export default async function TodayPage() {
 
   const monday = weekStart(today);
   // One round trip: the AI verdict comes embedded; the group's dispute results are few.
-  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }] = await Promise.all([
+  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }, { data: typingRows }] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
     getMembers(supabase),
     supabase.from("chest_openings").select("kind, period, item_id").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
+    supabase.from("typing_tests").select("wpm, accuracy, score, device, finished_at").eq("user_id", me.user_id).eq("day", today),
   ]);
   const chestOf = (kind: "daily" | "weekly", period: string) => {
     const row = (chests ?? []).find((c) => c.kind === kind && c.period === period);
@@ -89,10 +91,17 @@ export default async function TodayPage() {
           userId={me.user_id}
           done={mine.filter((c) => !c.extra && latest(c.goal) === c).map(toDone)}
           extras={mine.filter((c) => c.extra).map(toDone)}
+          typing={typingToday(typingRows ?? [])}
         />
         {!dayComplete && <div className="mt-8">{chestsPanel}</div>}
       </div>
       <GroupSidebar />
     </div>
   );
+}
+
+/** Attempts used today and the best finished one ("72 WPM · 96% · PC"). */
+function typingToday(rows: { wpm: number | null; accuracy: number | null; score: number | null; device: "pc" | "mobile"; finished_at: string | null }[]) {
+  const best = rows.filter((r) => r.finished_at && r.score !== null).sort((a, b) => Number(b.score) - Number(a.score))[0];
+  return { used: rows.length, best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy! })} · ${DEVICE_LABEL[best.device]}` : null };
 }

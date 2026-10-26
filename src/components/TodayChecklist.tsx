@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
-import { Camera, Check, ChevronRight, Clock, Loader, Plus, RotateCcw, X } from "lucide-react";
+import { Camera, Check, ChevronRight, Clock, Keyboard, Loader, Plus, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
+import { TypingTest, type TypingResult } from "@/components/TypingTest";
+import { DEVICE_LABEL } from "@/lib/typing";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
@@ -37,11 +39,13 @@ interface Props {
   done: DoneGoal[];
   /** Extra study sessions sent today. */
   extras: DoneGoal[];
+  /** Today's typing tests: how many were used and the best result. */
+  typing: { used: number; best: string | null };
 }
 
 type FormMode = "first" | "retake" | "extra";
 
-export function TodayChecklist({ groupId, userId, done, extras }: Props) {
+export function TodayChecklist({ groupId, userId, done, extras, typing }: Props) {
   const doneBy = new Map(done.map((d) => [d.goal, d]));
   const project = doneBy.get("project");
   const anyDone = GOALS.some((g) => doneBy.has(g.id));
@@ -55,6 +59,7 @@ export function TodayChecklist({ groupId, userId, done, extras }: Props) {
         <div className="space-y-3">
           {GOALS.map((g) => {
             const d = doneBy.get(g.id);
+            if (g.id === "typing") return <TypingGoal key={g.id} done={d} groupId={groupId} userId={userId} typing={typing} />;
             if (!d) return <GoalForm key={g.id} goal={g.id} groupId={groupId} userId={userId} />;
             // Condemned today: the proof can be retaken until 23:59 (the database enforces the day).
             if (d.dispute === "upheld") {
@@ -111,9 +116,121 @@ function ExtraSessions({ extras, groupId, userId }: { extras: DoneGoal[]; groupI
   );
 }
 
-function DoneRow({ item, label }: { item: DoneGoal; label?: string }) {
+/**
+ * Typing: the test inside the app is the proof. The first finished test sends the goal (with a
+ * picture of the result card for lists and the tribunal); the other attempts can only raise the
+ * day's best, which is what scores.
+ */
+function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupId: string; userId: string; typing: Props["typing"] }) {
+  const router = useRouter();
+  const [again, setAgain] = useState(false);
+  const [error, setError] = useState("");
+  const left = Math.max(0, 3 - typing.used);
+  const retake = done?.dispute === "upheld";
+  const needsProof = !done || retake;
+
+  async function sendProof(r: TypingResult) {
+    setError("");
+    try {
+      const card = await resultCard(r);
+      const supabase = createClient();
+      const path = mediaPath(groupId, userId, "typing");
+      const media = supabase.storage.from("media");
+      const [up] = await Promise.all([
+        media.upload(path, card, { contentType: "image/jpeg", upsert: false }),
+        media.upload(thumbPath(path), card, { contentType: "image/jpeg", upsert: false }).catch(() => null),
+      ]);
+      if (up.error) throw new Error();
+      const { error } = await supabase.from("checkins").insert({ goal: "typing", photo_path: path, typing_test_id: r.testId });
+      if (error) throw new Error();
+      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
+    } catch {
+      setError("O resultado foi salvo, mas a meta não foi enviada. Faça outro teste para tentar de novo.");
+    }
+    router.refresh();
+  }
+
+  if (needsProof) {
+    return (
+      <div className="space-y-2">
+        {retake && done && <DoneRow item={done} />}
+        <section className={`card ${retake ? "!border-warn" : ""}`} data-goal="typing" data-state={retake ? "retake" : "pending"} aria-labelledby="typing-title">
+          <div className="mb-3 flex items-center gap-3">
+            {retake ? <RotateCcw size={24} aria-hidden className="shrink-0 text-warn" /> : <Sprite name={GOAL_SPRITE.typing} dim />}
+            <div className="min-w-0 flex-1">
+              <h3 id="typing-title" className="pixel text-xl uppercase leading-6">
+                {retake ? "Refazer digitação" : "Digitação"}
+              </h3>
+              <p className="text-sm text-muted">{retake ? "O grupo condenou a prova. Faça um teste novo até 23:59." : "Teste de 1 minuto aqui no app"}</p>
+            </div>
+          </div>
+          <TypingTest attemptsLeft={left} onResult={sendProof} />
+          {error && (
+            <p role="alert" className="mt-2 text-sm text-fail">
+              {error}
+            </p>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <DoneRow item={{ ...done!, typingBest: typing.best }} />
+      {again ? (
+        <section className="card" data-goal="typing" data-state="again" aria-label="Tentar de novo">
+          <TypingTest
+            attemptsLeft={left}
+            onResult={() => {
+              // Back to the summary row, now with the new best (if it is better).
+              setAgain(false);
+              router.refresh();
+            }}
+          />
+        </section>
+      ) : (
+        left > 0 && (
+          <button className="btn-secondary w-full" onClick={() => setAgain(true)}>
+            <Keyboard size={18} aria-hidden /> Tentar de novo ({left} {left === 1 ? "restante" : "restantes"})
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+/** A picture of the result (lists and the tribunal show proofs as photos). */
+async function resultCard(r: TypingResult): Promise<Blob> {
+  const c = document.createElement("canvas");
+  c.width = c.height = 480;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#26292e";
+  g.fillRect(0, 0, 480, 480);
+  g.strokeStyle = "#ffcd38";
+  g.lineWidth = 8;
+  g.strokeRect(12, 12, 456, 456);
+  g.textAlign = "center";
+  g.fillStyle = "#bdb7a8";
+  g.font = "bold 30px sans-serif";
+  g.fillText("TESTE DE DIGITAÇÃO", 240, 110);
+  g.fillStyle = "#ffcd38";
+  g.font = "bold 120px sans-serif";
+  g.fillText(String(Math.round(r.wpm)), 240, 260);
+  g.font = "bold 40px sans-serif";
+  g.fillText("WPM", 240, 315);
+  g.fillStyle = "#f5f1e6";
+  g.font = "28px sans-serif";
+  g.fillText(`${Math.round(r.accuracy * 100)}% de precisão · ${DEVICE_LABEL[r.device]}`, 240, 380);
+  g.fillStyle = "#bdb7a8";
+  g.font = "22px sans-serif";
+  g.fillText(new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }), 240, 425);
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("card"))), "image/jpeg", 0.85));
+}
+
+function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | null }; label?: string }) {
   const g = goalMeta(item.goal);
-  const value = checkinNumbers(item);
+  const value = item.typingBest ?? checkinNumbers(item);
   const annulled = item.dispute === "upheld";
   return (
     <Link

@@ -10,6 +10,7 @@ import { Sprite } from "@/components/Sprite";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
 import { photoAgeLabel } from "@/lib/photo-date";
+import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
@@ -28,7 +29,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
 
   // One round trip for everything about this proof (RLS limits it to the caller's group).
   const [{ data: checkin }, members, { data: dispute }, { data: result }, { data: review }, { data: retake }, { data: group }, { data: reactionRows }] = await Promise.all([
-    supabase.from("checkins").select("*").eq("id", id).maybeSingle<Checkin>(),
+    supabase.from("checkins").select("*, typing_tests(wpm, accuracy, device)").eq("id", id).maybeSingle<Checkin & { typing_tests: { wpm: number; accuracy: number; device: "pc" | "mobile" } | null }>(),
     getMembers(supabase),
     supabase.from("disputes").select("*, dispute_votes(*)").eq("checkin_id", id).maybeSingle<Dispute & { dispute_votes: DisputeVote[] }>(),
     supabase.from("dispute_results").select("*").eq("checkin_id", id).maybeSingle<DisputeResult>(),
@@ -53,7 +54,8 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
-  const value = checkinNumbers(checkin);
+  // Typing made in the app shows the server-measured result of the test it comes from.
+  const value = checkin.typing_tests ? `${typingLabel(checkin.typing_tests)} · ${DEVICE_LABEL[checkin.typing_tests.device]}` : checkinNumbers(checkin);
   const photoAge = photoAgeLabel(checkin.photo_taken_at, checkin.day);
   const kind = checkin.extra ? "Sessão extra de estudo" : checkin.retake_of ? `${goal.label} (refeita)` : goal.label;
   const isOwner = checkin.user_id === me.user_id;

@@ -4,6 +4,7 @@ import { askGemini, geminiConfigured } from "@/lib/gemini";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Checkin } from "@/lib/types";
+import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,22 @@ export async function POST(request: NextRequest) {
 
   const { data: existing } = await admin.from("checkin_reviews").select("checkin_id").eq("checkin_id", checkinId).maybeSingle();
   if (existing) return NextResponse.json({ status: "exists" });
+
+  // Typing made in the app: the server measured it, so the judge only records the result.
+  if (checkin.typing_test_id) {
+    const { data: t } = await admin.from("typing_tests").select("wpm, accuracy, device").eq("id", checkin.typing_test_id).maybeSingle();
+    if (!t) return NextResponse.json({ error: "test not found" }, { status: 404 });
+    const { error } = await admin.from("checkin_reviews").insert({
+      checkin_id: checkin.id,
+      group_id: checkin.group_id,
+      verdict: "match",
+      seen: `Teste de digitação feito no app: ${typingLabel(t)} (${DEVICE_LABEL[t.device as "pc" | "mobile"]}).`,
+      detected: Math.round(Number(t.wpm)),
+      model: "pacto-app",
+    });
+    if (error && error.code !== "23505") return NextResponse.json({ error: "review failed" }, { status: 502 });
+    return NextResponse.json({ status: "reviewed" });
+  }
 
   // The main photo is required; an extra one that fails to download is just left out.
   const files = await Promise.all([checkin.photo_path, ...(checkin.extra_photos ?? [])].map((p) => admin.storage.from("media").download(p)));

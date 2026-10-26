@@ -12,6 +12,7 @@ import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/da
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
 import { photoAgeLabel } from "@/lib/photo-date";
+import { typingLabel } from "@/lib/typing";
 import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +21,19 @@ export default async function FeedPage() {
   const { supabase, me } = await requireMember();
   const today = spToday();
 
-  const [members, { data: checkinRows }, { data: changeRows }, { data: resultRows }] = await Promise.all([
+  const [members, { data: checkinRows }, { data: changeRows }, { data: resultRows }, { data: typingRows }] = await Promise.all([
     getMembers(supabase),
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("*"),
+    supabase.from("typing_tests").select("user_id, wpm, accuracy, score").eq("day", today).not("score", "is", null),
   ]);
+  // Today's best typing test per person (what scores), shown on the typing tile.
+  const typingBest = new Map<string, { wpm: number; accuracy: number; score: number }>();
+  for (const t of (typingRows ?? []) as { user_id: string; wpm: number; accuracy: number; score: number }[]) {
+    const cur = typingBest.get(t.user_id);
+    if (!cur || Number(t.score) > cur.score) typingBest.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score) });
+  }
   const checkins = (checkinRows ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const results = (resultRows ?? []) as DisputeResult[];
   const resultByCheckin = new Map(results.map((r) => [r.checkin_id, r]));
@@ -120,7 +128,8 @@ export default async function FeedPage() {
                     </li>
                   );
                 }
-                const value = checkinNumbers(c);
+                const best = g.id === "typing" && c.typing_test_id ? typingBest.get(c.user_id) : undefined;
+                const value = best ? typingLabel(best) : checkinNumbers(c);
                 const age = photoAgeLabel(c.photo_taken_at, c.day);
                 return (
                   <li key={g.id}>

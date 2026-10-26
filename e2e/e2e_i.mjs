@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { ANON, APP, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step } from "./lib.mjs";
+import { ANON, APP, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const as = (email) => loginAs(browser, email);
@@ -68,7 +68,9 @@ await step("push: Davi turns notices on (fake push service), Caio closes the day
 
   const before = pushes().filter((p) => p.path === "/push/davi").length;
   const caio = await as("caio@pacto.test");
-  for (const goal of ["typing", "reading"]) {
+  await typingTest(caio, caio.locator("[data-goal=typing][data-state=pending]"));
+  await caio.locator("[data-goal=typing][data-state=done]").waitFor();
+  for (const goal of ["reading"]) {
     const card = caio.locator(`[data-goal=${goal}]`);
     await card.locator("input[type=file]").setInputFiles(FIXTURE);
     if (goal === "reading") await card.getByTestId("pages").fill("9");

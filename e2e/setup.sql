@@ -23,3 +23,6 @@ drop trigger if exists e2e_default_day_off on public.day_off_changes;
 create trigger e2e_default_day_off
   before insert on public.day_off_changes
   for each row execute function public.e2e_default_day_off();
+
+-- Test-only: the in-app typing test lasts 3 seconds instead of 60 (see e2e/lib.mjs typingTest).
+update public.typing_config set seconds = 3;
