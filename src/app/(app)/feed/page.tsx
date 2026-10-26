@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- signed URLs */
-import { ChevronRight, Circle, CircleCheck, Pause } from "lucide-react";
+import { CalendarClock, ChevronRight, Circle, CircleCheck, Pause } from "lucide-react";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { GroupTabs } from "@/components/GroupTabs";
@@ -11,7 +11,7 @@ import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
-import { photoAgeLabel } from "@/lib/photo-date";
+import { photoIsOlder } from "@/lib/photo-date";
 import { typingLabel } from "@/lib/typing";
 import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
 
@@ -67,14 +67,19 @@ export default async function FeedPage() {
   rows.sort((a, b) => b.done - a.done || b.mine.length - a.mine.length);
 
   return (
-    <>
+    <div data-wide>
       <PageHeader title="Grupo" subtitle={`Feed de ${formatDayPt(today)}`} />
       <GroupTabs />
 
+      {/* Neutral strip with a small warning mark: yellow is kept for the state and the action. */}
       {open.length > 0 && (
-        <section className="card mb-6 !border-warn !bg-warn-bg" aria-labelledby="tribunal">
-          <h2 id="tribunal" className="pixel flex items-center gap-2 text-xl uppercase text-warn">
-            <Sprite name="judgeBench" /> Tribunal em andamento
+        <section className="card mb-6" aria-labelledby="tribunal">
+          <h2 id="tribunal" className="pixel flex items-center gap-2 text-xl uppercase">
+            <Sprite name="judgeBench" />
+            <span>
+              {open.length === 1 ? "1 tribunal em andamento" : `${open.length} tribunais em andamento`}
+              <span className="ml-2 inline-block h-3 w-3 rounded-sm bg-warn align-middle" aria-hidden />
+            </span>
           </h2>
           <ul className="mt-2">
             {open.map((c) => (
@@ -91,7 +96,8 @@ export default async function FeedPage() {
         </section>
       )}
 
-      <div className="space-y-3">
+      {/* Desktop: two equal columns, one card per person, reading order kept (no masonry). */}
+      <div className="grid gap-3 desk:grid-cols-2 desk:items-start desk:gap-6">
         {rows.map(({ m, mine, project, done, extraMinutes, off }) => (
           <section key={m.user_id} className="card" data-member={m.display_name} aria-label={m.display_name}>
             <div className="flex items-center gap-3">
@@ -130,7 +136,7 @@ export default async function FeedPage() {
                 }
                 const best = g.id === "typing" && c.typing_test_id ? typingBest.get(c.user_id) : undefined;
                 const value = best ? typingLabel(best) : checkinNumbers(c);
-                const age = photoAgeLabel(c.photo_taken_at, c.day);
+                const older = photoIsOlder(c.photo_taken_at, c.day);
                 return (
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
@@ -148,9 +154,14 @@ export default async function FeedPage() {
                         </p>
                       )}
                     </Link>
-                    {age && <p className="text-xs font-semibold text-warn">{age}</p>}
+                    {/* The file's date, as context next to the metadata: never over the evidence. */}
+                    {older && (
+                      <p className="mt-0.5 inline-flex items-center gap-1 rounded-sm bg-warn-bg px-1 text-xs font-semibold text-warn" data-testid="photo-older">
+                        <CalendarClock size={14} aria-hidden /> Data anterior
+                      </p>
+                    )}
                     {(stamps.get(c.id) ?? 0) > 0 && (
-                      <p className="tabular text-xs text-accent" data-testid="stamp-count">
+                      <p className="tabular mt-0.5 border-t border-divider pt-0.5 text-xs text-accent" data-testid="stamp-count">
                         {stamps.get(c.id)} {stamps.get(c.id) === 1 ? "carimbo" : "carimbos"}
                       </p>
                     )}
@@ -165,7 +176,7 @@ export default async function FeedPage() {
             {project && (
               <Link href={`/checkin/${project.id}`} className="mt-3 flex min-h-12 items-center gap-2 border-t border-divider pt-3 text-sm">
                 <Sprite name="computer" />
-                <span className="min-w-0 flex-1 truncate">Projeto: {project.title}</span>
+                <span className="line-clamp-2 min-w-0 flex-1 break-words">Projeto: {project.title}</span>
                 <PrimaryBadge dispute={resultByCheckin.get(project.id)?.status} ai={reviewOf.get(project.id)} />
                 <ChevronRight size={18} aria-hidden className="shrink-0 text-muted" />
               </Link>
@@ -173,6 +184,6 @@ export default async function FeedPage() {
           </section>
         ))}
       </div>
-    </>
+    </div>
   );
 }

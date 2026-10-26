@@ -5,6 +5,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GROUP_TAB_KEY } from "./GroupTabs";
+import { GuideButton } from "./JudgeGuide";
 
 interface Item {
   label: string;
@@ -45,7 +46,7 @@ export function BottomNav({ profileHref }: { profileHref: string }) {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-bevel-light bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-3px_0_var(--color-hard-shadow)] desk:inset-y-0 desk:right-auto desk:w-60 desk:border-r-2 desk:border-t-0 desk:pb-0 desk:shadow-[3px_0_0_var(--color-hard-shadow)]"
+      className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-bevel-light bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-3px_0_var(--color-hard-shadow)] desk:inset-y-0 desk:right-auto desk:w-60 desk:border-r-2 desk:border-t-0 desk:overflow-y-auto desk:pb-6 desk:shadow-[3px_0_0_var(--color-hard-shadow)]"
     >
       {/* Desktop: the nav becomes a side bar with the brand on top. */}
       <div className="hidden px-6 pb-6 pt-8 desk:block">
@@ -72,6 +73,10 @@ export function BottomNav({ profileHref }: { profileHref: string }) {
           );
         })}
       </ul>
+      {/* Desktop: the guide is an action after the destinations, not a fifth tab. */}
+      <div className="mx-3 mt-6 hidden border-t-2 border-divider pt-4 desk:block">
+        <GuideButton place="nav" />
+      </div>
     </nav>
   );
 }

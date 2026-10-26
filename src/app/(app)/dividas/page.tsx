@@ -44,7 +44,7 @@ export default async function DebtsPage() {
   const [, month, day] = lastDayOfMonth(today).split("-");
 
   return (
-    <>
+    <div data-wide>
       <PageHeader title="Dívidas" subtitle={`Cada dia descumprido vale 1 Coca + 1 salgado ao grupo. Prazo deste mês: ${day}/${month}.`} />
 
       <section className="card mb-6" aria-label="Seu saldo" data-testid="my-balance">
@@ -71,7 +71,7 @@ export default async function DebtsPage() {
         ) : (
           <>
             <p className="pixel flex items-center gap-2 text-[28px] font-bold uppercase leading-[34px] text-done">
-              <CircleCheck size={26} aria-hidden /> Tudo em dia
+              <CircleCheck size={26} aria-hidden /> Você está em dia
             </p>
             <p className="mt-1 text-sm text-muted">A geladeira agradece.</p>
           </>
@@ -79,7 +79,8 @@ export default async function DebtsPage() {
       </section>
 
       <h2 className="pixel mb-3 text-xl uppercase leading-6">Saldo do grupo</h2>
-      <ul className="space-y-2">
+      {/* Desktop: two cards per row, in the same order. */}
+      <ul className="grid gap-2 desk:grid-cols-2 desk:items-start desk:gap-6">
         {rows.map(({ m, days, sum }) => (
           <DebtorRow
             key={m.user_id}
@@ -95,6 +96,6 @@ export default async function DebtsPage() {
         ))}
       </ul>
       <p className="mt-4 text-sm text-muted">O dia de hoje só vira dívida depois das 23:59.</p>
-    </>
+    </div>
   );
 }

@@ -1,15 +1,15 @@
 /* eslint-disable @next/next/no-img-element -- signed URLs */
-import { ChevronRight, Maximize2, RotateCcw } from "lucide-react";
+import { CalendarClock, ChevronRight, Maximize2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AiPanel } from "@/components/AiPanel";
 import { Avatar } from "@/components/Avatar";
-import { BackButton } from "@/components/BackButton";
+import { BackBar } from "@/components/PageHeader";
 import { DisputeActions } from "@/components/DisputeActions";
 import { Sprite } from "@/components/Sprite";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
-import { photoAgeLabel } from "@/lib/photo-date";
+import { photoDaysBefore } from "@/lib/photo-date";
 import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
@@ -56,7 +56,10 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const GoalIcon = GOAL_ICON[checkin.goal];
   // Typing made in the app shows the server-measured result of the test it comes from.
   const value = checkin.typing_tests ? `${typingLabel(checkin.typing_tests)} · ${DEVICE_LABEL[checkin.typing_tests.device]}` : checkinNumbers(checkin);
-  const photoAge = photoAgeLabel(checkin.photo_taken_at, checkin.day);
+  // The date the file reports (EXIF, or the file's own date): context, never proof either way.
+  const daysBefore = photoDaysBefore(checkin.photo_taken_at, checkin.day);
+  const photoAge = daysBefore > 0 ? `O arquivo informa uma data de ${daysBefore === 1 ? "1 dia" : `${daysBefore} dias`} antes do envio.` : null;
+  const ddmm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
   const kind = checkin.extra ? "Sessão extra de estudo" : checkin.retake_of ? `${goal.label} (refeita)` : goal.label;
   const isOwner = checkin.user_id === me.user_id;
   const recent = checkin.day >= addDays(spToday(), -1);
@@ -68,11 +71,6 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const proofAlt = `Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`;
   const photoBlock = (
     <figure className="mb-4">
-      {photoAge && (
-        <p className="mb-2 rounded-sm border-2 border-warn bg-warn-bg px-3 py-2 text-sm font-semibold text-warn" data-testid="photo-age">
-          {photoAge}, segundo o celular de {ownerName}. A data pode estar errada, mas vale conferir.
-        </p>
-      )}
       {photo ? (
         <>
           <PhotoViewer
@@ -106,6 +104,20 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         </>
       ) : (
         <div className="flex h-40 items-center justify-center rounded-sm bg-surface text-sm text-muted">Foto indisponível no momento.</div>
+      )}
+      {daysBefore > 0 && (
+        <figcaption className="mt-2 flex gap-2 rounded-sm border-l-[3px] border-warn bg-surface p-3 text-sm" data-testid="photo-age">
+          <CalendarClock size={18} aria-hidden className="mt-0.5 shrink-0 text-warn" />
+          <span>
+            <span className="block font-semibold">Data informada pelo arquivo</span>
+            {/* Only the first photo carries a date; the other files are not described. */}
+            <span className="block">
+              {photos.length > 1 ? "A primeira foto informa" : "Esta foto informa"} {ddmm(spToday(new Date(checkin.photo_taken_at!)))}; o envio foi em {ddmm(checkin.day)}
+              {daysBefore === 1 ? " (1 dia antes)." : ` (${daysBefore} dias antes).`}
+            </span>
+            <span className="mt-1 block text-muted">Essa data pode estar incorreta ou vir de uma captura ou edição. Ela não comprova quando a atividade aconteceu.</span>
+          </span>
+        </figcaption>
       )}
     </figure>
   );
@@ -226,7 +238,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     return (
       <div data-wide className="desk:grid desk:grid-cols-[minmax(0,1fr)_420px] desk:items-start desk:gap-8">
         <div className="min-w-0">
-        <BackButton fallback="/feed" />
+        <BackBar fallback="/feed" />
         <Courtroom
           disputeId={dispute.id}
           result={result}
@@ -257,7 +269,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <BackButton fallback="/feed" />
+      <BackBar fallback="/feed" />
       {header}
       {review && (
         <div className="mb-4">

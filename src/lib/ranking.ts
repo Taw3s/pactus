@@ -96,3 +96,20 @@ export function positions(scores: Score[]): number[] {
   scores.forEach((s, i) => out.push(i > 0 && s.points === scores[i - 1].points ? out[i - 1] : i + 1));
   return out;
 }
+
+/**
+ * The podium: positions 1 to 3 (competition ranking, as `positions`) with everyone at each one.
+ * Nobody with zero points stands on it. `tied` when a position holds more than one person: the
+ * page then shows level shelves instead of steps, since there is no 2nd place in "1, 1, 3".
+ */
+export function podium(scores: Score[]) {
+  const pos = positions(scores);
+  const groups: { position: number; userIds: string[]; points: number }[] = [];
+  scores.forEach((s, i) => {
+    if (pos[i] > 3 || s.points <= 0) return;
+    const g = groups.find((x) => x.position === pos[i]);
+    if (g) g.userIds.push(s.userId);
+    else groups.push({ position: pos[i], userIds: [s.userId], points: s.points });
+  });
+  return { groups, tied: groups.some((g) => g.userIds.length > 1) };
+}

@@ -70,7 +70,7 @@ await step("Ana disputes Bia's check-in: courtroom with defendant, jury and scor
 
 await step("Bia (defendant) sees tribunal in feed, defends once, cannot vote", async () => {
   await biaP.goto(`${APP}/feed`);
-  await biaP.getByText("Tribunal em andamento").waitFor();
+  await biaP.getByText(/tribuna(l|is) em andamento/i).waitFor();
   await biaP.goto(url);
   await biaP.waitForLoadState("networkidle");
   await biaP.getByText("Você é o réu e não vota").waitFor();
@@ -117,7 +117,7 @@ await step("Eva can no longer vote; Votos tab shows who convicted and why; feed 
   await p.screenshot({ path: `${SHOTS}/c3-votos.png`, fullPage: true });
   await p.goto(`${APP}/feed`);
   await p.locator("[data-member=Bia]").getByText("anulado").waitFor();
-  assert((await p.getByText("Tribunal em andamento").count()) === 0, "tribunal banner still shown");
+  assert((await p.getByText(/tribuna(l|is) em andamento/i).count()) === 0, "tribunal banner still shown");
 });
 
 await step("acquittal path: 3 'inocente' keeps the check-in (ABSOLVIDO)", async () => {

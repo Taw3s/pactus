@@ -10,7 +10,7 @@ import { AiBadge, type AiState } from "./StatusBadges";
 // Fixed lines per state: the judge raises suspicions, the group decides.
 const JUDGE: Record<AiState, { action: JudgeAction; line: string }> = {
   analyzing: { action: "think", line: "Hmm… deixa eu ver essa foto." },
-  match: { action: "stamp", line: "Confere. Pode seguir." },
+  match: { action: "stamp", line: "O conteúdo visível confere." },
   unclear: { action: "unsure", line: "Não deu para concluir. Fica com o grupo." },
   mismatch: { action: "present", line: "Algo aqui não bate. Levo ao júri." },
   unavailable: { action: "idle", line: "Estou fora do ar agora." },

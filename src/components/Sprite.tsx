@@ -14,6 +14,8 @@ export type SpriteName =
   | "gavelUp"
   | "judgeBench"
   | "trophy"
+  | "trophySilver"
+  | "trophyBronze"
   | "scales"
   | "memoryCard"
   | "calendar"

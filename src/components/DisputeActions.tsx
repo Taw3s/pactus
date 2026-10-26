@@ -62,7 +62,7 @@ export function DisputeActions({ checkinId, disputeId, canDispute, canReply }: P
           <label className="label" htmlFor="motivo">
             Motivo
           </label>
-          <textarea id="motivo" className="input min-h-20" maxLength={280} placeholder="Ex.: a foto parece ser de ontem" value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea id="motivo" className="input min-h-20" maxLength={280} placeholder="Explique o que precisa ser conferido" value={text} onChange={(e) => setText(e.target.value)} />
         </div>
         {errorLine}
         <button

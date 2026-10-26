@@ -370,10 +370,18 @@ function judgeBench() {
   return g;
 }
 
+/** Ranking podium cups: one model, three metals (gold is the original `trophy`). */
+const METALS = {
+  gold: { tones: ["#f2c230", "#e0ac1c", "#ffd84d"], plate: 0xe0ac1c },
+  silver: { tones: ["#c9d0d8", "#aab3bd", "#e6ebf0"], plate: 0xaab3bd },
+  bronze: { tones: ["#c98a52", "#a96d3a", "#e0a87a"], plate: 0xa96d3a },
+};
+
 /** Ranking: gold cup. */
-function trophy() {
+function trophy(metal = "gold") {
   const g = new THREE.Group();
-  const gold = mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#f2c230", "#e0ac1c", "#ffd84d"], 5)));
+  const { tones, plate: plateColor } = METALS[metal];
+  const gold = mat(0, tex(8, 8, (c) => noise(c, 8, 8, tones, 5)));
   const cupPts = [[0.05, 0.0], [0.42, 0.02], [0.5, 0.25], [0.46, 0.5], [0.34, 0.66], [0.12, 0.74], [0.1, 0.78]].map(([x, y]) => new THREE.Vector2(x, y));
   const cup = new THREE.Mesh(new THREE.LatheGeometry(cupPts.reverse(), 10), gold);
   cup.position.y = 0.62;
@@ -384,7 +392,7 @@ function trophy() {
   const base = box(0.62, 0.26, 0.62, mat(0x4a2a12));
   base.position.y = 0.13;
   g.add(base);
-  const plate = box(0.3, 0.1, 0.02, mat(0xe0ac1c));
+  const plate = box(0.3, 0.1, 0.02, mat(plateColor));
   plate.position.set(0, 0.13, 0.32);
   g.add(plate);
   for (const s of [-1, 1]) {
@@ -395,6 +403,9 @@ function trophy() {
   }
   return g;
 }
+
+const trophySilver = () => trophy("silver");
+const trophyBronze = () => trophy("bronze");
 
 /** Tribunal / contestação: scales of justice. */
 function scales() {
@@ -965,7 +976,7 @@ function benchFront() {
   return g;
 }
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, gavel, gavelMid, gavelUp, judgeBench, trophy, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, ...JUDGE };
+export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, ...JUDGE };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {
