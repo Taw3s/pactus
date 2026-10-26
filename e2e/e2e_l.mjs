@@ -88,17 +88,33 @@ await step("weekly summary: one push per subscribed member a day", async () => {
   assert(r2.summarized === 0, `second run ${JSON.stringify(r2)}`);
 });
 
-await step("typing: another attempt can raise the best, the ranking keeps PC records, and the server refuses a faked run", async () => {
+await step("typing: another attempt over a text keeps the place, the ranking keeps records per device and mode, and the server refuses a faked run", async () => {
   const p = await loginAs(browser, "ana@pacto.test");
   await p.getByRole("button", { name: /Tentar de novo \(2 restantes\)/ }).click();
-  await typingTest(p, p.locator("[data-goal=typing][data-state=again]"));
+  const again = p.locator("[data-goal=typing][data-state=again]");
+  await again.getByTestId("typing-mode-text").click();
+  await again.getByTestId("typing-text-select").selectOption("sql-o-que-e");
+  await typingTest(p, again);
+  await p.getByTestId("typing-moved").getByText(/Avançou \d+ palavras? em “O que é SQL”/).waitFor();
   await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
+  const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name = 'Ana' and p.text_id = 'sql-o-que-e'"));
+  assert(place > 0, `place ${place}`);
+  // The choice is remembered, with the place shown next to the text.
+  await p.getByRole("button", { name: /Tentar de novo/ }).click();
+  assert((await again.getByTestId("typing-mode-text").getAttribute("aria-checked")) === "true", "mode remembered");
+  assert((await again.getByTestId("typing-text-select").inputValue()) === "sql-o-que-e", "text remembered");
+  await again.getByTestId("typing-text-select").locator("option:checked").getByText(/O que é SQL · \d+%/).waitFor({ state: "attached" });
   await p.goto(`${APP}/ranking`);
-  await p.getByTestId("typing-records").locator('[data-device="pc"]').getByText(/Ana.*/).first().waitFor();
+  const records = p.getByTestId("typing-records").locator('[data-device="pc"]');
+  await records.locator('[data-mode="words"]').getByText(/Ana.*/).first().waitFor();
+  await records.locator('[data-mode="text"]').getByText(/Ana.*/).first().waitFor();
   // Finishing right after starting (a faked clock) is refused by the server.
   const token = await accessToken(p);
   const h = { apikey: ANON, authorization: `Bearer ${token}`, "content-type": "application/json" };
-  const start = await fetch(`${SUPABASE}/rest/v1/rpc/start_typing_test`, { method: "POST", headers: h, body: JSON.stringify({ p_device: "pc" }) }).then((r) => r.json());
+  const start = await fetch(`${SUPABASE}/rest/v1/rpc/start_typing_test`, {
+    method: "POST", headers: h, body: JSON.stringify({ p_device: "pc", p_mode: "text", p_text: "sql-o-que-e" }),
+  }).then((r) => r.json());
+  assert(start[0].start_word === place, `continues at ${start[0].start_word}, saved ${place}`);
   const fin = await fetch(`${SUPABASE}/rest/v1/rpc/finish_typing_test`, { method: "POST", headers: h, body: JSON.stringify({ p_test: start[0].test_id, p_correct: 50, p_typed: 50 }) });
   assert(fin.status >= 400, `faked run accepted: ${fin.status}`);
   // That was the third attempt: no more today.
