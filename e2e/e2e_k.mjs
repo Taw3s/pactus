@@ -1,6 +1,7 @@
 // Stage (k): the judge's animations and the courtroom interactions (after stages c and j).
 import { devices } from "playwright";
 import fs from "node:fs";
+import AxeBuilder from "@axe-core/playwright";
 import path from "node:path";
 import { APP, DIR, FIXTURE, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
 
@@ -107,6 +108,22 @@ await step("a proof takes up to 4 photos: gallery on the proof page and all of t
   const calls = () => fs.readFileSync(path.join(DIR, "gemini_calls.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
   for (let i = 0; i < 40 && !calls().some((c) => c.claim.goal === "reading" && c.images === 4); i++) await new Promise((r) => setTimeout(r, 250));
   assert(calls().some((c) => c.claim.goal === "reading" && c.images === 4), "the AI judge got the 4 photos");
+});
+
+await step("the judge's guide answers fixed questions about the rules", async () => {
+  const p = await loginAs(browser, "eva@pacto.test");
+  await p.getByTestId("judge-guide").click();
+  const dialog = p.locator("dialog[open]");
+  await dialog.getByRole("button", { name: "Como funciona o tribunal?" }).click();
+  await dialog.getByTestId("guide-answer").getByText("Depois de 72 h").waitFor();
+  await dialog.getByRole("button", { name: "Outras perguntas" }).click();
+  await dialog.getByRole("button", { name: "Quando eu fico devendo?" }).waitFor();
+  await p.addStyleTag({ content: "body{background-image:none!important;background-color:#2a2d32!important}" });
+  const axe = await new AxeBuilder({ page: p }).include("dialog[open]").withTags(["wcag2a", "wcag2aa"]).analyze();
+  const bad = axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  assert(bad.length === 0, bad.map((v) => `${v.id}×${v.nodes.length}`).join(", "));
+  await p.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached" });
 });
 
 await step("Google sign-in sends the browser to Supabase's Google authorize page and back to /auth/confirm", async () => {
