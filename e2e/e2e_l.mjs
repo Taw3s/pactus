@@ -107,6 +107,7 @@ await step("typing: another attempt over a text keeps the place, English is offe
   const tile = p.locator('[data-member^="Ana"] a', { hasText: "Digitação" });
   await tile.getByTestId("typing-card").getByText(best).waitFor();
   await tile.click();
+  await p.waitForURL("**/checkin/**");
   await p.getByTestId("typing-card").getByText(best, { exact: true }).waitFor();
   await p.goto(`${APP}/hoje`);
   const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name like 'Ana%' and p.text_id = 'sql-o-que-e'"));
