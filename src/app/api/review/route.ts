@@ -10,6 +10,8 @@ export const maxDuration = 60;
 
 // Reviews the photos of one check-in with Gemini. Any member of the group may trigger it
 // (idempotent: an existing review is kept). Without the keys the feature is simply off.
+// Every Gemini call is claimed first (claim_ai_review, migration 0014): one at a time per proof,
+// 3 attempts per proof and 30 per member a day, so failures and bursts cannot drain the quota.
 export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   if (!admin || !geminiConfigured()) return NextResponse.json({ status: "disabled" }, { status: 501 });
@@ -40,6 +42,16 @@ export async function POST(request: NextRequest) {
     if (error && error.code !== "23505") return NextResponse.json({ error: "review failed" }, { status: 502 });
     return NextResponse.json({ status: "reviewed" });
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { data: claim, error: claimError } = await admin.rpc("claim_ai_review", { p_checkin: checkin.id, p_user: user.id });
+  if (claimError) return NextResponse.json({ error: "review failed" }, { status: 502 });
+  if (claim === "exists") return NextResponse.json({ status: "exists" });
+  if (claim === "busy") return NextResponse.json({ status: "busy" }, { status: 409 });
+  if (claim !== "ok") return NextResponse.json({ status: claim }, { status: 429 });
 
   // The main photo is required; an extra one that fails to download is just left out.
   const files = await Promise.all([checkin.photo_path, ...(checkin.extra_photos ?? [])].map((p) => admin.storage.from("media").download(p)));

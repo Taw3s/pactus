@@ -35,3 +35,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f typing_english_test.sql
 "${PSQL[@]}" -f ../migrations/0013_typing_five_minutes.sql
 "${PSQL[@]}" -f typing_minutes_test.sql
+"${PSQL[@]}" -f ../migrations/0014_ai_review_limits.sql
+"${PSQL[@]}" -f ai_limits_test.sql
