@@ -1,6 +1,8 @@
 // Stage (k): the judge's animations and the courtroom interactions (after stages c and j).
 import { devices } from "playwright";
-import { APP, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
+import fs from "node:fs";
+import path from "node:path";
+import { APP, DIR, FIXTURE, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
 
 const browser = await launch();
 const bia = sql(`select user_id from public.members where display_name = 'Bia'`);
@@ -79,6 +81,32 @@ await step("Hoje: pending goals come before the chests", async () => {
     return goals && chest ? goals.compareDocumentPosition(chest) & Node.DOCUMENT_POSITION_FOLLOWING : -1;
   });
   assert(order > 0, "the daily chest is above the pending goals");
+});
+
+await step("a proof takes up to 4 photos: gallery on the proof page and all of them go to the AI judge", async () => {
+  const p = await loginAs(browser, "davi@pacto.test");
+  const card = p.locator("[data-goal=reading][data-state=pending]");
+  await card.locator("input[type=file]").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
+  assert((await card.getByTestId("photo-previews").locator("img").count()) === 3, "3 previews");
+  await card.getByRole("button", { name: "Tirar a foto 3" }).click();
+  await card.locator("input[type=file]").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
+  assert((await card.getByTestId("photo-previews").locator("img").count()) === 4, "capped at 4");
+  await card.getByText("Até 4 fotos por prova").waitFor();
+  await card.getByTestId("pages").fill("12");
+  await card.getByRole("button", { name: "Enviar prova" }).click();
+  await p.locator("[data-goal=reading][data-state=done]").click();
+  await p.waitForURL("**/checkin/**");
+  const gallery = p.getByTestId("proof-photos");
+  await gallery.waitFor();
+  assert((await gallery.locator("li").count()) === 4, "4 photos on the proof page");
+  await gallery.getByRole("button", { name: "Ampliar a foto 2 de 4" }).click();
+  await p.locator("dialog[open]").getByText("Foto 2 de 4").waitFor();
+  await p.keyboard.press("ArrowRight");
+  await p.locator("dialog[open]").getByText("Foto 3 de 4").waitFor();
+  await p.keyboard.press("Escape");
+  const calls = () => fs.readFileSync(path.join(DIR, "gemini_calls.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+  for (let i = 0; i < 40 && !calls().some((c) => c.claim.goal === "reading" && c.images === 4); i++) await new Promise((r) => setTimeout(r, 250));
+  assert(calls().some((c) => c.claim.goal === "reading" && c.images === 4), "the AI judge got the 4 photos");
 });
 
 await step("Google sign-in sends the browser to Supabase's Google authorize page and back to /auth/confirm", async () => {

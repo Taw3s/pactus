@@ -120,7 +120,12 @@ export default async function FeedPage() {
                 return (
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
-                      <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
+                      <span className="relative block">
+                        <img src={urls.get(c.photo_path)} alt={`Prova de ${g.label.toLowerCase()} de ${m.display_name}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-raised object-cover" />
+                        {(c.extra_photos?.length ?? 0) > 0 && (
+                          <span className="tabular absolute bottom-1 right-1 rounded-sm bg-bg/90 px-1 text-xs font-semibold">{c.extra_photos.length + 1} fotos</span>
+                        )}
+                      </span>
                       <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
                       {value && (
                         <p className="tabular text-xs text-muted">

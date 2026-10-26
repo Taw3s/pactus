@@ -28,7 +28,7 @@ interface Props {
   byAi: boolean;
   jurors: Juror[];
   /** The proof on the evidence table. */
-  proof: { goal: string; day: string; value: string | null; photoUrl: string | null; ai: Verdict | null };
+  proof: { goal: string; day: string; value: string | null; photos: string[]; ai: Verdict | null };
   me: { id: string; isOwner: boolean; canVote: boolean; vote: DisputeVote | null; joinedLate: boolean };
 }
 
@@ -106,15 +106,16 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           </Podium>
 
           <div className="flex flex-col items-center">
-            {proof.photoUrl ? (
+            {proof.photos.length ? (
               <PhotoViewer
-                src={proof.photoUrl}
+                photos={proof.photos}
                 alt={`Prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
                 label={`Ampliar a foto da prova de ${proof.goal.toLowerCase()} de ${defendant.display_name}`}
                 className="group relative block h-20 w-20 overflow-hidden rounded-sm border-2 border-bevel-dark bg-surface shadow-[3px_3px_0_var(--color-hard-shadow)] desk:h-28 desk:w-28"
               >
-                <img src={proof.photoUrl} alt="" className="h-full w-full object-cover" />
-                <span className="absolute bottom-0.5 right-0.5 rounded-sm bg-bg/90 p-0.5">
+                <img src={proof.photos[0]} alt="" className="h-full w-full object-cover" />
+                <span className="absolute bottom-0.5 right-0.5 flex items-center gap-0.5 rounded-sm bg-bg/90 p-0.5 text-xs font-semibold">
+                  {proof.photos.length > 1 && <span className="tabular">{proof.photos.length}</span>}
                   <Maximize2 size={14} aria-hidden />
                 </span>
               </PhotoViewer>

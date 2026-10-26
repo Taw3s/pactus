@@ -28,7 +28,7 @@ class GeminiError extends Error {
   }
 }
 
-async function call(model: string, prompt: string, imageBase64: string): Promise<string> {
+async function call(model: string, prompt: string, imagesBase64: string[]): Promise<string> {
   const base = process.env.GEMINI_API_URL || DEFAULT_API; // overridable for local tests
   let res: Response;
   try {
@@ -36,7 +36,7 @@ async function call(model: string, prompt: string, imageBase64: string): Promise
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }],
+        contents: [{ parts: [{ text: prompt }, ...imagesBase64.map((data) => ({ inline_data: { mime_type: "image/jpeg", data } }))] }],
         generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0 },
       }),
       signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
@@ -55,13 +55,13 @@ async function call(model: string, prompt: string, imageBase64: string): Promise
   return text;
 }
 
-/** Sends one image + prompt; falls back to a lighter model when the main one is overloaded or slow. */
-export async function askGemini(prompt: string, jpeg: ArrayBuffer): Promise<{ text: string; model: string }> {
-  const image = Buffer.from(jpeg).toString("base64");
+/** Sends the proof's photos + prompt; falls back to a lighter model when the main one is overloaded or slow. */
+export async function askGemini(prompt: string, jpegs: ArrayBuffer[]): Promise<{ text: string; model: string }> {
+  const images = jpegs.map((j) => Buffer.from(j).toString("base64"));
   const errors: string[] = [];
   for (const model of models()) {
     try {
-      return { text: await call(model, prompt, image), model };
+      return { text: await call(model, prompt, images), model };
     } catch (e) {
       errors.push(e instanceof Error ? e.message : String(e));
       if (e instanceof GeminiError && !e.retryable) break;

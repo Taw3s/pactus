@@ -23,11 +23,12 @@ http
       const json = JSON.parse(body || "{}");
       const parts = json.contents?.[0]?.parts ?? [];
       const prompt = parts.find((p) => p.text)?.text ?? "";
-      const image = parts.find((p) => p.inline_data)?.inline_data;
+      const images = parts.filter((p) => p.inline_data).map((p) => p.inline_data);
+      const image = images[0];
       const claim = JSON.parse(prompt.match(/Claim \(JSON\): (.*)$/m)?.[1] ?? "{}");
       fs.appendFileSync(
         path.join(DIR, "gemini_calls.jsonl"),
-        JSON.stringify({ url: req.url, key: req.headers["x-goog-api-key"], claim, imageBytes: image ? Buffer.from(image.data, "base64").length : 0, mime: image?.mime_type, schema: !!json.generationConfig?.responseSchema }) + "\n",
+        JSON.stringify({ url: req.url, key: req.headers["x-goog-api-key"], claim, imageBytes: image ? Buffer.from(image.data, "base64").length : 0, images: images.length, mime: image?.mime_type, schema: !!json.generationConfig?.responseSchema }) + "\n",
       );
       let answer;
       if (claim.goal === "typing") answer = { consistent: "yes", number: 72, seen: "Tela do Monkeytype mostrando 72 WPM." };

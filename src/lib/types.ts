@@ -27,6 +27,7 @@ export function goalMeta(goal: Goal): GoalMeta {
 export const MIN_STUDY_MINUTES = 60;
 export const MIN_EXTRA_MINUTES = 10;
 export const MAX_EXTRA_SESSIONS = 5;
+export const MAX_PHOTOS = 4;
 
 export function checkinNumbers(item: { goal: Goal; minutes: number | null; pages: number | null; title: string | null }): string | null {
   if (item.goal === "study" && item.minutes) return `${item.minutes} min`;
@@ -61,6 +62,8 @@ export interface Checkin {
   extra: boolean;
   /** The annulled proof this one retakes (same goal, same day). */
   retake_of: string | null;
+  /** Up to 3 more photos besides photo_path (4 in total). */
+  extra_photos: string[];
   created_at: string;
 }
 
