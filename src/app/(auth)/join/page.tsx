@@ -217,7 +217,7 @@ function JoinForm() {
 
 export default function JoinPage() {
   return (
-    <AuthShell subtitle="Só entra quem tem convite">
+    <AuthShell subtitle="Entre com um convite ou crie o seu desafio">
       <Suspense>
         <JoinForm />
       </Suspense>
