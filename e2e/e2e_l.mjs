@@ -97,7 +97,7 @@ await step("typing: another attempt over a text keeps the place, the ranking kee
   await typingTest(p, again);
   await p.getByTestId("typing-moved").getByText(/Avançou \d+ palavras? em “O que é SQL”/).waitFor();
   await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
-  const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name = 'Ana' and p.text_id = 'sql-o-que-e'"));
+  const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name like 'Ana%' and p.text_id = 'sql-o-que-e'"));
   assert(place > 0, `place ${place}`);
   // The choice is remembered, with the place shown next to the text.
   await p.getByRole("button", { name: /Tentar de novo/ }).click();
