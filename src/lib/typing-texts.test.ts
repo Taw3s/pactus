@@ -6,6 +6,8 @@ describe("typing texts", () => {
     expect(new Set(TYPING_TEXTS.map((t) => t.id)).size).toBe(TYPING_TEXTS.length);
     for (const t of TYPING_TEXTS) {
       expect(TYPING_CATEGORIES).toContain(t.category);
+      // The database tells English texts by their id.
+      expect(t.id.startsWith("en-"), t.id).toBe(t.lang === "en");
       expect(t.id.length).toBeLessThanOrEqual(60);
       expect(t.text).not.toMatch(/[{}()[\]<>=`"'_\\|#*]/);
       const n = textWords(t).length;
@@ -22,5 +24,12 @@ describe("typing texts", () => {
     expect(wrapsAt).toBe(2);
     expect(progressAfter(t, 10, 30)).toEqual({ restart: false, words: 40 });
     expect(progressAfter(t, all.length - 5, 5)).toEqual({ restart: true, words: 0 });
+  });
+
+  it("come in both languages, with the same subjects", () => {
+    const pt = TYPING_TEXTS.filter((t) => t.lang === "pt");
+    const en = TYPING_TEXTS.filter((t) => t.lang === "en");
+    expect(en.length).toBe(pt.length);
+    for (const c of TYPING_CATEGORIES) expect(en.filter((t) => t.category === c).length).toBe(pt.filter((t) => t.category === c).length);
   });
 });

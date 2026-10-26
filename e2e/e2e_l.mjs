@@ -88,7 +88,7 @@ await step("weekly summary: one push per subscribed member a day", async () => {
   assert(r2.summarized === 0, `second run ${JSON.stringify(r2)}`);
 });
 
-await step("typing: another attempt over a text keeps the place, the ranking keeps records per device and mode, and the server refuses a faked run", async () => {
+await step("typing: another attempt over a text keeps the place, English is offered, the ranking keeps records per device, mode and language, and the server refuses a faked run", async () => {
   const p = await loginAs(browser, "ana@pacto.test");
   await p.getByRole("button", { name: /Tentar de novo \(2 restantes\)/ }).click();
   const again = p.locator("[data-goal=typing][data-state=again]");
@@ -104,13 +104,24 @@ await step("typing: another attempt over a text keeps the place, the ranking kee
   assert((await again.getByTestId("typing-mode-text").getAttribute("aria-checked")) === "true", "mode remembered");
   assert((await again.getByTestId("typing-text-select").inputValue()) === "sql-o-que-e", "text remembered");
   await again.getByTestId("typing-text-select").locator("option:checked").getByText(/O que é SQL · \d+%/).waitFor({ state: "attached" });
+  // In English the list shows the English texts.
+  await again.getByTestId("typing-lang-en").click();
+  await again.getByTestId("typing-text-select").locator("option", { hasText: "What is SQL" }).waitFor({ state: "attached" });
+  assert((await again.getByTestId("typing-text-select").locator("option", { hasText: "O que é SQL" }).count()) === 0, "Portuguese texts in the English list");
+  await again.getByTestId("typing-lang-pt").click();
   await p.goto(`${APP}/ranking`);
-  const records = p.getByTestId("typing-records").locator('[data-device="pc"]');
-  await records.locator('[data-mode="words"]').getByText(/Ana.*/).first().waitFor();
-  await records.locator('[data-mode="text"]').getByText(/Ana.*/).first().waitFor();
+  // Stage b typed on a computer, this attempt on a phone.
+  const records = p.getByTestId("typing-records");
+  await records.locator('[data-device="pc"] [data-mode="words"][data-lang="pt"]').getByText(/Ana.*/).first().waitFor();
+  await records.locator('[data-device="mobile"] [data-mode="text"][data-lang="pt"]').getByText(/Ana.*/).first().waitFor();
   // Finishing right after starting (a faked clock) is refused by the server.
   const token = await accessToken(p);
   const h = { apikey: ANON, authorization: `Bearer ${token}`, "content-type": "application/json" };
+  // A Portuguese text cannot be started as an English test.
+  const wrong = await fetch(`${SUPABASE}/rest/v1/rpc/start_typing_test`, {
+    method: "POST", headers: h, body: JSON.stringify({ p_device: "pc", p_mode: "text", p_text: "sql-o-que-e", p_lang: "en" }),
+  });
+  assert(wrong.status >= 400, `language mismatch accepted: ${wrong.status}`);
   const start = await fetch(`${SUPABASE}/rest/v1/rpc/start_typing_test`, {
     method: "POST", headers: h, body: JSON.stringify({ p_device: "pc", p_mode: "text", p_text: "sql-o-que-e" }),
   }).then((r) => r.json());

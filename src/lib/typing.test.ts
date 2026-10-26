@@ -21,4 +21,9 @@ describe("makeWords", () => {
     expect(w).toHaveLength(50);
     expect(w.every((x) => x.length > 0)).toBe(true);
   });
+
+  it("gives English words without accents in English", () => {
+    const w = makeWords(200, Math.random, "en");
+    expect(w.every((x) => /^[a-z]+$/.test(x))).toBe(true);
+  });
 });

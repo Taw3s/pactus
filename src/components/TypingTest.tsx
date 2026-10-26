@@ -3,7 +3,7 @@
 import { BookOpen, Keyboard, Loader, Shuffle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel } from "@/lib/typing";
+import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel, type TypingLang } from "@/lib/typing";
 import { progressAfter, textWords, TYPING_CATEGORIES, TYPING_TEXTS, typingText, wordsFrom } from "@/lib/typing-texts";
 
 export interface TypingResult {
@@ -28,7 +28,8 @@ const ERRORS: [string, string][] = [
 /**
  * One-minute typing test. The server starts and ends the clock (start/finish_typing_test) and
  * computes the result; this screen shows the words and counts what was typed. Random words or a
- * text about programming, which continues where the person stopped last time.
+ * text about programming, which continues where the person stopped last time; in Portuguese or
+ * English.
  */
 export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; onResult: (r: TypingResult) => void | Promise<void> }) {
   const [phase, setPhase] = useState<"idle" | "starting" | "running" | "sending" | "done">("idle");
@@ -39,33 +40,46 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   const [result, setResult] = useState<TypingResult | null>(null);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<Mode>("words");
-  const [textId, setTextId] = useState(TYPING_TEXTS[0].id);
+  const [lang, setLang] = useState<TypingLang>("pt");
+  // The chosen text of each language.
+  const [texts, setTexts] = useState<Record<TypingLang, string>>(() => ({
+    pt: TYPING_TEXTS.find((t) => t.lang === "pt")!.id,
+    en: TYPING_TEXTS.find((t) => t.lang === "en")!.id,
+  }));
+  const textId = texts[lang];
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [title, setTitle] = useState("");
   const test = useRef<{ id: string; seconds: number; started: number; device: "pc" | "mobile"; text: string | null; start: number } | null>(null);
+  const [typingLang, setTypingLang] = useState<TypingLang>("pt");
   const run = useRef({ committed: [] as string[], current: "", words: [] as string[] });
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
 
-  // The last choice (mode and text) is remembered on this device; the place in each text is on the server.
+  // The last choice (mode, language, texts) is remembered on this device; the place in each text is on the server.
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}");
       if (saved.mode === "text" || saved.mode === "words") setMode(saved.mode);
-      if (typingText(saved.text)) setTextId(saved.text);
+      if (saved.lang === "pt" || saved.lang === "en") setLang(saved.lang);
+      for (const id of Object.values(saved.texts ?? {})) {
+        const t = typingText(id as string);
+        if (t) setTexts((cur) => ({ ...cur, [t.lang]: t.id }));
+      }
     } catch {}
     loadProgress();
   }, []);
 
-  function choose(next: { mode?: Mode; text?: string }) {
+  function choose(next: { mode?: Mode; lang?: TypingLang; text?: string }) {
     const m = next.mode ?? mode;
-    const t = next.text ?? textId;
+    const l = next.lang ?? lang;
+    const ts = next.text ? { ...texts, [l]: next.text } : texts;
     setMode(m);
-    setTextId(t);
+    setLang(l);
+    setTexts(ts);
     try {
-      localStorage.setItem(PREF, JSON.stringify({ mode: m, text: t }));
+      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, texts: ts }));
     } catch {}
   }
 
@@ -79,7 +93,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setPhase("starting");
     const device = deviceKind();
     const text = mode === "text" ? typingText(textId) : null;
-    const { data, error } = await createClient().rpc("start_typing_test", { p_device: device, p_mode: text ? "text" : "words", p_text: text?.id ?? null });
+    const { data, error } = await createClient().rpc("start_typing_test", { p_device: device, p_mode: text ? "text" : "words", p_text: text?.id ?? null, p_lang: lang });
     const row = Array.isArray(data) ? data[0] : null;
     if (error || !row) {
       setError(ERRORS.find(([k]) => error?.message.includes(k))?.[1] ?? "Não foi possível começar. Tente de novo.");
@@ -87,8 +101,9 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       return;
     }
     const start = Number(row.start_word ?? 0);
-    const list = text ? wordsFrom(text, start).words : makeWords();
+    const list = text ? wordsFrom(text, start).words : makeWords(120, Math.random, lang);
     setTitle(text?.title ?? "");
+    setTypingLang(lang);
     run.current = { committed: [], current: "", words: list };
     setWords(list);
     setCommitted([]);
@@ -165,6 +180,22 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     <div className="space-y-3" data-testid="typing-test" data-phase={phase}>
       {phase === "idle" || phase === "starting" ? (
         <>
+          <div className="flex gap-2" role="radiogroup" aria-label="Idioma">
+            {(["pt", "en"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                role="radio"
+                aria-checked={lang === l}
+                className={`${lang === l ? "btn-primary" : "btn-secondary"} flex-1`}
+                onClick={() => choose({ lang: l })}
+                data-testid={`typing-lang-${l}`}
+                lang={l === "en" ? "en" : "pt-BR"}
+              >
+                {l === "pt" ? "Português" : "English"}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="O que digitar">
             {(
               [
@@ -191,7 +222,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               <select className="input mt-1" value={textId} onChange={(e) => choose({ text: e.target.value })} data-testid="typing-text-select">
                 {TYPING_CATEGORIES.map((c) => (
                   <optgroup key={c} label={c}>
-                    {TYPING_TEXTS.filter((t) => t.category === c).map((t) => (
+                    {TYPING_TEXTS.filter((t) => t.category === c && t.lang === lang).map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.title}
                         {progress[t.id] ? ` · ${Math.round((progress[t.id] / textWords(t).length) * 100)}%` : ""}
@@ -223,7 +254,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
             </p>
             <p className="tabular text-sm text-muted">{committed.length} palavras</p>
           </div>
-          <p className="min-h-24 rounded-sm border-2 border-bevel-dark bg-bg p-3 text-lg leading-8" aria-label="Palavras do teste" lang="pt-BR">
+          <p className="min-h-24 rounded-sm border-2 border-bevel-dark bg-bg p-3 text-lg leading-8" aria-label="Palavras do teste" lang={typingLang === "en" ? "en" : "pt-BR"}>
             {shown.map((w, i) => {
               const n = offset + i;
               const typedWord = committed[n];

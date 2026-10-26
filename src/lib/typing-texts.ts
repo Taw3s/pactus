@@ -1,9 +1,12 @@
 // Texts for the typing test's "Texto" mode: short explanations about programming, in prose (no
 // code symbols), so the test is also a reading. Each person keeps their place in every text
-// (typing_progress); a text's id is stored, so never rename one.
+// (typing_progress); a text's id is stored, so never rename one. English texts are the same
+// subjects; their ids start with "en-" (the database checks it).
+import type { TypingLang } from "./typing";
 
 export interface TypingText {
   id: string;
+  lang: TypingLang;
   category: string;
   title: string;
   text: string;
@@ -11,8 +14,9 @@ export interface TypingText {
 
 export const TYPING_CATEGORIES = ["Fundamentos", "SQL e dados", "Python", "JavaScript", "Web"] as const;
 
-export const TYPING_TEXTS: TypingText[] = [
+const PT: TypingText[] = [
   {
+    lang: "pt",
     id: "algoritmo",
     category: "Fundamentos",
     title: "O que é um algoritmo",
@@ -26,6 +30,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "chama busca binária, e mostra que pensar antes de escrever o código costuma valer mais do que digitar rápido.",
   },
   {
+    lang: "pt",
     id: "variavel",
     category: "Fundamentos",
     title: "Variáveis e tipos",
@@ -39,6 +44,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "código fácil de ler meses depois.",
   },
   {
+    lang: "pt",
     id: "funcao",
     category: "Fundamentos",
     title: "Funções",
@@ -52,6 +58,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "deveria ser dividida em duas.",
   },
   {
+    lang: "pt",
     id: "complexidade",
     category: "Fundamentos",
     title: "Complexidade de algoritmos",
@@ -65,6 +72,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "reais chegarem.",
   },
   {
+    lang: "pt",
     id: "api",
     category: "Fundamentos",
     title: "O que é uma API",
@@ -77,6 +85,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "pessoas já usam quebra os programas delas, por isso APIs públicas costumam ganhar versões novas em vez de mudar as antigas.",
   },
   {
+    lang: "pt",
     id: "http",
     category: "Fundamentos",
     title: "Como funciona o HTTP",
@@ -89,6 +98,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "servidor só sabe quem você é porque cada pedido carrega essa prova. A versão segura, HTTPS, criptografa tudo no caminho.",
   },
   {
+    lang: "pt",
     id: "git",
     category: "Fundamentos",
     title: "Git e controle de versão",
@@ -101,6 +111,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "pequenos, com mensagens claras, transformam o histórico numa documentação de como o projeto chegou até aqui.",
   },
   {
+    lang: "pt",
     id: "compilador-interpretador",
     category: "Fundamentos",
     title: "Compilador e interpretador",
@@ -114,6 +125,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "aparecer.",
   },
   {
+    lang: "pt",
     id: "nuvem",
     category: "Fundamentos",
     title: "O que é a nuvem",
@@ -127,6 +139,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "qualquer pessoa.",
   },
   {
+    lang: "pt",
     id: "senhas",
     category: "Fundamentos",
     title: "Como guardar senhas",
@@ -139,6 +152,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "testar milhões de tentativas fique caro demais para um atacante.",
   },
   {
+    lang: "pt",
     id: "sql-o-que-e",
     category: "SQL e dados",
     title: "O que é SQL",
@@ -152,6 +166,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "quem trabalha com dados.",
   },
   {
+    lang: "pt",
     id: "sql-chaves",
     category: "SQL e dados",
     title: "Chaves primárias e estrangeiras",
@@ -165,6 +180,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "dados coerentes, porque nenhum programa consegue gravar uma ligação quebrada.",
   },
   {
+    lang: "pt",
     id: "sql-indices",
     category: "SQL e dados",
     title: "Índices em bancos de dados",
@@ -178,6 +194,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "você criou.",
   },
   {
+    lang: "pt",
     id: "sql-transacoes",
     category: "SQL e dados",
     title: "Transações",
@@ -191,6 +208,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "desempenho.",
   },
   {
+    lang: "pt",
     id: "python-intro",
     category: "Python",
     title: "Por que Python é tão popular",
@@ -204,6 +222,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "preço da simplicidade é a velocidade, menor que a de linguagens compiladas.",
   },
   {
+    lang: "pt",
     id: "python-listas",
     category: "Python",
     title: "Listas e dicionários em Python",
@@ -217,6 +236,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "instantaneamente.",
   },
   {
+    lang: "pt",
     id: "js-intro",
     category: "JavaScript",
     title: "A história do JavaScript",
@@ -229,6 +249,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "JavaScript e acusa erros antes de o código rodar, sem mudar o que acontece no navegador.",
   },
   {
+    lang: "pt",
     id: "js-assincrono",
     category: "JavaScript",
     title: "JavaScript assíncrono",
@@ -241,6 +262,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "erro mais comum de quem está começando é esquecer de esperar uma promessa e usar um resultado que ainda não chegou.",
   },
   {
+    lang: "pt",
     id: "html-css",
     category: "Web",
     title: "HTML e CSS",
@@ -253,6 +275,7 @@ export const TYPING_TEXTS: TypingText[] = [
       "regras que mudam conforme a largura da tela, o mesmo HTML se adapta a um celular e a um monitor grande.",
   },
   {
+    lang: "pt",
     id: "web-navegador",
     category: "Web",
     title: "O que acontece ao abrir um site",
@@ -265,6 +288,262 @@ export const TYPING_TEXTS: TypingText[] = [
       "em enviar menos arquivos e arquivos menores, e em mostrar o conteúdo principal antes do resto.",
   },
 ];
+
+const EN: Omit<TypingText, "lang">[] = [
+  {
+    id: "en-algorithm",
+    category: "Fundamentos",
+    title: "What is an algorithm",
+    text:
+      "An algorithm is a finite sequence of well defined steps that solves a problem. A cake recipe is an algorithm: it has " +
+      "ingredients as input, instructions in order and a result at the end. In programming the idea is the same, but the steps " +
+      "must be so precise that a machine can follow them without interpreting anything. A good algorithm always finishes, gives " +
+      "the right answer for every valid input and uses no more time or memory than it needs. That is why two algorithms can solve " +
+      "the same problem and still be very different. Looking for a name in a list by checking every item works, but in a sorted " +
+      "list it is much faster to open the middle and throw away half of the list at each step. This is called binary search, and " +
+      "it shows that thinking before writing code is often worth more than typing fast.",
+  },
+  {
+    id: "en-variables",
+    category: "Fundamentos",
+    title: "Variables and types",
+    text:
+      "A variable is a name that points to a value stored in memory. Instead of repeating a number in many places, a program keeps " +
+      "it once and uses the name whenever it needs it. Every value has a type, which says what it represents and what can be done " +
+      "with it. Whole numbers can be added, pieces of text can be joined, and boolean values are only true or false. Some languages " +
+      "require the type of every variable to be declared and check everything before the program runs; others find out the types " +
+      "while the program is running. The first approach catches many mistakes early, while the second lets you write code faster. " +
+      "Choosing good names for variables looks like a small detail, but it is one of the things that most help code stay easy to " +
+      "read months later.",
+  },
+  {
+    id: "en-functions",
+    category: "Fundamentos",
+    title: "Functions",
+    text:
+      "A function is a named block of code that receives data, does some work and returns a result. It exists to avoid repetition " +
+      "and to give a name to an idea. When the same shipping calculation appears on three screens, writing it once inside a function " +
+      "makes sure all three screens change together when the rule changes. The values a function receives are called parameters. A " +
+      "pure function always returns the same output for the same inputs and changes nothing outside of itself, which makes it easy " +
+      "to test and to understand. Small functions that do only one thing are usually easier to reuse. When the name of a function " +
+      "needs the word and in the middle to describe what it does, that is a good sign it should be split into two.",
+  },
+  {
+    id: "en-complexity",
+    category: "Fundamentos",
+    title: "Algorithm complexity",
+    text:
+      "The complexity of an algorithm describes how the time or memory it needs grows as the input grows. It does not matter " +
+      "whether a list of ten items takes one or two milliseconds; what matters is what happens with a million items. A linear " +
+      "algorithm does work in proportion to the size of the input. A quadratic one, such as comparing every item with every other " +
+      "item, becomes a hundred times slower when the input becomes ten times larger. Binary search is logarithmic: doubling the " +
+      "list adds only one more step. This way of measuring ignores the details of the machine and focuses on the shape of the " +
+      "growth, which is why it is called asymptotic analysis. In practice it helps you notice early when a solution that works well " +
+      "in tests will freeze once real data arrives.",
+  },
+  {
+    id: "en-api",
+    category: "Fundamentos",
+    title: "What is an API",
+    text:
+      "API stands for application programming interface. It is a contract that says how one program can ask something of another: " +
+      "which requests exist, which data to send and what comes back as an answer. When a weather app shows the forecast, it has " +
+      "probably asked a weather service for that data through its API. The app does not need to know how the service calculates " +
+      "the forecast; it only needs to follow the contract. This separation is what allows different systems, written in different " +
+      "languages, to talk to each other. A good API is stable, well documented and hard to use the wrong way. Changing a contract " +
+      "that other people already depend on breaks their programs, so public APIs usually get new versions instead of changing the " +
+      "old ones.",
+  },
+  {
+    id: "en-http",
+    category: "Fundamentos",
+    title: "How HTTP works",
+    text:
+      "HTTP is the protocol a browser uses to talk to servers. Every conversation is a request followed by a response. The request " +
+      "says what is wanted by using a method: GET to fetch something, POST to send new data, PUT or PATCH to change it and DELETE " +
+      "to remove it. The response carries a status code, such as two hundred when everything went well, four hundred and four when " +
+      "the address does not exist and five hundred when the server failed. Requests and responses also carry headers, which are " +
+      "extra details like the type of the content or the token of the person who is logged in. HTTP keeps no memory between one " +
+      "request and the next, so the server only knows who you are because every request carries that proof. Its secure version, " +
+      "HTTPS, encrypts everything along the way.",
+  },
+  {
+    id: "en-git",
+    category: "Fundamentos",
+    title: "Git and version control",
+    text:
+      "Git is a version control system: it keeps the history of a project as a series of snapshots called commits. Each commit " +
+      "records what changed, who changed it and why, so you can go back in time, compare versions and find out when a bug first " +
+      "appeared. Branches are parallel lines of work. Someone can create a branch for a new feature without touching the version " +
+      "that is running in production, and only join the two when the work is ready. Joining them is called a merge. When two people " +
+      "change the same line, Git does not guess which change wins and asks someone to resolve the conflict. Small commits with clear " +
+      "messages turn the history into documentation of how the project got to where it is today.",
+  },
+  {
+    id: "en-compiler-interpreter",
+    category: "Fundamentos",
+    title: "Compiler and interpreter",
+    text:
+      "A computer only understands machine instructions, so the code we write has to be translated. A compiler translates the whole " +
+      "program at once, before it runs, and produces an executable file. Languages like C, Go and Rust work this way, which is why " +
+      "they tend to be fast and to report many errors before the program even starts. An interpreter reads and runs the code bit by " +
+      "bit while the program is running, which makes it very quick to try out ideas. In practice the line is blurry. Java is " +
+      "compiled into an intermediate code that a virtual machine runs, and the JavaScript engines in browsers compile the most used " +
+      "parts of the code while it runs in order to make them faster. The useful question is not whether a language is compiled, but " +
+      "when each kind of error will show up.",
+  },
+  {
+    id: "en-cloud",
+    category: "Fundamentos",
+    title: "What is the cloud",
+    text:
+      "The cloud means using computers owned by another company over the internet and paying for what you use. Instead of buying servers " +
+      "and keeping them running in a room, a team rents capacity from providers that have data centers all over the world. There " +
+      "are different levels of service. At the most basic level you rent virtual machines and take care of everything else. With " +
+      "managed services, the provider looks after the database, the backups and the updates. In the serverless model you only send " +
+      "your code, and it runs whenever someone makes a request. The big advantage is being able to grow or shrink in minutes. The " +
+      "risk is the bill: forgotten resources keep costing money, and a badly configured permission can leave data open to anyone.",
+  },
+  {
+    id: "en-passwords",
+    category: "Fundamentos",
+    title: "How to store passwords",
+    text:
+      "A system should never store passwords exactly as people typed them. If the database leaks, every account is exposed, and " +
+      "since many people reuse passwords, the damage goes far beyond that one site. The right way is to store a hash, the result of " +
+      "a one way function: it is easy to compute the hash from the password, but practically impossible to go the other way. At " +
+      "login, the system hashes what was typed and compares it with the stored value. Each password also gets a salt, a random " +
+      "value that keeps two identical passwords from having the same hash. Functions made for this purpose, such as bcrypt and " +
+      "argon2, are slow on purpose, so that trying millions of guesses becomes far too expensive for an attacker.",
+  },
+  {
+    id: "en-sql-what",
+    category: "SQL e dados",
+    title: "What is SQL",
+    text:
+      "SQL is the language used to talk to relational databases. In these databases, data lives in tables made of rows and columns, " +
+      "much like a well organized spreadsheet. With SQL you describe what you want, not how to find it. For example, asking for all " +
+      "students with a grade above seven, sorted by name, is a single statement; the database decides on its own the fastest way to " +
+      "find those rows. The most common statements are SELECT to read data, INSERT to add it, UPDATE to change it and DELETE to " +
+      "remove it. You can also join different tables in the same query, matching for example each order with the customer who " +
+      "placed it. Even with so many new technologies around, SQL is still one of the most useful skills for anyone who works with " +
+      "data.",
+  },
+  {
+    id: "en-sql-keys",
+    category: "SQL e dados",
+    title: "Primary and foreign keys",
+    text:
+      "Every well designed table has a primary key, a column whose value identifies each row in a unique way. It can be a number " +
+      "that grows on its own or a random identifier. Names and email addresses are poor choices, because they change. A foreign key " +
+      "is a column that points to the primary key of another table. In an orders table, the customer column holds the identifier of " +
+      "someone from the customers table. The database then guarantees that link: it refuses an order for a customer who does not " +
+      "exist, and it can either stop a customer with orders from being deleted or delete the orders as well, depending on the rule " +
+      "you chose. This guarantee is called referential integrity. It takes the job of keeping data consistent away from the " +
+      "application code, because no program can save a broken link.",
+  },
+  {
+    id: "en-sql-indexes",
+    category: "SQL e dados",
+    title: "Database indexes",
+    text:
+      "Without an index, to find the rows of one customer the database has to read the entire table, row by row. With a few rows " +
+      "that does not matter, but with millions it becomes a problem. An index works like the index at the back of a book: a sorted " +
+      "structure that says where each value is, usually organized as a tree that reaches the data in a few steps. Indexes make " +
+      "queries much faster, but they are not free. They take up space and must be updated on every insert or change, which makes " +
+      "writes a little slower. So the rule is to create indexes for the columns that are used most in filters, joins and sorting, " +
+      "and to check the execution plan to make sure the database is really using the index you created.",
+  },
+  {
+    id: "en-sql-transactions",
+    category: "SQL e dados",
+    title: "Transactions",
+    text:
+      "A transaction groups several operations into a block that either happens completely or does not happen at all. The classic " +
+      "example is a bank transfer: taking money out of one account and putting it into another are two steps, and it would be a " +
+      "disaster if only the first one happened because of a power cut. Inside a transaction, if something fails, everything is " +
+      "undone with a rollback; if it all works, a commit confirms every change at once. Relational databases promise four " +
+      "properties, known by the acronym ACID: atomicity, consistency, isolation and durability. Isolation is the most subtle one, " +
+      "because it defines what a transaction can see of others running at the same time, and stricter levels bring more safety at " +
+      "the cost of performance.",
+  },
+  {
+    id: "en-python-intro",
+    category: "Python",
+    title: "Why Python is so popular",
+    text:
+      "Python is a language created by Guido van Rossum and first released in nineteen ninety one. It became famous for being easy " +
+      "to read: blocks of code are defined by indentation instead of symbols, which forces the code to look organized. Python is " +
+      "interpreted and dynamically typed, so you can try ideas quickly in the terminal. Its greatest strength is its ecosystem. " +
+      "There are ready made libraries for data analysis, machine learning, task automation, web development and scientific " +
+      "computing. That is why the same language is used by scientists, analysts and software engineers. The philosophy of the " +
+      "language says that there should be one obvious way to do each thing, and that readability counts. The price of this " +
+      "simplicity is speed, which is lower than in compiled languages.",
+  },
+  {
+    id: "en-python-collections",
+    category: "Python",
+    title: "Lists and dictionaries in Python",
+    text:
+      "In Python, the two most used data structures are the list and the dictionary. A list keeps items in order and lets you reach " +
+      "them by position, starting from zero. It can grow, shrink and mix different types, and it is ideal when order matters. A " +
+      "dictionary keeps pairs of keys and values, like a name linked to a phone number. Looking up a value by its key is very fast, " +
+      "even with millions of items, because the dictionary uses a hash table underneath. Python also offers tuples, which are lists " +
+      "that cannot be changed, and sets, which keep items without repetition. Choosing the right structure changes everything: " +
+      "checking whether a name is in a list means looking at every item, while in a set the answer comes almost instantly.",
+  },
+  {
+    id: "en-js-intro",
+    category: "JavaScript",
+    title: "The story of JavaScript",
+    text:
+      "JavaScript was created in nineteen ninety five by Brendan Eich, in about ten days, to make pages in the Netscape browser " +
+      "interactive. Despite its name, it has nothing to do with Java; the name was a marketing move of the time. Today it is the " +
+      "only language that every browser runs natively, which is why it is on almost every website. With Node.js it also runs on " +
+      "servers, so a single team can write both ends of an application. The language is standardized under the name ECMAScript and " +
+      "gets new features every year. Many projects use TypeScript, which adds types to JavaScript and reports errors before the code " +
+      "runs, without changing what happens in the browser.",
+  },
+  {
+    id: "en-js-async",
+    category: "JavaScript",
+    title: "Asynchronous JavaScript",
+    text:
+      "JavaScript runs one thing at a time, on a single thread. If every request to the internet stopped the program until the " +
+      "answer arrived, the page would freeze. The solution is the asynchronous model. When the code asks for something slow, such " +
+      "as data from a server, it registers what to do when the answer arrives and moves on. A mechanism called the event loop keeps " +
+      "checking which tasks have finished and runs the next part of each one. Promises represent a value that will exist later, and " +
+      "the words async and await let you write this flow as if it were a normal sequence, from top to bottom. The most common " +
+      "mistake beginners make is forgetting to wait for a promise and using a result that has not arrived yet.",
+  },
+  {
+    id: "en-html-css",
+    category: "Web",
+    title: "HTML and CSS",
+    text:
+      "Every web page starts with HTML, the language that describes the structure of the content: what is a heading, what is a " +
+      "paragraph, where there is a list, an image or a button. HTML is not a programming language, because it has no logic or " +
+      "decisions; it marks the meaning of each part. Using the right markup matters, because screen readers and search engines " +
+      "depend on it to understand the page. CSS takes care of how things look: colors, fonts, spacing and the layout of elements on " +
+      "the screen. Keeping structure apart from style lets you change the look of a whole site without touching the content. With " +
+      "tools like flexbox and grid, and rules that change with the width of the screen, the same HTML adapts to a phone and to a " +
+      "large monitor.",
+  },
+  {
+    id: "en-web-browser",
+    category: "Web",
+    title: "What happens when you open a site",
+    text:
+      "When you type an address and press enter, a lot happens in less than a second. First, the browser asks the DNS for the " +
+      "numeric address of the server behind that name. Then it opens a connection to it and, if the site uses HTTPS, the two agree " +
+      "on a key to encrypt the conversation. Next the browser asks for the page, and the server answers with the HTML. While " +
+      "reading that HTML, the browser finds out it needs other files, such as styles, scripts and images, and asks for each of " +
+      "them. With everything in hand, it builds the tree of elements, works out where each thing goes and paints the screen. That " +
+      "is why fast sites care about sending fewer and smaller files, and about showing the main content before everything else.",
+  },
+];
+
+export const TYPING_TEXTS: TypingText[] = [...PT, ...EN.map((t) => ({ ...t, lang: "en" as const }))];
 
 export function typingText(id: string | null | undefined) {
   return TYPING_TEXTS.find((t) => t.id === id) ?? null;
