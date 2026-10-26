@@ -27,3 +27,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f photos_test.sql
 "${PSQL[@]}" -f ../migrations/0009_photo_date_reactions.sql
 "${PSQL[@]}" -f reactions_test.sql
+"${PSQL[@]}" -f ../migrations/0010_typing_test.sql
+"${PSQL[@]}" -f typing_test.sql

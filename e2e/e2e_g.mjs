@@ -1,13 +1,17 @@
 // Patch: AI review of photos (Gemini mocked)
 import fs from "node:fs";
 import path from "node:path";
-import { ANON, APP, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step } from "./lib.mjs";
+import { ANON, APP, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step, typingTest } from "./lib.mjs";
 
 const calls = () => (fs.existsSync(path.join(DIR, "gemini_calls.jsonl")) ? fs.readFileSync(path.join(DIR, "gemini_calls.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)) : []);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await launch();
 const as = (email) => loginAs(browser, email);
 async function checkin(p, goal, fill) {
+  if (goal === "typing") {
+    await typingTest(p, p.locator("[data-goal=typing][data-state=pending]"));
+    return p.locator("[data-goal=typing][data-state=done]").waitFor();
+  }
   const card = p.locator(`[data-goal=${goal}]`);
   await card.locator("input[type=file]").setInputFiles(FIXTURE);
   await fill?.(card);
@@ -31,9 +35,9 @@ await step("check-ins sent earlier today were reviewed in the background", async
 });
 
 const ana = await as("ana@pacto.test");
-await step("match: typing photo gets '🤖 conferido' and the AI description", async () => {
+await step("typing made in the app: the judge records the measured result, no photo analysis", async () => {
   await openTile(ana, "Ana", "Digitação");
-  await ana.getByText("Tela do Monkeytype mostrando 72 WPM.").waitFor();
+  await ana.getByText(/Teste de digitação feito no app: \d+ WPM/).waitFor();
   await ana.getByText("IA conferiu").first().waitFor();
 });
 

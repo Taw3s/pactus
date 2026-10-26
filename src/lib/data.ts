@@ -107,7 +107,7 @@ export function embeddedVerdict(embed: unknown): Verdict | null {
 export async function getMonthScores(supabase: SupabaseClient, membersPromise: Promise<Member[]>, month: string) {
   const from = `${month}-01`;
   const to = lastDayOfMonth(from);
-  const [members, checkins, upheld, completed] = await Promise.all([
+  const [members, checkins, upheld, completed, typing] = await Promise.all([
     membersPromise,
     fetchAll<Omit<RankingCheckin, "annulled"> & { id: string }>((a, b) =>
       supabase.from("checkins").select("id, user_id, day, goal, minutes, pages").gte("day", from).lte("day", to).order("id").range(a, b),
@@ -118,12 +118,21 @@ export async function getMonthScores(supabase: SupabaseClient, membersPromise: P
     fetchAll<{ user_id: string; day: string }>((a, b) =>
       supabase.from("completed_days").select("user_id, day").gte("day", from).lte("day", to).order("user_id").order("day").range(a, b),
     ),
+    fetchAll<{ user_id: string; day: string; score: number }>((a, b) =>
+      supabase.from("typing_tests").select("user_id, day, score").gte("day", from).lte("day", to).not("score", "is", null).order("id").range(a, b),
+    ),
   ]);
+  const typingBest = new Map<string, number>();
+  for (const t of typing) {
+    const k = `${t.user_id}|${t.day}`;
+    typingBest.set(k, Math.max(typingBest.get(k) ?? 0, Number(t.score)));
+  }
   const annulled = new Set(upheld.map((u) => u.checkin_id));
   const scores = scoreMonth(
     members.map((x) => x.user_id),
     checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),
     completed,
+    typingBest,
   );
   return { members, scores, pos: positions(scores) };
 }

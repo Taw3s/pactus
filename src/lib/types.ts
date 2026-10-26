@@ -66,6 +66,8 @@ export interface Checkin {
   extra_photos: string[];
   /** When the phone says the photos were taken (oldest); only a hint. */
   photo_taken_at: string | null;
+  /** Typing: the in-app test this proof comes from. */
+  typing_test_id: string | null;
   created_at: string;
 }
 

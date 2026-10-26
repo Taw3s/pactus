@@ -4,6 +4,8 @@ import { APP, FIXTURE, SHOTS, assert, done, launch, loginAs, sql, step } from ".
 
 const browser = await launch();
 const as = (email) => loginAs(browser, email);
+const typingPts = (like) =>
+  Math.round(Math.min(Number(sql(`select coalesce(max(t.score), 0) from typing_tests t join members m using (user_id) where m.display_name like '${like}' and t.day = sp_today()`)), 240));
 const pts = async (p, name) => Number(await p.locator(`[data-member="${name}"] [data-testid=points]`).innerText());
 
 const ana = await as("ana@pacto.test");
@@ -37,7 +39,8 @@ await step("monthly ranking: points, medals, ties and highlights", async () => {
   const seededDay = 90 + 40 + 20;
   const inMonth = (days) => days.filter((d) => monthKey(d) === monthKey(TODAY)).length;
   const expected = {
-    [name]: inMonth([T(-5), T(-4), T(-3), T(-2), T(-1)]) * seededDay + (95 + 46 + 20) + 10,
+    // + today's best typing test (wpm × accuracy, made in stage b)
+    [name]: inMonth([T(-5), T(-4), T(-3), T(-2), T(-1)]) * seededDay + (95 + 46 + 20) + 10 + typingPts("Ana%"),
     Bia: inMonth([T(-3)]) * seededDay, // her typing today was annulled by the tribunal
     Fab: 10, // 5 pages kept by the tribunal
     Caio: 0,

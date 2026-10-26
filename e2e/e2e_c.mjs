@@ -1,5 +1,5 @@
 // Stage (c): feed + tribunal
-import { ANON, APP, FIXTURE, SERVICE, SHOTS, SUPABASE, assert, done, launch, loginAs, step } from "./lib.mjs";
+import { ANON, APP, FIXTURE, SERVICE, SHOTS, SUPABASE, assert, done, launch, loginAs, step, typingTest } from "./lib.mjs";
 
 for (const name of ["Caio", "Davi", "Eva", "Fab"]) {
   await fetch(`${SUPABASE}/auth/v1/signup`, {
@@ -21,9 +21,7 @@ const as = (email) => loginAs(browser, email);
 
 const biaP = await as("bia@pacto.test");
 await step("Bia checks in typing", async () => {
-  const card = biaP.locator("[data-goal=typing]");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
-  await card.getByRole("button", { name: "Enviar prova" }).click();
+  await typingTest(biaP, biaP.locator("[data-goal=typing][data-state=pending]"));
   await biaP.locator("[data-goal=typing][data-state=done]").waitFor();
 });
 

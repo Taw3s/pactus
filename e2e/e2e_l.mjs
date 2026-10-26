@@ -1,7 +1,7 @@
 // Stage (l): old-photo warning, stamps on proofs and the weekly summary push (after stage k).
 import fs from "node:fs";
 import path from "node:path";
-import { APP, DIR, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
+import { ANON, APP, DIR, SUPABASE, accessToken, assert, done, launch, loginAs, sql, step, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const pushes = () => {
@@ -86,6 +86,24 @@ await step("weekly summary: one push per subscribed member a day", async () => {
   assert(pushes().length > before, "a summary reached the push service");
   const r2 = await fetch(`${APP}/api/cron/weekly`).then((r) => r.json());
   assert(r2.summarized === 0, `second run ${JSON.stringify(r2)}`);
+});
+
+await step("typing: another attempt can raise the best, the ranking keeps PC records, and the server refuses a faked run", async () => {
+  const p = await loginAs(browser, "ana@pacto.test");
+  await p.getByRole("button", { name: /Tentar de novo \(2 restantes\)/ }).click();
+  await typingTest(p, p.locator("[data-goal=typing][data-state=again]"));
+  await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
+  await p.goto(`${APP}/ranking`);
+  await p.getByTestId("typing-records").locator('[data-device="pc"]').getByText(/Ana.*/).first().waitFor();
+  // Finishing right after starting (a faked clock) is refused by the server.
+  const token = await accessToken(p);
+  const h = { apikey: ANON, authorization: `Bearer ${token}`, "content-type": "application/json" };
+  const start = await fetch(`${SUPABASE}/rest/v1/rpc/start_typing_test`, { method: "POST", headers: h, body: JSON.stringify({ p_device: "pc" }) }).then((r) => r.json());
+  const fin = await fetch(`${SUPABASE}/rest/v1/rpc/finish_typing_test`, { method: "POST", headers: h, body: JSON.stringify({ p_test: start[0].test_id, p_correct: 50, p_typed: 50 }) });
+  assert(fin.status >= 400, `faked run accepted: ${fin.status}`);
+  // That was the third attempt: no more today.
+  await p.goto(`${APP}/hoje`);
+  assert((await p.getByRole("button", { name: /Tentar de novo/ }).count()) === 0, "a fourth attempt is offered");
 });
 
 await browser.close();

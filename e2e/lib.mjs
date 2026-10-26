@@ -152,3 +152,19 @@ export function jpegSize(buf) {
   }
   return null;
 }
+
+/**
+ * Takes the in-app typing test inside `card` (3 seconds in the test database, see setup.sql):
+ * types the shown words at a human pace until the test ends.
+ */
+export async function typingTest(page, card) {
+  await card.getByRole("button", { name: "Começar teste" }).click();
+  const input = card.getByTestId("typing-input");
+  await input.waitFor();
+  while ((await card.getAttribute("data-state").catch(() => null)) !== null && (await card.getByTestId("typing-test").getAttribute("data-phase").catch(() => "gone")) === "running") {
+    const word = await card.getByTestId("typing-word-current").innerText().catch(() => "");
+    if (!word) break;
+    await input.pressSequentially(`${word} `, { delay: 90 }).catch(() => {});
+  }
+}
+

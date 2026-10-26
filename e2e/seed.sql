@@ -8,7 +8,7 @@ update public.members set joined_on = (date_trunc('month', public.sp_today()) - 
 update public.day_off_changes d set effective_from = m.joined_on from public.members m where m.user_id = d.user_id;
 
 -- Ana did the 3 goals on each of the 5 days before today; Bia only 3 days ago.
-alter table public.checkins disable trigger checkins_before_insert;
+alter table public.checkins disable trigger user;
 insert into public.checkins (user_id, group_id, day, goal, photo_path, summary, minutes, pages)
 select m.user_id, m.group_id, d::date, g::public.goal,
        m.group_id || '/' || m.user_id || '/seed-' || d::date || '-' || g || '.jpg',
@@ -19,4 +19,4 @@ from public.members m
 cross join generate_series(public.sp_today() - 5, public.sp_today() - 1, interval '1 day') d
 cross join unnest(array['study', 'typing', 'reading']) g
 where m.display_name = 'Ana' or (m.display_name = 'Bia' and d::date = public.sp_today() - 3);
-alter table public.checkins enable trigger checkins_before_insert;
+alter table public.checkins enable trigger user;

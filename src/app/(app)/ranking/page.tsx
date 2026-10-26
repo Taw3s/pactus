@@ -3,7 +3,8 @@ import { GroupTabs } from "@/components/GroupTabs";
 import { MonthNav, monthName } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
 import { Sprite } from "@/components/Sprite";
-import { monthKey, spToday } from "@/lib/dates";
+import { lastDayOfMonth, monthKey, spToday } from "@/lib/dates";
+import { typingLabel } from "@/lib/typing";
 import { getMembers, getMonthScores, requireMember, signUrls } from "@/lib/data";
 import { SCORING } from "@/lib/ranking";
 
@@ -22,7 +23,20 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const { supabase, me } = await requireMember();
   const current = monthKey(spToday());
   const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
-  const { members, scores, pos } = await getMonthScores(supabase, getMembers(supabase), month);
+  const [{ members, scores, pos }, { data: typingRows }] = await Promise.all([
+    getMonthScores(supabase, getMembers(supabase), month),
+    supabase.from("typing_tests").select("user_id, device, wpm, accuracy").gte("day", `${month}-01`).lte("day", lastDayOfMonth(`${month}-01`)).not("wpm", "is", null),
+  ]);
+  // Best wpm of the month per person, phones and computers apart.
+  const records = (device: "pc" | "mobile") => {
+    const best = new Map<string, { wpm: number; accuracy: number }>();
+    for (const t of (typingRows ?? []) as { user_id: string; device: string; wpm: number; accuracy: number }[]) {
+      if (t.device !== device) continue;
+      const cur = best.get(t.user_id);
+      if (!cur || Number(t.wpm) > cur.wpm) best.set(t.user_id, { wpm: Number(t.wpm), accuracy: Number(t.accuracy) });
+    }
+    return [...best.entries()].sort((a, b) => b[1].wpm - a[1].wpm).slice(0, 5);
+  };
   const byId = new Map(members.map((x) => [x.user_id, x]));
   const urls = await signUrls(supabase, members.map((x) => x.avatar_path));
   const leader = (key: "studyMinutes" | "pages" | "projects") =>
@@ -107,6 +121,36 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
+      <section className="card mt-6" aria-labelledby="recordes" data-testid="typing-records">
+        <h2 id="recordes" className="pixel mb-3 text-xl uppercase leading-6">
+          Recordes de digitação
+        </h2>
+        <div className="grid gap-4 min-[420px]:grid-cols-2">
+          {(["pc", "mobile"] as const).map((device) => {
+            const list = records(device);
+            return (
+              <div key={device} data-device={device}>
+                <h3 className="pixel mb-1 text-base uppercase text-muted">{device === "pc" ? "PC" : "Celular"}</h3>
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted">Ninguém fez teste ainda.</p>
+                ) : (
+                  <ol className="space-y-1 text-sm">
+                    {list.map(([id, r], n) => (
+                      <li key={id} className="flex justify-between gap-2">
+                        <span className="truncate">
+                          {n + 1}. {byId.get(id)?.display_name ?? "?"}
+                        </span>
+                        <span className="tabular shrink-0 font-semibold">{typingLabel(r)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <details className="card mt-6 text-sm">
         <summary className="cursor-pointer font-semibold">Como a pontuação funciona</summary>
         <ul className="mt-3 space-y-1 text-muted">
@@ -116,6 +160,9 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           </li>
           <li>
             Leitura: {SCORING.perPage} pts por página, até {SCORING.maxPagesPerDay} páginas por dia
+          </li>
+          <li>
+            Digitação: o melhor teste do dia vale WPM × precisão em pontos (60 WPM com 95% = 57), até {SCORING.maxTypingPointsPerDay} por dia
           </li>
           <li>Projeto: {SCORING.perProject} pts, 1 por dia</li>
           <li>Prova anulada pelo Tribunal não pontua. Provas enviadas na folga pontuam normalmente.</li>

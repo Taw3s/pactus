@@ -38,6 +38,12 @@ describe("scoreMonth", () => {
     expect(ana.studyMinutes).toBe(SCORING.maxStudyMinutesPerDay + 30);
   });
 
+  it("scores the day's best typing test once, only with a valid typing proof", () => {
+    const best = new Map([["ana|2026-10-26", 57.4], ["ana|2026-10-27", 80]]);
+    const [ana] = scoreMonth(["ana"], [c({ goal: "typing" }), c({ goal: "typing", day: "2026-10-27", annulled: true })], [], best);
+    expect(ana.points).toBe(57);
+  });
+
   it("ignores annulled check-ins and counts legacy study as 60 min", () => {
     const [ana] = scoreMonth(["ana"], [c({ minutes: 120, annulled: true }), c({ day: "2026-10-27" })], []);
     expect(ana.studyMinutes).toBe(60);

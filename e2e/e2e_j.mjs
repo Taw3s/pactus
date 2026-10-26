@@ -1,6 +1,6 @@
 // Stage (j): retaking a proof condemned by the tribunal (same day only) and extra study sessions.
 import AxeBuilder from "@axe-core/playwright";
-import { APP, FIXTURE, SHOTS, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
+import { APP, FIXTURE, SHOTS, assert, done, launch, loginAs, sql, step, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const davi = await loginAs(browser, "davi@pacto.test");
@@ -8,6 +8,10 @@ const davi = await loginAs(browser, "davi@pacto.test");
 /** Fills and sends a goal form found by its data-state ("pending", "retake" or "extra"). */
 async function send(goal, state, fill = async () => {}) {
   const card = davi.locator(`[data-goal=${goal}][data-state=${state}]`);
+  if (goal === "typing") {
+    await typingTest(davi, card);
+    return card.waitFor({ state: "detached" });
+  }
   await card.locator("input[type=file]").setInputFiles(FIXTURE);
   await fill(card);
   await card.getByRole("button", { name: /Enviar prova|Enviar nova prova|Somar sessão/ }).click();
@@ -37,7 +41,7 @@ await step("Davi sends typing; the tribunal condemns it; Hoje offers a retake un
   annul(firstTyping);
   await davi.reload();
   const retake = davi.locator("[data-goal=typing][data-state=retake]");
-  await retake.getByText("Mande uma nova até 23:59").waitFor();
+  await retake.getByText(/até 23:59/).waitFor();
   await davi.locator("[data-goal=typing][data-state=annulled]").waitFor();
   await davi.screenshot({ path: `${SHOTS}/j1-refazer.png`, fullPage: true });
   // Same contrast workaround as stage h (axe skips text over the dithered background).
