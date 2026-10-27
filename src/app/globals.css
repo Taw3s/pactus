@@ -5,13 +5,26 @@
 @import "@fontsource/pixelify-sans/latin-700.css";
 
 /*
+ * Digits of the pixel type come from Inter: in Pixelify a 5 reads as S and a 3 as an 8 (the group
+ * misread the ranking points). Letters stay pixel; only 0–9 switch.
+ */
+@font-face {
+  font-family: "Pacto Digits";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0030-0039;
+}
+
+/*
  * Design tokens — PS1/N64 low-poly. Gray "studio" background, chunky bevelled panels,
  * pixel font for titles and numbers (Inter for reading), pre-rendered low-poly props.
  * All text pairs below were checked at ≥ 4.5:1.
  */
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Pixelify Sans", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Pacto Digits", "Pixelify Sans", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 
   --color-bg: #26292e;
   --color-surface: #363a41;

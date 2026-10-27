@@ -19,6 +19,7 @@ O Pacto tem duas camadas:
 
 ## Bugs para corrigir
 
+- [x] **Números ilegíveis (Daniel, 27/10):** na fonte pixel o 5 parecia S e o 3 parecia 8 (ranking, placar, código de convite). Corrigido: os algarismos usam a Inter, as letras continuam pixel.
 - [x] **Imagem da prova de digitação não mudava ao refazer o teste** (PR #26): Hoje, Feed e página da prova desenham o cartão do melhor teste do dia. Falta: o tribunal ainda mostra a imagem guardada.
 - [x] **Palavras "se mexendo" no teste de digitação** (feedback do grupo, 26/10): a partir da 40ª palavra a tela apagava a mais antiga e todas as quebras de linha mudavam. Corrigido no PR seguinte ao #26.
 - [x] **Não dava para voltar e corrigir uma palavra** (feedback do grupo): agora Backspace numa palavra vazia volta para a anterior, se ela estiver errada (como no Monkeytype). No celular depende do teclado mandar o evento de apagar; conferir no Android e no iPhone.
@@ -43,6 +44,11 @@ O Pacto tem duas camadas:
 - **Leitura cronometrada com interpretação:** velocidade de leitura junto com acerto. É a "digitação" do Enem.
 - **Flashcards com repetição espaçada:** fórmulas, datas, conceitos.
 - **Redação semanal:** foto da redação, com o juiz IA conferindo só a estrutura (tema, proposta de intervenção, tamanho). Não prometer nota de redação feita por IA.
+
+### Programação (pedidos do grupo, 27/10)
+
+- **Treino de linguagens (Lucas):** questõezinhas simples em várias linguagens, "igual ao LeetCode". Sem compilador dá para começar com questões de múltipla escolha, "qual a saída deste código" e lacunas de sintaxe, com respostas conferidas pelo servidor. Rodar código de verdade pede um executor isolado (Judge0, Piston), com custo e risco de segurança: só depois que a versão sem execução provar que o grupo usa.
+- **Digitação de código (Lustosa):** digitar código em vez de prosa. Contraria a decisão "só prosa": símbolos são difíceis no teclado do celular. Saída possível: um modo "Código" só no PC, com recordes próprios (o recorde já é separado por modo). Decidir antes de fazer.
 
 ### Mecânicas que servem para várias trilhas
 
