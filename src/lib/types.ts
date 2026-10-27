@@ -1,5 +1,5 @@
 import type { ISODate } from "./dates";
-import type { DebtItem } from "./ledger";
+import type { DebtItem } from "./debt-items";
 
 export type DailyGoal = "study" | "typing" | "reading";
 export type Goal = DailyGoal | "project";

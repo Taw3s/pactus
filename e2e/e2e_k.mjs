@@ -3,7 +3,7 @@ import { devices } from "playwright";
 import fs from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import path from "node:path";
-import { APP, DIR, FIXTURE, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
+import { APP, DIR, FIXTURE, assert, done, launch, loginAs, newPhone, sql, step } from "./lib.mjs";
 
 const browser = await launch();
 const bia = sql(`select user_id from public.members where display_name = 'Bia'`);
@@ -148,6 +148,49 @@ await step("a session left from a deleted account goes back to the login instead
   await p.goto(`${APP}/join?step=code`);
   await p.waitForURL("**/login?error=session");
   await p.getByText("Sua sessão era de uma conta que não existe mais").waitFor();
+});
+
+await step("anyone without an invite creates a challenge, picks the debt menu, and only the owner changes it (from next Monday)", async () => {
+  const { page: p } = await newPhone(browser);
+  await p.goto(`${APP}/join`);
+  await p.getByTestId("toggle-create").click();
+  assert((await p.locator("#code").count()) === 0, "no invite code asked when creating");
+  await p.fill("#name", "Rui");
+  await p.fill("#email", "rui@pacto.test");
+  await p.fill("#password", "senha123");
+  await p.getByRole("button", { name: "Criar conta" }).click();
+  await p.waitForURL("**/join?step=code&criar=1");
+  await p.fill("#group", "Pacto do Rui");
+  const picker = p.getByTestId("menu-picker");
+  await picker.locator('[data-item="coke"]').click(); // leaves 1 salgado
+  await picker.locator('[data-item="pizza"]').click();
+  assert(await picker.locator('[data-item="coffee"]').isDisabled(), "a third item can be picked");
+  await picker.getByText("1 salgado + 1 fatia de pizza").waitFor();
+  await p.getByRole("button", { name: "Criar desafio" }).click();
+  await p.waitForURL("**/hoje");
+  const group = sql("select g.name || '|' || g.invite_code || '|' || (g.owner_id = m.user_id) from groups g join members m on m.group_id = g.id where m.display_name = 'Rui'");
+  assert(/^Pacto do Rui\|[A-HJ-NP-Z2-9]{8}\|true$/.test(group), `group ${group}`);
+
+  await p.goto(`${APP}/config`);
+  const settings = p.getByTestId("group-settings");
+  await settings.getByTestId("invite-code").getByText(group.split("|")[1]).waitFor();
+  await settings.getByTestId("settings-menu-today").getByText("1 salgado + 1 fatia de pizza").waitFor();
+  await settings.locator('[data-item="snack"]').click();
+  await settings.locator('[data-item="pix"]').click();
+  await settings.getByRole("button", { name: "Salvar cardápio" }).click();
+  await settings.getByText(/Salvo\. Vale a partir de/).waitFor();
+  await settings.getByTestId("settings-menu-next").getByText(/1 fatia de pizza \+ 1 Pix de R\$ 5/).waitFor();
+  // Today still costs the old menu; the change shows on Dívidas too.
+  await p.goto(`${APP}/dividas`);
+  await p.getByTestId("menu-today").getByText("1 salgado + 1 fatia de pizza").waitFor();
+  await p.getByTestId("menu-next").getByText(/1 fatia de pizza \+ 1 Pix de R\$ 5/).waitFor();
+
+  // In the original group nobody created it in the app: members see the menu but cannot change it.
+  const ana = await loginAs(browser, "ana@pacto.test");
+  await ana.goto(`${APP}/config`);
+  await ana.getByTestId("settings-menu-today").getByText("1 Coca + 1 salgado").waitFor();
+  assert((await ana.getByTestId("menu-picker").count()) === 0, "a non-owner can edit the menu");
+  await ana.getByText("Só quem criou o desafio troca o cardápio.").waitFor();
 });
 
 await browser.close();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, eachDay, lastDayOfMonth, msUntilEndOfDay, nextMonday, spToday, weekdayOf } from "./dates";
-import { currentStreak, dayOffOn, dayStatus, debtLines, debtSummary, missedDays, streakMilestone, type MemberLedgerInput } from "./ledger";
+import { currentStreak, dayOffOn, dayStatus, debtLines, debtSummary, itemsOn, missedDays, streakMilestone, type MemberLedgerInput } from "./ledger";
 
 describe("dates (America/Sao_Paulo)", () => {
   it("uses São Paulo date, not UTC, around midnight", () => {
@@ -89,13 +89,33 @@ describe("ledger", () => {
     expect(lines).toHaveLength(4);
     expect(lines.filter((l) => l.payment)).toHaveLength(1);
     expect(lines.every((l) => l.payment || l.overdue)).toBe(true); // October unpaid is overdue in November
-    expect(debtSummary(lines)).toEqual({ cokes: 1, snacks: 2, overdue: 3 });
+    expect(debtSummary(lines)).toEqual({ counts: [["coke", 1], ["snack", 2]], total: 3, overdue: 3 });
   });
 
   it("debt in the current month is not overdue", () => {
     const lines = debtLines(base(), [], "2026-10-21");
     expect(lines.map((l) => l.day)).toEqual(["2026-10-19", "2026-10-19", "2026-10-20", "2026-10-20"]);
     expect(lines.some((l) => l.overdue)).toBe(false);
+  });
+});
+
+describe("debt menu", () => {
+  const menus = [
+    { effective_from: "2026-10-01", items: ["coffee" as const] },
+    { effective_from: "2026-10-20", items: ["pizza" as const, "pix" as const] },
+  ];
+
+  it("uses the menu in force on each missed day, and Coca + salgado before any menu", () => {
+    expect(itemsOn(menus, "2026-09-30")).toEqual(["coke", "snack"]);
+    expect(itemsOn(menus, "2026-10-19")).toEqual(["coffee"]);
+    expect(itemsOn(menus, "2026-10-20")).toEqual(["pizza", "pix"]);
+    expect(itemsOn([...menus].reverse(), "2026-10-25")).toEqual(["pizza", "pix"]);
+  });
+
+  it("charges each missed day with its own menu", () => {
+    const lines = debtLines(base(), [], "2026-10-21", menus);
+    expect(lines.map((l) => `${l.day} ${l.item}`)).toEqual(["2026-10-19 coffee", "2026-10-20 pizza", "2026-10-20 pix"]);
+    expect(debtSummary(lines)).toEqual({ counts: [["coffee", 1], ["pizza", 1], ["pix", 1]], total: 3, overdue: 0 });
   });
 });
 

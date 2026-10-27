@@ -274,6 +274,153 @@ function coxinha() {
 }
 
 
+// ---- debt menu items (a group picks 1 or 2; see src/lib/debt-items.ts) ------------
+
+/** Dívida: café (mug with saucer and a little steam). */
+function coffeeCup() {
+  const g = new THREE.Group();
+  const cream = mat(0xf1ebe0);
+  const saucer = cyl(0.5, 0.42, 0.06, 10, cream);
+  saucer.position.y = 0.03;
+  g.add(saucer);
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.26, 0.5, 10, 1, true), mat(0xffffff));
+  cup.position.y = 0.32;
+  g.add(cup);
+  const bottom = cyl(0.26, 0.26, 0.04, 10, cream);
+  bottom.position.y = 0.09;
+  g.add(bottom);
+  const coffee = cyl(0.31, 0.31, 0.02, 10, mat(0x4a2a14));
+  coffee.position.y = 0.52;
+  g.add(coffee);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.04, 4, 8, Math.PI), cream);
+  handle.position.set(0.36, 0.34, 0);
+  handle.rotation.z = -Math.PI / 2;
+  g.add(handle);
+  for (const [x, z, h] of [[-0.08, 0, 0.22], [0.08, 0.04, 0.3]]) {
+    const steam = box(0.05, h, 0.05, mat(0xdfe6ea));
+    steam.position.set(x, 0.62 + h / 2, z);
+    g.add(steam);
+  }
+  return g;
+}
+
+/** Dívida: barra de chocolate, half unwrapped. */
+function chocolateBar() {
+  const g = new THREE.Group();
+  const choc = mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#5a3218", "#4a2810", "#6b3d1f"], 3)));
+  for (let r = 0; r < 3; r++)
+    for (let col = 0; col < 2; col++) {
+      const piece = box(0.32, 0.12, 0.26, choc);
+      piece.position.set(-0.17 + col * 0.34, 0.1, -0.3 + r * 0.28);
+      g.add(piece);
+    }
+  const wrapper = box(0.72, 0.16, 0.5, mat(0xc0262d));
+  wrapper.position.set(0, 0.1, 0.42);
+  g.add(wrapper);
+  const foil = box(0.72, 0.02, 0.08, mat(0xd8dde2));
+  foil.position.set(0, 0.17, 0.16);
+  g.add(foil);
+  const band = box(0.74, 0.17, 0.08, mat(0xf2c230));
+  band.position.set(0, 0.1, 0.5);
+  g.add(band);
+  g.rotation.y = 0.35;
+  return g;
+}
+
+/** Dívida: açaí na tigela, with banana and granola. */
+function acaiBowl() {
+  const g = new THREE.Group();
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.3, 0.42, 10), mat(0xe8e2d6));
+  bowl.position.y = 0.21;
+  g.add(bowl);
+  const acai = cyl(0.46, 0.46, 0.06, 10, mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#4b1f4f", "#3d1842", "#5c2861"], 4))));
+  acai.position.y = 0.44;
+  g.add(acai);
+  for (const [x, z] of [[-0.18, 0.1], [0.05, 0.2], [0.2, -0.05]]) {
+    const banana = cyl(0.08, 0.08, 0.04, 6, mat(0xf3e2a0));
+    banana.position.set(x, 0.49, z);
+    g.add(banana);
+  }
+  for (const [x, z] of [[-0.05, -0.18], [-0.22, -0.12], [0.12, -0.22], [0.0, 0.0]]) {
+    const granola = box(0.07, 0.05, 0.07, mat(0xb07a3a));
+    granola.position.set(x, 0.49, z);
+    granola.rotation.y = x * 7;
+    g.add(granola);
+  }
+  return g;
+}
+
+/** Dívida: fatia de pizza. */
+function pizzaSlice() {
+  const g = new THREE.Group();
+  const shape = new THREE.Shape();
+  shape.moveTo(0, -0.55);
+  shape.lineTo(0.42, 0.45);
+  shape.lineTo(-0.42, 0.45);
+  shape.lineTo(0, -0.55);
+  const cheese = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false }), mat(0xf3c24a));
+  cheese.rotation.x = -Math.PI / 2;
+  cheese.position.y = 0.08;
+  g.add(cheese);
+  const crust = box(0.92, 0.14, 0.14, mat(0xc88a3e));
+  crust.position.set(0, 0.12, -0.47);
+  g.add(crust);
+  for (const [x, z] of [[0, -0.2], [-0.15, -0.38], [0.17, -0.34], [0.02, 0.15]]) {
+    const pep = cyl(0.08, 0.08, 0.03, 8, mat(0xb8312b));
+    pep.position.set(x, 0.18, z);
+    g.add(pep);
+  }
+  g.rotation.y = Math.PI;
+  return g;
+}
+
+/** Dívida: sorvete de casquinha. */
+function iceCream() {
+  const g = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.62, 8), mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#d8a55a", "#c38f45", "#e4b46a"], 5))));
+  cone.rotation.x = Math.PI;
+  cone.position.y = 0.31;
+  g.add(cone);
+  const scoop1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.27, 0), mat(0xf5c4d2));
+  scoop1.position.y = 0.72;
+  g.add(scoop1);
+  const scoop2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), mat(0xf6efe0));
+  scoop2.position.y = 1.0;
+  g.add(scoop2);
+  const cherry = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07, 0), mat(0xc8202b));
+  cherry.position.y = 1.22;
+  g.add(cherry);
+  return g;
+}
+
+/** Dívida: Pix de R$ 5 (a coin stack with a note). */
+function pixCoin() {
+  const g = new THREE.Group();
+  const note = box(0.86, 0.03, 0.46, mat(0, tex(16, 8, (c) => {
+    c.fillStyle = "#8a6fb8";
+    c.fillRect(0, 0, 16, 8);
+    c.fillStyle = "#b9a5dc";
+    c.fillRect(1, 1, 14, 6);
+    c.fillStyle = "#5b4489";
+    c.fillRect(10, 2, 3, 4);
+  })));
+  note.position.set(-0.08, 0.02, 0.12);
+  note.rotation.y = 0.25;
+  g.add(note);
+  const gold = mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#e8b53a", "#d49f22", "#f2c85a"], 6)));
+  for (let i = 0; i < 4; i++) {
+    const coin = cyl(0.22, 0.22, 0.07, 10, gold);
+    coin.position.set(0.22 + (i % 2) * 0.02, 0.07 + i * 0.075, -0.1);
+    g.add(coin);
+  }
+  // The Pix mark: a small teal diamond on top.
+  const mark = box(0.14, 0.03, 0.14, mat(0x32bcad));
+  mark.position.set(0.22, 0.38, -0.1);
+  mark.rotation.y = Math.PI / 4;
+  g.add(mark);
+  return g;
+}
+
 // ---- tribunal & ranking props ---------------------------------------------------
 
 const woodTex = (seed, colors = ["#7a4a24", "#6b3f1e", "#85542b", "#5e3518"]) =>
@@ -976,7 +1123,7 @@ function benchFront() {
   return g;
 }
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, ...JUDGE };
+export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, ...JUDGE };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {

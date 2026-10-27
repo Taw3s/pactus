@@ -3,6 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isDebtItem } from "./debt-items";
 import { thumbPath } from "./image";
 import { createClient } from "./supabase/server";
 import type { Verdict } from "./ai-review";
@@ -52,7 +53,7 @@ export async function getMembers(supabase: SupabaseClient): Promise<Member[]> {
 
 /** Everything the ledger needs for every member of the group. */
 export async function getLedgerInputs(supabase: SupabaseClient, members: Member[]) {
-  const [changes, completed, payments] = await Promise.all([
+  const [changes, completed, payments, { data: menuRows }] = await Promise.all([
     fetchAll<DayOffChange & { user_id: string }>((a, b) =>
       supabase.from("day_off_changes").select("user_id, weekday, effective_from").order("id").range(a, b),
     ),
@@ -60,6 +61,8 @@ export async function getLedgerInputs(supabase: SupabaseClient, members: Member[
       supabase.from("completed_days").select("user_id, day").order("user_id").order("day").range(a, b),
     ),
     fetchAll<PaymentRow>((a, b) => supabase.from("payments").select("*").order("id").range(a, b)),
+    // The group's debt menu history (RLS: only the caller's group).
+    supabase.from("debt_menus").select("effective_from, items").order("effective_from"),
   ]);
 
   const inputs = new Map<string, MemberLedgerInput>();
@@ -71,7 +74,11 @@ export async function getLedgerInputs(supabase: SupabaseClient, members: Member[
   for (const c of changes) inputs.get(c.user_id)?.dayOffChanges.push(c);
   for (const c of completed) inputs.get(c.user_id)?.completedDays.add(c.day);
   for (const p of payments) paymentsBy.get(p.debtor_id)?.push(p);
-  return { inputs, paymentsBy };
+  const menus = ((menuRows ?? []) as { effective_from: string; items: string[] }[]).map((m) => ({
+    effective_from: m.effective_from,
+    items: m.items.filter(isDebtItem),
+  }));
+  return { inputs, paymentsBy, menus };
 }
 
 /** Signed URLs for private media (photos, avatars). */
