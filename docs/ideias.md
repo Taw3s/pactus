@@ -34,7 +34,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [ ] **E-mail de login** com SMTP próprio (Resend) no painel do Supabase. Precisa de domínio verificado. (você)
 - [ ] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor. (Claude)
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
-- [ ] **Política de privacidade e termos** (rascunho do Claude, revisão sua).
+- [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [ ] **Página de apresentação** e **primeiros passos** de um grupo novo (brief do Astra, implementação do Claude).
 - [ ] **Aviso de erros** (Sentry) e consulta de **retenção** por grupo.
 - [ ] Conferir em Configurações se você aparece como dono do grupo atual.

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Sprite } from "./Sprite";
 
 /** Entry screens (login, join): a small low-poly "title screen" above the form, never in its way. */
@@ -18,6 +19,15 @@ export function AuthShell({ subtitle, children }: { subtitle: string; children: 
         <h1 className="pixel mt-5 text-xl uppercase leading-6">{subtitle}</h1>
       </div>
       {children}
+      <p className="mt-auto pt-8 text-center text-sm text-muted">
+        <Link href="/privacidade" className="inline-flex min-h-11 items-center underline">
+          Privacidade
+        </Link>
+        <span aria-hidden> · </span>
+        <Link href="/termos" className="inline-flex min-h-11 items-center underline">
+          Termos de uso
+        </Link>
+      </p>
     </main>
   );
 }

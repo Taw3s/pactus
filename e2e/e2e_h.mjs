@@ -29,6 +29,16 @@ await step("axe: login and join (logged out)", async () => {
   await scan("join");
 });
 
+await step("privacy policy and terms open without an account, linked from the login, axe clean", async () => {
+  await page.goto(`${APP}/login`);
+  await page.getByRole("link", { name: "Privacidade" }).click();
+  await page.getByRole("heading", { name: "Política de privacidade" }).waitFor();
+  await scan("privacidade");
+  await page.getByRole("link", { name: "termos de uso" }).click();
+  await page.getByRole("heading", { name: "Termos de uso" }).waitFor();
+  await scan("termos");
+});
+
 await step("axe: every screen of a member with data", async () => {
   await page.goto(`${APP}/login`);
   await page.fill("#email", "ana@pacto.test");
