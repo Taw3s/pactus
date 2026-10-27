@@ -92,6 +92,7 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 ## Decisões já tomadas (para não rediscutir)
 
+- Logo (27/10): o juiz do app em low poly, busto, fundo amarelo. Recusados: P em pixel art (o app é low poly, não pixel), P 3D com rosto (pouco caricato), martelo com cara (clichê jurídico).
 - Penalidade: cardápio de 1 ou 2 itens; só o dono troca; a troca vale na segunda seguinte.
 - Qualquer pessoa sem grupo pode criar um desafio; cada pessoa fica em um grupo só.
 - Digitação: teste dentro do app (sem foto), 3 tentativas por dia, vale o melhor; PC e celular separados.

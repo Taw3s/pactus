@@ -1158,11 +1158,14 @@ function evidenceFolder() {
   return g;
 }
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, evidenceFolder, ...JUDGE };
+/** App icon: the group's judge, one brow raised (suspicious of your proof), gavel at rest. Framed by icons.mjs. */
+const logoJudge = () => judgeScene({ brows: "raised", mouth: "flat", r: [-0.9, 0.3, "gavel"] });
+
+export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, evidenceFolder, ...JUDGE, logoJudge };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {
-  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: name.startsWith("logo"), alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
   renderer.setSize(size, size);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1172,6 +1175,12 @@ export function render(name, size) {
   sun.position.set(3, 5, 2);
   scene.add(sun);
 
+  // Logos are seen large and face the viewer: smooth edges and a soft front light keep the colours true.
+  if (name.startsWith("logo")) {
+    const fill = new THREE.DirectionalLight(0xfff6e8, 1.3);
+    fill.position.set(0.6, 0.8, 3);
+    scene.add(fill);
+  }
   const obj = MODELS[name]();
   scene.add(obj);
   const bbox = new THREE.Box3().setFromObject(obj);
