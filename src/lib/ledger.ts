@@ -36,7 +36,9 @@ export interface MemberLedgerInput {
 export interface Payment {
   day: ISODate;
   item: DebtItem;
-  received_by: string;
+  /** Null once the receiver left the group; received_name keeps who it was. */
+  received_by: string | null;
+  received_name?: string | null;
   paid_at: string;
 }
 

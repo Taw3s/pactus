@@ -98,7 +98,8 @@ export interface DisputeResult {
 
 export interface DisputeVote {
   dispute_id: string;
-  voter_id: string;
+  /** Null once the voter left the group: the vote still counts. */
+  voter_id: string | null;
   upheld: boolean;
   /** Why guilty / innocent. Null only for votes cast before reasons existed. */
   reason: string | null;
@@ -110,7 +111,8 @@ export interface PaymentRow {
   debtor_id: string;
   day: ISODate;
   item: DebtItem;
-  received_by: string;
+  received_by: string | null;
+  received_name?: string | null;
   paid_at: string;
 }
 
