@@ -20,6 +20,7 @@ import { getMembers, requireMember, signUrls } from "@/lib/data";
 import { thumbPath } from "@/lib/image";
 import { KEEP_FULL_DAYS } from "@/lib/media-retention";
 import { GOAL_ICON } from "@/lib/goal-icons";
+import { studyPrompt } from "@/lib/study-prompts";
 import { checkinNumbers, goalMeta, type Checkin, type CheckinReview, type Dispute, type DisputeResult, type DisputeVote, type Member } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const GoalIcon = GOAL_ICON[checkin.goal];
   // Typing made in the app shows the server-measured result of the day's best test.
   const value = typingShown ? `${typingLabel(typingShown)} · ${DEVICE_LABEL[typingShown.device]}` : checkinNumbers(checkin);
+  const question = studyPrompt(checkin.study_prompt);
   // The date the file reports (EXIF, or the file's own date): context, never proof either way.
   const daysBefore = photoDaysBefore(checkin.photo_taken_at, checkin.day);
   const photoAge = daysBefore > 0 ? `O arquivo informa uma data de ${daysBefore === 1 ? "1 dia" : `${daysBefore} dias`} antes do envio.` : null;
@@ -168,15 +170,16 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
       {checkin.summary && (
         <section className="mb-4" aria-labelledby="resumo">
           <h2 id="resumo" className="pixel mb-1 text-base uppercase text-muted">
-            Resumo
+            {question ? "Pergunta do dia" : "Resumo"}
           </h2>
-          <p className="whitespace-pre-wrap">{checkin.summary}</p>
+          {question && <p className="mb-1 break-words font-medium" data-testid="proof-question">{question.text}</p>}
+          <p className="whitespace-pre-wrap break-words">{checkin.summary}</p>
         </section>
       )}
       <div className="mb-4">
         <AiPanel
           checkinId={checkin.id}
-          review={review ? { verdict: review.verdict, seen: review.seen, detected: review.detected } : null}
+          review={review ? { verdict: review.verdict, seen: review.seen, detected: review.detected, answer: review.answer_check ?? null } : null}
           declaredMinutes={checkin.minutes}
           ownerName={ownerName}
           isOwner={isOwner}

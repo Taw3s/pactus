@@ -55,6 +55,8 @@ export interface Checkin {
   goal: Goal;
   photo_path: string;
   summary: string | null;
+  /** The question of the day the study summary answers (src/lib/study-prompts.ts). */
+  study_prompt: string | null;
   minutes: number | null;
   pages: number | null;
   title: string | null;
@@ -123,4 +125,5 @@ export interface CheckinReview {
   seen: string;
   detected: number | null;
   model: string;
+  answer_check: import("./ai-review").AnswerCheck | null;
 }

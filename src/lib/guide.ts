@@ -14,7 +14,7 @@ export const GUIDE: GuideEntry[] = [
     id: "metas",
     q: "O que preciso fazer todo dia?",
     a: [
-      `Três metas: estudo (foto + mínimo ${MIN_STUDY_MINUTES} min + um resumo de pelo menos ${MIN_SUMMARY} caracteres), digitação (um teste de 1 minuto aqui no app) e leitura (foto + páginas lidas).`,
+      `Três metas: estudo (foto + mínimo ${MIN_STUDY_MINUTES} min + a resposta à pergunta do dia, com pelo menos ${MIN_SUMMARY} caracteres), digitação (um teste de 1 minuto aqui no app) e leitura (foto + páginas lidas).`,
       "O prazo é 23:59, horário de São Paulo. O dia só vale com as três.",
       `Cada prova com foto aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
       "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e vale a melhor.",

@@ -2,10 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Verdict } from "@/lib/ai-review";
+import type { AnswerCheck, Verdict } from "@/lib/ai-review";
 import type { JudgeAction } from "@/lib/judge";
 import { Judge } from "./Judge";
 import { AiBadge, type AiState } from "./StatusBadges";
+
+// The AI's reading of the answer to the question of the day: information for the group, never a verdict.
+const ANSWER: Record<AnswerCheck, string> = {
+  specific: "responde com detalhes do assunto.",
+  vague: "genérica, poderia ter sido escrita sem estudar.",
+  off_topic: "não responde à pergunta ou não combina com as fotos.",
+};
 
 // Fixed lines per state: the judge raises suspicions, the group decides.
 const JUDGE: Record<AiState, { action: JudgeAction; line: string }> = {
@@ -18,7 +25,7 @@ const JUDGE: Record<AiState, { action: JudgeAction; line: string }> = {
 
 interface Props {
   checkinId: string;
-  review: { verdict: Verdict; seen: string; detected: number | null } | null;
+  review: { verdict: Verdict; seen: string; detected: number | null; answer: AnswerCheck | null } | null;
   /** Declared study minutes, to explain a timer divergence. */
   declaredMinutes: number | null;
   ownerName: string;
@@ -85,6 +92,12 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
             {review.seen}
           </p>
           {review.verdict === "unclear" && <p className="mt-1 text-sm text-muted">A imagem não permitiu uma conclusão.</p>}
+          {review.answer && (
+            <p className={`mt-2 ${secondary ? "text-sm text-muted" : ""} ${review.answer !== "specific" && !secondary ? "font-medium" : ""}`} data-testid="ai-answer">
+              <span className="text-muted">Resposta à pergunta: </span>
+              {ANSWER[review.answer]}
+            </p>
+          )}
         </>
       ) : state === "analyzing" ? (
         <p className="mt-2 text-sm text-muted">Analisando a foto…</p>

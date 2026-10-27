@@ -97,6 +97,7 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 - **Código aberto?** Bom como portfólio, sem esperar que traga usuários. Licença MIT (portfólio) ou AGPL (se um dia quiser ganhar dinheiro). O histórico do git já foi varrido e não tem segredos.
 - **Pontos do teste de 5 minutos:** hoje vale o melhor teste do dia de qualquer duração, então o de 5 minutos quase nunca conta. Mudar isso muda a regra.
 - **Identidade jurídica (brief de 26/10):** passo 1 feito (PR #29) e revisado em 27/10: aprovado com ajustes (frase da data da foto, Feed no celular). Próximos: Perfil como arquivo mensal e pasta na cena de entrada; depois, autoria dos selos e legibilidade do tribunal. Para estudar: dossiê sem tribunal em duas colunas no desktop (foto à esquerda).
+- **Link de commit na prova de estudo:** segundo passo da prova de estudo, só se a pergunta do dia não bastar contra trapaça. Usa a API do GitHub (serviço novo: atualizar a política no mesmo PR) e só serve para quem estuda programando.
 - **Inglês na digitação:** rende mais WPM que português; os recordes são separados, mas os pontos não.
 
 ## Decisões já tomadas (para não rediscutir)
@@ -107,3 +108,4 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 - Digitação: teste dentro do app (sem foto), 3 tentativas por dia, vale o melhor; PC e celular separados.
 - Textos de digitação: só prosa, sem símbolos de código.
 - Astra é o diretor de design: ideias visuais passam por ele.
+- Prova de estudo (27/10, migration 0017): o resumo responde a uma pergunta do dia, sorteada por pessoa e dia (a mesma o dia todo). O juiz IA avalia a resposta (específica, vaga, fora do tema), mas isso só informa o grupo: o veredito e a acusação continuam vindo da foto.

@@ -57,6 +57,10 @@ await step("mismatch: visible timer far below the declared minutes", async () =>
   await openTile(caio, "Caio", "Estudo");
   await caio.getByTestId("ai-review").getByText("cronômetro marcando 45 minutos").waitFor();
   await caio.getByText("Você informou 240 min. A IA identificou um cronômetro com 45 min na imagem.").waitFor();
+  // The question of the day goes to the judge, and its rating of the answer is shown (it never changes the verdict).
+  const sent = calls().findLast((c) => c.claim.goal === "study" && c.claim.declared_minutes === 240);
+  assert(sent?.claim.study_question === (await caio.getByTestId("proof-question").innerText()), `question sent: ${JSON.stringify(sent?.claim)}`);
+  await caio.getByTestId("ai-answer").getByText("responde com detalhes do assunto.").waitFor();
   await caio.screenshot({ path: `${SHOTS}/g1-ia-diverge.png`, fullPage: true });
 });
 

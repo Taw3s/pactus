@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildPrompt, decideVerdict, parseAnswer } from "@/lib/ai-review";
 import { askGemini, geminiConfigured } from "@/lib/gemini";
+import { studyPrompt } from "@/lib/study-prompts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Checkin } from "@/lib/types";
@@ -68,6 +69,8 @@ export async function POST(request: NextRequest) {
       verdict: decideVerdict(checkin, answer),
       seen: answer.seen,
       detected: answer.number,
+      // Only a summary that answers a question is rated (the model may fill the field anyway).
+      ...(answer.answer && checkin.summary && studyPrompt(checkin.study_prompt) ? { answer_check: answer.answer } : {}),
       model,
     });
     if (error && error.code !== "23505") throw new Error(error.message);

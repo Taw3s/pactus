@@ -38,6 +38,8 @@ http
       else if (claim.goal === "reading" && claim.declared_pages === 23) answer = { consistent: "unclear", number: null, seen: "Imagem muito escura." };
       else if (claim.goal === "reading") answer = { consistent: "yes", number: 12, seen: "Livro aberto na página 12." };
       else answer = { consistent: "yes", number: null, seen: "Tela com código de um projeto." };
+      // A study summary that answers the question of the day is rated too (0017).
+      if (claim.study_question) answer.answer = (claim.study_summary ?? "").length < 50 ? "vague" : "specific";
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] } }] }));
     });

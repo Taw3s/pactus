@@ -16,6 +16,7 @@ import { DEVICE_LABEL } from "@/lib/typing";
 import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
+import { promptOfDay } from "@/lib/study-prompts";
 import { createClient } from "@/lib/supabase/client";
 import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
@@ -298,6 +299,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const g = goalMeta(goal);
   const extra = mode === "extra";
   const minMinutes = extra ? MIN_EXTRA_MINUTES : MIN_STUDY_MINUTES;
+  // The study summary answers the question of the day (same one all day, retakes included).
+  const question = goal === "study" && !extra ? promptOfDay(userId, spToday()) : null;
   // Up to MAX_PHOTOS photos; the first one is the main photo (lists and thumbnails).
   const [shots, setShots] = useState<{ file: File; url: string; takenAt?: Date | null }[]>([]);
   const [summary, setSummary] = useState("");
@@ -320,7 +323,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
     shots.length === 0 && "adicione a foto",
     goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
     goal === "reading" && !pagesOk && "informe as páginas lidas",
-    goal === "study" && !summaryOk && "complete o resumo",
+    goal === "study" && !summaryOk && "responda à pergunta do dia",
   ].filter(Boolean) as string[];
   const missingText =
     missing.length === 0 ? "" : `Para enviar: ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} e ${missing.at(-1)}`}.`;
@@ -387,6 +390,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           goal,
           photo_path: path,
           summary: goal === "study" && !extra ? summary.trim() : null,
+          ...(question ? { study_prompt: question.id } : {}),
           minutes: goal === "study" ? Number(minutes) : null,
           pages: goal === "reading" ? Number(pages) : null,
           title: goal === "project" ? title.trim() : null,
@@ -525,18 +529,21 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       {goal === "study" && (
         <div className="mt-3 space-y-3">
           <NumberField id={fieldId("minutes")} label={extra ? "Minutos nesta sessão" : "Minutos estudados"} min={minMinutes} max={1440} value={minutes} onChange={setMinutes} ok={minutesOk} testId="minutes" />
-          {!extra && (
-          <div>
+          {question && (
+          <div data-testid="study-question" data-prompt={question.id}>
             <label className="label" htmlFor={fieldId("summary")}>
-              Resumo do que você estudou
+              Pergunta do dia
             </label>
+            <p id={fieldId("question")} className="mb-2 break-words font-medium">
+              {question.text}
+            </p>
             <textarea
               id={fieldId("summary")}
               className="input min-h-24 resize-y"
               maxLength={2000}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              aria-describedby={fieldId("summary-help")}
+              aria-describedby={`${fieldId("question")} ${fieldId("summary-help")}`}
             />
             <p id={fieldId("summary-help")} className={`tabular mt-1 text-sm ${summaryOk || !touched ? "text-muted" : "text-warn"}`}>
               {summary.trim().length} de {MIN_SUMMARY} caracteres mínimos
