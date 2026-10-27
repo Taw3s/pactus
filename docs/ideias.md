@@ -29,8 +29,14 @@ O Pacto tem duas camadas:
 
 ## Pendências de lançamento
 
-- [ ] Rodar a migration **0014** (limite do Juiz IA) no Supabase, se ainda não rodou.
-- [ ] Rodar a migration **0015** (criar desafio e cardápio de dívida) e depois fazer o merge do **PR #25**.
+Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 semanas → cobrar pelo site (plano por grupo) → Play Store → App Store. Para desconhecidos usarem:
+
+- [ ] **E-mail de login** com SMTP próprio (Resend) no painel do Supabase. Precisa de domínio verificado. (você)
+- [ ] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor. (Claude)
+- [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
+- [ ] **Política de privacidade e termos** (rascunho do Claude, revisão sua).
+- [ ] **Página de apresentação** e **primeiros passos** de um grupo novo (brief do Astra, implementação do Claude).
+- [ ] **Aviso de erros** (Sentry) e consulta de **retenção** por grupo.
 - [ ] Conferir em Configurações se você aparece como dono do grupo atual.
 - [ ] **Preview da Vercel falha em todo PR.** Precisa do log: `npx vercel inspect <deploy> --logs`. Corrigindo, dá para testar cada mudança no celular antes do merge.
 - [ ] **Domínio** (`pactus.dev.br` no registro.br): trocar **antes** de chamar mais gente, porque o app instalado e os avisos não passam para o endereço novo.

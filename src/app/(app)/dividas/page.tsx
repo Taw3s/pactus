@@ -10,12 +10,17 @@ import { plural } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
+/** Who received a payment: the member's current name, or the name kept on the payment after they left. */
+function receiverName(p: { received_by: string | null; received_name?: string | null }, nameOf: Map<string, string>) {
+  return (p.received_by && nameOf.get(p.received_by)) || (p.received_name ? `${p.received_name} (saiu do grupo)` : "ex-membro");
+}
+
 function groupByDay(lines: DebtLine[], nameOf: Map<string, string>): DebtDay[] {
   const days = new Map<string, DebtDay>();
   for (const l of lines) {
     const d = days.get(l.day) ?? { day: l.day, label: formatDayPt(l.day), overdue: false, items: [] };
     d.overdue ||= l.overdue;
-    d.items.push({ item: l.item, receivedBy: l.payment ? (nameOf.get(l.payment.received_by) ?? "alguém") : null });
+    d.items.push({ item: l.item, receivedBy: l.payment ? receiverName(l.payment, nameOf) : null });
     days.set(l.day, d);
   }
   return [...days.values()];

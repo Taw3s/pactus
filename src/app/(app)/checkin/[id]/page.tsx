@@ -80,7 +80,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const canDispute = !dispute && !isOwner && recent;
   const myVote = votes.find((v) => v.voter_id === me.user_id) ?? null;
   const joinedLate = !!dispute && me.created_at > dispute.created_at;
-  const accuser = dispute ? (dispute.by_ai ? "Juiz IA" : (byId.get(dispute.author_id ?? "")?.display_name ?? "?")) : "";
+  const accuser = dispute ? (dispute.by_ai ? "Juiz IA" : (byId.get(dispute.author_id ?? "")?.display_name ?? "Ex-membro")) : "";
 
   const proofAlt = `Prova de ${goal.label.toLowerCase()} enviada por ${ownerName}`;
   const photoBlock = (
@@ -238,13 +238,13 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         ) : (
           <ul className="space-y-3">
             {votes.map((v) => {
-              const m = byId.get(v.voter_id);
+              const m = v.voter_id ? byId.get(v.voter_id) : undefined;
               return (
-                <li key={v.voter_id} className="card flex gap-3" data-vote-by={m?.display_name}>
+                <li key={`${v.voter_id ?? "ex"}-${v.created_at}`} className="card flex gap-3" data-vote-by={m?.display_name}>
                   <Avatar name={m?.display_name ?? "?"} url={avatar(m)} size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-x-2 font-semibold">
-                      {m?.display_name}
+                      {m?.display_name ?? "Ex-membro"}
                       <span className={`pixel text-base uppercase ${v.upheld ? "text-fail" : "text-done"}`}>{v.upheld ? "Anular" : "Manter"}</span>
                       <span className="text-xs font-normal text-muted">{time(v.created_at)}</span>
                     </p>
