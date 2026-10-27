@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <b>Perfil:</b> o nome que você escolhe, a foto de perfil (se enviar) e o seu dia de folga.
         </li>
         <li>
-          <b>Provas:</b> as fotos que você envia (até quatro por prova), os minutos de estudo, as páginas lidas, o resumo do estudo, o nome do
+          <b>Provas:</b> as fotos que você envia (até quatro por prova), os minutos de estudo, as páginas lidas, a pergunta do dia e a sua resposta sobre o estudo, o nome do
           projeto, o dia e a hora do envio e a data que o arquivo da foto informa (só a data, para mostrar ao grupo quando a foto é antiga).
         </li>
         <li>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
           <b>Vercel:</b> hospedagem do app.
         </li>
         <li>
-          <b>Google (API Gemini):</b> o juiz IA envia a foto e os números de uma prova para a IA do Google conferir se batem. O Google trata
+          <b>Google (API Gemini):</b> o juiz IA envia a foto, os números e, no estudo, a pergunta do dia com a sua resposta para a IA do Google conferir se batem. O Google trata
           esses dados pelos termos da API Gemini; dependendo do plano usado, pode usá-los para melhorar os próprios serviços. O juiz IA não decide
           nada sozinho: a decisão é sempre do grupo.
         </li>

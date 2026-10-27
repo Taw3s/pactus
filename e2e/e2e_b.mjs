@@ -22,7 +22,7 @@ await step("Ana sees 3 pending goals, progress 0/3 and countdown", async () => {
   await p.screenshot({ path: `${SHOTS}/b1-hoje-vazio.png`, fullPage: true });
 });
 
-await step("study needs photo + 40-char summary before enabling submit", async () => {
+await step("study needs photo + a 40-char answer to the question of the day before enabling submit", async () => {
   const card = p.locator("[data-goal=study]");
   const btn = card.getByRole("button", { name: "Enviar prova" });
   assert(await btn.isDisabled(), "disabled without photo");
@@ -35,9 +35,12 @@ await step("study needs photo + 40-char summary before enabling submit", async (
   assert(await btn.isDisabled(), "disabled with < 60 minutes");
   await card.getByTestId("minutes").fill("95");
   assert(await btn.isEnabled(), "enabled");
+  const prompt = await card.getByTestId("study-question").getAttribute("data-prompt");
   await btn.click();
   await p.locator("[data-goal=study][data-state=done]").waitFor();
   await p.getByText("1/3").waitFor();
+  // The summary answers the question of the day, and the proof keeps which one it was.
+  assert(sql("select study_prompt from checkins where goal='study'") === prompt, `stored prompt vs ${prompt}`);
 });
 
 await step("photo was compressed to JPEG with max side 1600px, plus a 480px thumbnail", async () => {

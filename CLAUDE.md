@@ -31,7 +31,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Migrations em `supabase/migrations/NNNN_nome.sql`, rodadas **à mão pelo usuário no SQL Editor**, em ordem. Cada uma confere no início se a anterior foi rodada.
 - Toda migration nova precisa: teste em `supabase/tests/*_test.sql` + linha em `supabase/tests/run.sh`; aviso no PR de que deve ser rodada **antes do merge**.
 - RPCs `security definer` com `set search_path = public`; grants explícitos; RLS em toda tabela.
-- Estado em 27/10/2026: 0001–0015 rodadas em produção (0014 e 0015 entregues para rodar antes do merge do PR #25, já mergeado). **0016** (sair do grupo, remover membro, excluir conta) no PR de "sair/remover/excluir": rodar antes do merge. A próxima depois dela é a 0017.
+- Estado em 27/10/2026: 0001–0016 rodadas em produção. **0017** (pergunta do dia no resumo de estudo) no PR "pergunta do dia": rodar antes do merge, senão o envio da prova de estudo falha (coluna `study_prompt` inexistente). A próxima depois dela é a 0018.
 - Testes do banco: `npm run test:db` (precisa de binários do Postgres 15+; no container da nuvem roda como usuário `postgres` copiando a pasta para um lugar legível).
 
 ## Testes
@@ -56,6 +56,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Identidade jurídica (brief de 26/10, passo 1): provas enviadas são documentos numa pasta (`doc-tab`, aba vinho de 8 px; etiqueta de papel `paper-label` "Prova enviada"; cabeçalho da prova com o sprite `evidenceFolder`), e cada item de dívida recebido vira um recibo (`receipt`, papel creme com texto escuro). Tokens `folder`, `paper`, `on-paper` em `globals.css`. Papel só em detalhes, sempre com texto escuro; nada de número processual, assinatura ou selo oficial. Próximos passos do brief (Perfil como arquivo, cena de entrada, autoria dos selos) só depois da revisão dos prints.
 - Sprites low poly: `tools/lowpoly/models.js` + `render.mjs` (PNG 48×48 em `public/lowpoly`, sempre em escala inteira). Juiz animado: `src/lib/judge.ts`.
 - Logo e ícones do app: o busto do juiz low poly (sobrancelha erguida, desconfiado) sobre o amarelo `#ffcd38`, gerado por `tools/lowpoly/icons.mjs` em `public/icons`. A identidade é low poly, não pixel art: não desenhe a logo em grade de pixels (a v1 assim foi recusada).
+- Pergunta do dia do estudo: `src/lib/study-prompts.ts` (ids gravados em `checkins.study_prompt`, não renomear nem reaproveitar). A avaliação da resposta pela IA (`checkin_reviews.answer_check`) só informa: nunca muda o veredito nem abre tribunal.
 - Guia do juiz (perguntas fixas): `src/lib/guide.ts` — atualize quando mudar uma regra.
 
 ## Decisões que não se rediscutem

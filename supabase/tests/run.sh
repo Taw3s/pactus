@@ -41,3 +41,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f debt_menu_test.sql
 "${PSQL[@]}" -f ../migrations/0016_leave_remove_delete.sql
 "${PSQL[@]}" -f membership_test.sql
+"${PSQL[@]}" -f ../migrations/0017_study_prompt.sql
+"${PSQL[@]}" -f study_prompt_test.sql
