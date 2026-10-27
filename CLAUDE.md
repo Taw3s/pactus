@@ -31,7 +31,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Migrations em `supabase/migrations/NNNN_nome.sql`, rodadas **à mão pelo usuário no SQL Editor**, em ordem. Cada uma confere no início se a anterior foi rodada.
 - Toda migration nova precisa: teste em `supabase/tests/*_test.sql` + linha em `supabase/tests/run.sh`; aviso no PR de que deve ser rodada **antes do merge**.
 - RPCs `security definer` com `set search_path = public`; grants explícitos; RLS em toda tabela.
-- Estado em 27/10/2026: 0001–0013 rodadas em produção. **0014** (limite do juiz IA, PR #24 já mergeado) pode não ter sido rodada. **0015** (criar desafio e cardápio de dívida) está no **PR #25, ainda não mergeado**: rodar a 0015 antes do merge.
+- Estado em 27/10/2026: 0001–0015 rodadas em produção (0014 e 0015 entregues para rodar antes do merge do PR #25, já mergeado). A próxima migration é a **0016**.
 - Testes do banco: `npm run test:db` (precisa de binários do Postgres 15+; no container da nuvem roda como usuário `postgres` copiando a pasta para um lugar legível).
 
 ## Testes
