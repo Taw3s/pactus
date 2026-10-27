@@ -20,9 +20,11 @@ async function oldJpeg(page, daysAgo) {
     return c.toDataURL("image/jpeg").split(",")[1];
   });
   const jpeg = Buffer.from(b64, "base64");
-  const d = new Date(Date.now() - daysAgo * 86_400_000);
+  // Counted from today in São Paulo, as the app does (the runner's clock may already be on the next day in UTC).
+  const sp = new Date(Date.now() - 3 * 3_600_000);
+  const d = new Date(Date.UTC(sp.getUTCFullYear(), sp.getUTCMonth(), sp.getUTCDate() - daysAgo));
   const pad = (n) => String(n).padStart(2, "0");
-  const stamp = `${d.getFullYear()}:${pad(d.getMonth() + 1)}:${pad(d.getDate())} 12:00:00`;
+  const stamp = `${d.getUTCFullYear()}:${pad(d.getUTCMonth() + 1)}:${pad(d.getUTCDate())} 12:00:00`;
   // TIFF (little endian): IFD0 -> Exif IFD -> DateTimeOriginal
   const t = Buffer.alloc(64);
   t.write("II", 0, "ascii");
