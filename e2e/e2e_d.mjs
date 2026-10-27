@@ -121,7 +121,7 @@ await step("settings: rename + avatar appear in the feed", async () => {
 
 await step("logout returns to login and protects pages", async () => {
   await ana.goto(`${APP}/config`);
-  await ana.getByRole("button", { name: "Sair" }).click();
+  await ana.getByRole("button", { name: "Sair", exact: true }).click();
   await ana.waitForURL("**/login");
   await ana.goto(`${APP}/dividas`);
   await ana.waitForURL("**/login");

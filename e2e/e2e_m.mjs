@@ -3,14 +3,14 @@
 import { APP, assert, done, launch, loginAs, newPhone, sql, step } from "./lib.mjs";
 
 const browser = await launch();
-const group = sql("select id from groups where invite_code is not null order by created_at limit 1");
-const ownerEmail = sql(`select u.email from groups g join auth.users u on u.id = g.owner_id where g.id = '${group}'`);
+// Ana's group, with Ana as its owner (the earlier stages created the group without one).
+const ownerEmail = "ana@pacto.test";
+const group = sql(`select m.group_id from members m join auth.users u on u.id = m.user_id where u.email = '${ownerEmail}'`);
+sql(`update groups set owner_id = (select id from auth.users where email = '${ownerEmail}') where id = '${group}'`);
 const idOf = (email) => sql(`select id from auth.users where email = '${email}'`);
 const files = (user) => Number(sql(`select count(*) from storage.objects where bucket_id = 'media' and name like '${group}/${user}/%'`));
-// Three people who are not the owner: one is removed, one leaves, one deletes the account.
-const [removed, leaver, deleter] = sql(
-  `select u.email from members m join auth.users u on u.id = m.user_id where m.group_id = '${group}' and u.email <> '${ownerEmail}' order by u.email limit 3`,
-).split("\n");
+// Three members who sign in with a password (earlier stages use them): one is removed, one leaves, one deletes the account.
+const [removed, leaver, deleter] = ["bia@pacto.test", "caio@pacto.test", "eva@pacto.test"];
 
 await step("a member who is not the owner sees no 'Remover'", async () => {
   const p = await loginAs(browser, leaver);

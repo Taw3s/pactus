@@ -90,8 +90,8 @@ export function MembershipSettings({ isOwner, others }: Props) {
             {busy === "leave" ? spin : <LogOut size={16} aria-hidden />}
             Sair do grupo
           </button>
-          <button type="button" className="btn-secondary min-h-11 text-sm !text-fail" disabled={!!busy} onClick={deleteAccount}>
-            {busy === "delete" ? spin : <Trash2 size={16} aria-hidden />}
+          <button type="button" className="btn-secondary min-h-11 text-sm" disabled={!!busy} onClick={deleteAccount}>
+            {busy === "delete" ? spin : <Trash2 size={16} aria-hidden className="text-fail" />}
             Excluir minha conta
           </button>
         </div>
