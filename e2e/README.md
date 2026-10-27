@@ -54,3 +54,7 @@ Para rodar de novo, comece de um banco limpo: `supabase db reset` (na raiz) e de
 
 Variáveis opcionais: `APP_URL` (padrão `http://localhost:3000`), `MAIL_URL` (caixa de e-mail do Supabase
 local, padrão `http://127.0.0.1:54324`), `CHROMIUM_PATH` (usar um Chromium já instalado).
+
+## Auditoria responsiva
+
+Depois de rodar as etapas (o banco local fica com dados), `node responsive-audit.mjs /tmp/audit` abre cada tela em 320, 360, 390, 768, 1024 e 1440 px e lista: rolagem horizontal da página, elementos fora da tela, texto cortado e alvos de toque menores que 44 px. Os prints ficam na mesma pasta, para revisão visual. O único achado esperado é o resumo das metas da Hoje escondido para leitor de tela.

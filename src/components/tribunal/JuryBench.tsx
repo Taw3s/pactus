@@ -41,7 +41,7 @@ export function JuryBench({ seats, more }: { seats: Seat[]; more: number }) {
                   <Icon size={12} strokeWidth={3} />
                 </span>
               </span>
-              <span className="mt-1.5 block w-full truncate text-center text-xs">{s.name}</span>
+              <span className="mt-1.5 block w-full hyphens-auto break-words text-center text-xs leading-4">{s.name}</span>
             </>
           );
           return (

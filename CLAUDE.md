@@ -40,6 +40,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - E2E: `e2e/run.sh` roda as etapas `a`…`l` em sequência contra um Supabase local descartável, com Gemini e push simulados (veja `e2e/README.md`). As etapas compartilham estado: rode sempre o conjunto inteiro, num banco limpo. `e2e/setup.sql` faz o teste de digitação durar 3 s em vez de 60.
 - O CI (`.github/workflows/ci.yml`) roda tudo isso em cada PR: "Lint, types, unit and database tests" e "End-to-end (Playwright + axe)".
 - **Preview da Vercel falha em todo PR** desde o #8, antes do build (produção funciona). Causa desconhecida: precisa do log (`npx vercel inspect <deploy> --logs`) que só o usuário consegue. Não é motivo para bloquear PR.
+- Auditoria responsiva: `e2e/responsive-audit.mjs` (veja `e2e/README.md`), rodada à mão depois de mudanças de layout. Nomes e textos quebram linha (`break-words`, `hyphens-auto`), nunca `truncate`: nomes longos já quebraram o Feed e o tribunal.
 - O ambiente local de E2E montado nas sessões da nuvem fica fora do repositório e se perde entre sessões; sem ele, confie no CI ou monte de novo pelo `e2e/README.md`.
 
 ## Mapa rápido do código

@@ -82,7 +82,7 @@ export function Podium({ podium: { groups, tied }, people }: { podium: Podium; p
             <li key={g.position} data-position={g.position} className={`${COLUMN[place]} row-start-1 flex min-w-0 flex-col items-center text-center`}>
               <Sprite name={CUP[place]} />
               <Avatar name={p?.name ?? "?"} url={p?.url} />
-              <p className="mt-1 line-clamp-2 w-full break-words text-sm font-semibold leading-5">{p?.name ?? "?"}</p>
+              <p className="mt-1 w-full hyphens-auto break-words text-sm font-semibold leading-5">{p?.name ?? "?"}</p>
               <p className="pixel tabular text-2xl leading-7">{g.points}</p>
               <div
                 className={`${PLINTH[place]} mt-1 flex w-full items-start justify-center rounded-sm border-2 border-bevel-dark border-t-bevel-light bg-surface shadow-[3px_3px_0_var(--color-hard-shadow)]`}

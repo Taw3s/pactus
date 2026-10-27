@@ -67,7 +67,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
             <h1 id="tribunal-title" className="pixel text-2xl font-bold uppercase leading-7 text-accent">
               Tribunal
             </h1>
-            <p className="truncate text-xs font-semibold text-muted">do grupo {groupName}</p>
+            <p className="break-words text-xs font-semibold text-muted">do grupo {groupName}</p>
           </div>
           <span
             className={`pixel shrink-0 rounded-sm border-2 px-2 text-base uppercase ${
@@ -100,7 +100,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
           <Podium label="Acusação" tone="fail">
             {byAi ? <Sprite name="judge-present6" /> : <Avatar name={accuser} url={accuserAvatar} size={48} />}
-            <p className="mt-1 w-full truncate text-center text-sm font-semibold" data-testid="accuser">
+            <p className="mt-1 w-full hyphens-auto break-words text-center text-sm font-semibold" data-testid="accuser">
               {accuser}
             </p>
           </Podium>
@@ -131,7 +131,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
             <div className={`rounded-full border-[3px] ${upheld ? "border-fail" : result.status === "rejected" ? "border-done" : "border-warn"}`}>
               <Avatar name={defendant.display_name} url={defendantAvatar} size={48} />
             </div>
-            <p className="mt-1 w-full truncate text-center text-sm font-semibold" data-testid="defendant">
+            <p className="mt-1 w-full hyphens-auto break-words text-center text-sm font-semibold" data-testid="defendant">
               {defendant.display_name}
             </p>
           </Podium>
@@ -228,7 +228,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="truncate font-semibold">{value}</dd>
+      <dd className="break-words font-semibold">{value}</dd>
     </div>
   );
 }
