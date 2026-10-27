@@ -128,7 +128,7 @@ export default async function FeedPage() {
                 if (!c) {
                   return (
                     <li key={g.id}>
-                      <div className="flex aspect-square flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-divider">
+                      <div className="mt-2 flex aspect-square flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-divider">
                         <Sprite name={GOAL_SPRITE[g.id]} dim />
                       </div>
                       <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
@@ -142,7 +142,8 @@ export default async function FeedPage() {
                 return (
                   <li key={g.id}>
                     <Link href={`/checkin/${c.id}`} className="block">
-                      <span className="relative block">
+                      {/* Sent: a document in its folder (the tab sits above the photo, never on it). */}
+                      <span className="doc-tab block">
                         {best ? (
                           <TypingCard t={best} size="tile" />
                         ) : (

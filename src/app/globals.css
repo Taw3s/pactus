@@ -26,6 +26,12 @@
   --color-bevel-dark: #1a1c20;
   --color-hard-shadow: #141518;
   --color-wood: #8a6a45;
+  /* Evidence folder (proofs as documents): the tab only, never behind text. */
+  --color-folder: #7a2e3a;
+  --color-folder-light: #a0485a;
+  /* Paper: small labels and receipts only, always with dark text (#26292e on #f5f1e6 = 13:1). */
+  --color-paper: #f5f1e6;
+  --color-on-paper: #26292e;
   --color-wood-dark: #5e4527;
 
   /* Semantic states: text/icon + background */
@@ -105,6 +111,57 @@ body {
   @apply rounded-sm border-2 bg-surface p-4;
   border-color: var(--color-bevel-light) var(--color-bevel-dark) var(--color-bevel-dark) var(--color-bevel-light);
   box-shadow: 4px 4px 0 var(--color-hard-shadow);
+}
+
+/*
+ * A sent proof as a document in a folder: an 8 px tab on the top edge. Decoration only (not a
+ * control); it never covers the photo and does not change with the proof's state.
+ */
+@utility doc-tab {
+  position: relative;
+  margin-top: 8px;
+  &::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: -10px;
+    width: min(56px, 40%);
+    height: 10px;
+    background: var(--color-folder);
+    border: 2px solid;
+    border-bottom: 0;
+    border-color: var(--color-folder-light) var(--color-hard-shadow) transparent var(--color-folder-light);
+    border-radius: 2px 2px 0 0;
+    pointer-events: none;
+  }
+}
+
+/* Paper label ("Prova enviada", "Recebimento registrado"): dark text on cream. */
+@utility paper-label {
+  @apply inline-flex items-center gap-1 rounded-sm px-1.5 text-sm font-semibold;
+  background: var(--color-paper);
+  color: var(--color-on-paper);
+  box-shadow: 2px 2px 0 var(--color-hard-shadow);
+}
+
+/*
+ * One received debt item as a small paper receipt: dark text on cream, a 4 px notched bottom edge.
+ * Not an official document (no signature, number or seal of any authority).
+ */
+@utility receipt {
+  @apply rounded-t-sm border-2 border-b-0 px-3 pt-3 pb-4;
+  background: var(--color-paper);
+  color: var(--color-on-paper);
+  border-color: var(--color-bevel-dark);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 95% calc(100% - 4px), 90% 100%, 85% calc(100% - 4px), 80% 100%, 75% calc(100% - 4px), 70% 100%, 65% calc(100% - 4px), 60% 100%, 55% calc(100% - 4px), 50% 100%, 45% calc(100% - 4px), 40% 100%, 35% calc(100% - 4px), 30% 100%, 25% calc(100% - 4px), 20% 100%, 15% calc(100% - 4px), 10% 100%, 5% calc(100% - 4px), 0 100%);
+}
+
+/* The "RECEBIDO" mark on a receipt: typographic, on the received item only. */
+@utility receipt-stamp {
+  @apply pixel shrink-0 rounded-sm border-2 px-1.5 text-sm font-bold uppercase;
+  color: #1d5e36;
+  border-color: #1d5e36;
+  transform: rotate(-2deg);
 }
 
 @utility input {
@@ -232,6 +289,16 @@ body {
   }
   100% {
     transform: translateY(0) rotate(-2deg);
+  }
+}
+
+/* A proof just sent: its sheet settles 4 px into the folder in 3 steps, once. */
+@keyframes sheet-in {
+  0% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
   }
 }
 

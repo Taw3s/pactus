@@ -19,6 +19,9 @@ import { spToday } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/client";
 import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
+/** The proof this page just sent ("extra" for an extra session): its row plays the sheet animation once. */
+let justSent: string | null = null;
+
 export interface DoneGoal {
   id: string;
   goal: Goal;
@@ -241,10 +244,15 @@ function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | nul
   const g = goalMeta(item.goal);
   const value = item.typingBest ?? checkinNumbers(item);
   const annulled = item.dispute === "upheld";
+  const kind = label ? "extra" : item.goal;
+  const [settle] = useState(() => justSent === kind);
+  useEffect(() => {
+    if (settle) justSent = null;
+  }, [settle]);
   return (
     <Link
       href={`/checkin/${item.id}`}
-      className="card flex min-h-[88px] items-center gap-3 p-3 transition-colors duration-150 hover:bg-raised"
+      className="card doc-tab flex min-h-[88px] items-center gap-3 p-3 transition-colors duration-150 hover:bg-raised"
       data-goal={item.goal}
       data-state={annulled ? "annulled" : "done"}
     >
@@ -257,9 +265,10 @@ function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | nul
             <TribunalBadge status={item.dispute} />
           ) : (
             <>
-              <Badge tone="done" icon={Check}>
-                Enviado
-              </Badge>
+              <span className="paper-label">
+                <Check size={14} aria-hidden />
+                Prova enviada
+              </span>
               {item.review && <AiBadge state={item.review} />}
               {item.photoAge && (
                 <Badge tone="pending" icon={Clock}>
@@ -270,13 +279,15 @@ function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | nul
           )}
         </span>
       </span>
-      {item.typingScore ? (
-        <TypingCard t={item.typingScore} size="thumb" />
-      ) : item.photoUrl ? (
-        <img src={item.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-sm border-2 border-bevel-dark object-cover" />
-      ) : (
-        <span className="h-14 w-14 shrink-0 rounded-sm bg-raised" />
-      )}
+      <span className={`shrink-0 ${settle ? "animate-[sheet-in_180ms_steps(3)_both] motion-reduce:animate-none" : ""}`}>
+        {item.typingScore ? (
+          <TypingCard t={item.typingScore} size="thumb" />
+        ) : item.photoUrl ? (
+          <img src={item.photoUrl} alt="" className="block h-14 w-14 rounded-sm border-2 border-bevel-dark object-cover" />
+        ) : (
+          <span className="block h-14 w-14 rounded-sm bg-raised" />
+        )}
+      </span>
       <ChevronRight size={20} aria-hidden className="shrink-0 text-muted" />
     </Link>
   );
@@ -409,6 +420,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
       // The server may nudge the group (this person closed the day / weekly challenge done).
       fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
+      justSent = extra ? "extra" : goal;
       onDone?.();
       router.refresh();
     } catch (e) {
