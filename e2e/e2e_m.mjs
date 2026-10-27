@@ -57,8 +57,17 @@ await step("a member leaves the group from Configurações", async () => {
   await p.context().close();
 });
 
-await step("a member deletes the account (typing EXCLUIR): the user and the photos are gone", async () => {
+await step("a member deletes the account (typing EXCLUIR): the user, the photos and the name on receipts are gone", async () => {
   const id = idOf(deleter);
+  // Make sure a receipt carries the person's name, so the check below is not empty.
+  const name = sql(`select display_name from members where user_id = '${id}'`).replace(/'/g, "''");
+  // (Bia's paid debts left with her above, so add one: Eva received Ana's Coca 3 days ago. Superuser, trigger off.)
+  sql(`alter table payments disable trigger payments_before_insert;
+    insert into payments (group_id, debtor_id, day, item, received_by, received_name)
+    values ('${group}', (select id from auth.users where email = '${ownerEmail}'), sp_today() - 3, 'coke', '${id}', '${name}')
+    on conflict do nothing;
+    alter table payments enable trigger payments_before_insert;`);
+  assert(sql(`select count(*) from payments where received_name = '${name}'`) !== "0", "no receipt to check");
   const p = await loginAs(browser, deleter);
   p.removeAllListeners("dialog");
   p.on("dialog", (d) => d.accept("excluir"));
@@ -67,6 +76,7 @@ await step("a member deletes the account (typing EXCLUIR): the user and the phot
   await p.waitForURL("**/login**");
   assert(sql(`select count(*) from auth.users where id = '${id}'`) === "0", "the account still exists");
   assert(files(id) === 0, "photos left behind");
+  assert(sql(`select count(*) from payments where received_name = '${name}'`) === "0", "the name stayed on receipts");
   await p.context().close();
 });
 

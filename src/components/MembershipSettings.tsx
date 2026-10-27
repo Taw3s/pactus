@@ -99,6 +99,15 @@ export function MembershipSettings({ isOwner, others }: Props) {
       <p className="text-sm text-muted" role="status">
         {msg}
       </p>
+      <p className="text-sm text-muted">
+        <a href="/privacidade" className="inline-flex min-h-11 items-center underline">
+          Política de privacidade
+        </a>
+        <span aria-hidden> · </span>
+        <a href="/termos" className="inline-flex min-h-11 items-center underline">
+          Termos de uso
+        </a>
+      </p>
     </section>
   );
 }
