@@ -2,9 +2,25 @@
 // computed on request, comparing São Paulo dates. The payments trigger in
 // supabase/migrations/0001_init.sql mirrors the "missed day" rule — keep both in sync.
 import { addDays, eachDay, monthKey, weekdayOf, type ISODate } from "./dates";
+import { DEBT_ITEMS, DEFAULT_MENU, type DebtItem } from "./debt-items";
 
 export type DayStatus = "done" | "missed" | "off" | "pending" | "before";
-export type DebtItem = "coke" | "snack";
+export type { DebtItem };
+
+/** A group's debt menu from a day on (supabase debt_menus); the latest one in force applies. */
+export interface DebtMenu {
+  effective_from: ISODate;
+  items: DebtItem[];
+}
+
+/** The items a missed day costs (mirrors debt_items_on in the database). */
+export function itemsOn(menus: DebtMenu[], day: ISODate): DebtItem[] {
+  let current: DebtMenu | undefined;
+  for (const m of menus) {
+    if (m.effective_from <= day && (!current || m.effective_from > current.effective_from)) current = m;
+  }
+  return current?.items ?? DEFAULT_MENU;
+}
 
 export interface DayOffChange {
   weekday: number;
@@ -65,12 +81,12 @@ export interface DebtLine {
   payment?: Payment;
 }
 
-/** One coke + one snack per missed day; each settled independently. */
-export function debtLines(input: MemberLedgerInput, payments: Payment[], today: ISODate): DebtLine[] {
+/** The items of the group's menu for each missed day (1 Coca + 1 salgado by default); each settled independently. */
+export function debtLines(input: MemberLedgerInput, payments: Payment[], today: ISODate, menus: DebtMenu[] = []): DebtLine[] {
   const paid = new Map(payments.map((p) => [`${p.day}|${p.item}`, p]));
   const lines: DebtLine[] = [];
   for (const day of missedDays(input, today)) {
-    for (const item of ["coke", "snack"] as const) {
+    for (const item of itemsOn(menus, day)) {
       const payment = paid.get(`${day}|${item}`);
       lines.push({ day, item, payment, overdue: !payment && monthKey(day) < monthKey(today) });
     }
@@ -78,13 +94,13 @@ export function debtLines(input: MemberLedgerInput, payments: Payment[], today: 
   return lines;
 }
 
+/** Open items per kind (in catalog order), their total and how many are overdue. */
 export function debtSummary(lines: DebtLine[]) {
   const open = lines.filter((l) => !l.payment);
-  return {
-    cokes: open.filter((l) => l.item === "coke").length,
-    snacks: open.filter((l) => l.item === "snack").length,
-    overdue: open.filter((l) => l.overdue).length,
-  };
+  const counts = new Map<DebtItem, number>();
+  for (const l of open) counts.set(l.item, (counts.get(l.item) ?? 0) + 1);
+  const ordered = [...counts.entries()].sort((a, b) => DEBT_ITEMS.indexOf(a[0]) - DEBT_ITEMS.indexOf(b[0]));
+  return { counts: ordered, total: open.length, overdue: open.filter((l) => l.overdue).length };
 }
 
 /** Streak milestones shown as a plaque in the history (visual only: no points, no rule). */
