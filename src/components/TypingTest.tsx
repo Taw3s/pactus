@@ -356,7 +356,7 @@ const Word = memo(function Word({ target, typed, state, caret }: { target: strin
     >
       {letters.map((ch, i) => {
         const t = typed[i];
-        const cls = state === "next" || t === undefined ? (state === "done" ? "text-muted/60" : "text-muted") : t === ch ? "text-fg" : "text-fail";
+        const cls = state === "next" || t === undefined ? (state === "done" ? "text-muted/75" : "text-muted") : t === ch ? "text-fg" : "text-fail";
         return (
           <span key={i} className={`relative ${cls}`}>
             {caretAt === i && bar}

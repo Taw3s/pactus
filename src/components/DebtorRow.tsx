@@ -89,13 +89,28 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
               </p>
               <ul>
                 {d.items.map(({ item, receivedBy }) => {
+                  // A received item becomes its own receipt; the rest of the day keeps its action.
+                  if (receivedBy) {
+                    return (
+                      <li key={item} className="receipt my-2" data-receipt={item}>
+                        <p className="pixel text-lg leading-6">Recebimento registrado</p>
+                        <p className="mt-1 flex items-center gap-2 text-sm">
+                          <Sprite name={DEBT_ITEM[item].sprite} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">{DEBT_ITEM[item].label}</span>
+                            <span className="block">Referente a {d.label}</span>
+                            <span className="block">Recebido por {receivedBy}</span>
+                          </span>
+                          <span className="receipt-stamp">Recebido</span>
+                        </p>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={item} className="flex min-h-12 items-center gap-3">
                       <Sprite name={DEBT_ITEM[item].sprite} />
                       <span className="flex-1">{DEBT_ITEM[item].label}</span>
-                      {receivedBy ? (
-                        <span className="text-sm text-done">Recebido por {receivedBy}</span>
-                      ) : isMe ? (
+                      {isMe ? (
                         <span className="text-sm text-muted">Em aberto</span>
                       ) : (
                         <PayButton debtorId={debtorId} debtorName={name} day={d.day} item={item} />

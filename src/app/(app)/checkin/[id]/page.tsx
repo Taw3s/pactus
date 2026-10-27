@@ -174,16 +174,23 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     </>
   );
 
+  // The proof as a dossier: the folder on the header only (never over the photos), the real date in plain text.
   const header = (
-    <header className="mb-4 flex items-center gap-3">
-      <Avatar name={ownerName} url={avatar(owner)} size={48} />
+    <header className="card doc-tab mb-4 flex items-center gap-3 p-3">
+      <Sprite name="evidenceFolder" />
       <div className="min-w-0 flex-1">
-        <p className="pixel truncate text-[28px] font-bold uppercase leading-[34px]">{ownerName}</p>
-        <p className="flex items-center gap-1.5 text-sm text-muted">
-          <GoalIcon size={16} aria-hidden />
-          {kind} · {formatDayPt(checkin.day)} · {time(checkin.created_at)}
+        <p className="pixel flex items-center gap-1.5 break-words text-xl uppercase leading-6">
+          <GoalIcon size={18} aria-hidden className="shrink-0" />
+          {kind}
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
+          <span className="font-semibold">{ownerName}</span>
+          <span className="text-muted">
+            {formatDayPt(checkin.day)} · {time(checkin.created_at)}
+          </span>
         </p>
       </div>
+      <Avatar name={ownerName} url={avatar(owner)} size={40} />
     </header>
   );
 

@@ -25,6 +25,7 @@ export type SpriteName =
   | "scales"
   | "memoryCard"
   | "calendar"
+  | "evidenceFolder"
   | "chest1"
   | "chest2"
   | "chest3"

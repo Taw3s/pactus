@@ -1123,7 +1123,42 @@ function benchFront() {
   return g;
 }
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, ...JUDGE };
+/** Provas: a wine evidence folder with two cream sheets peeking out and a raised tab (no text). */
+function evidenceFolder() {
+  const g = new THREE.Group();
+  const wine = mat(0, tex(8, 8, (c) => noise(c, 8, 8, ["#7a2e3a", "#712a35", "#83333f"], 5)));
+  const wineDark = mat(0x4f1c25);
+  const paper = mat(0, tex(8, 8, (c) => {
+    c.fillStyle = "#f5f1e6"; c.fillRect(0, 0, 8, 8);
+    c.fillStyle = "#b9b2a0"; c.fillRect(1, 2, 5, 1); c.fillRect(1, 4, 6, 1); c.fillRect(1, 6, 3, 1);
+  }));
+  const paperEdge = mat(0xe6dfcd);
+  const back = box(1.5, 0.05, 1.05, [wineDark, wineDark, wine, wineDark, wineDark, wineDark]);
+  g.add(back);
+  // the tab rises from the back cover's far edge
+  const tab = box(0.5, 0.05, 0.22, wine);
+  tab.position.set(-0.35, 0.0, -0.62);
+  g.add(tab);
+  // two sheets, offset so their corners show past the front cover
+  for (const [x, z, r, y] of [[0.1, -0.12, 0.1, 0.05], [-0.06, -0.16, -0.07, 0.08]]) {
+    const sheet = box(1.3, 0.025, 0.95, [paperEdge, paperEdge, paper, paperEdge, paperEdge, paperEdge]);
+    sheet.position.set(x, y, z);
+    sheet.rotation.y = r;
+    g.add(sheet);
+  }
+  // front cover a little shorter, so the papers peek out at the top
+  const front = box(1.5, 0.05, 0.72, [wineDark, wineDark, wine, wineDark, wineDark, wineDark]);
+  front.position.set(0, 0.12, 0.17);
+  g.add(front);
+  // brown spine along the left edge
+  const spine = box(0.08, 0.17, 1.05, mat(0x5e4527));
+  spine.position.set(-0.76, 0.06, 0);
+  g.add(spine);
+  g.rotation.set(0.45, 0.3, 0);
+  return g;
+}
+
+export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, evidenceFolder, ...JUDGE };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {
