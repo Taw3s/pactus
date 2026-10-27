@@ -70,7 +70,8 @@ function check() {
     if (hasText && s.hyphens !== "auto") {
       for (const n of el.childNodes) {
         if (n.nodeType !== 3) continue;
-        for (const m of n.textContent.matchAll(/\S{2,}/g)) {
+        // Words are split at their own hyphens first: "e-" / "mail" on two lines is a normal break.
+        for (const m of n.textContent.matchAll(/[^\s-]{2,}-?/g)) {
           const range = document.createRange();
           range.setStart(n, m.index);
           range.setEnd(n, m.index + m[0].length);
@@ -123,16 +124,22 @@ for (const w of WIDTHS) {
   // someone with pending goals: the forms and the typing test
   const ctx2 = await b.newContext({ viewport: { width: w, height: mobile ? 780 : 900 }, isMobile: mobile, hasTouch: mobile, locale: "pt-BR" });
   const bia = await ctx2.newPage();
-  // Stage m takes Bia, Caio and Eva out of the group: use the first of these still in it.
-  for (const email of ["bia@pacto.test", "davi@pacto.test"]) {
-    await bia.goto(`${APP}/login`);
-    await bia.fill("#email", email);
-    await bia.fill("#password", "senha123");
-    await bia.click("button:text-is('Entrar')");
-    await bia.waitForURL(/\/(hoje|join)/);
-    if (bia.url().includes("/hoje")) break;
-    await ctx2.clearCookies();
+  // Someone still in the group with goals pending today (stage m takes Bia, Caio and Eva out).
+  const pending = sql(`select u.email from members m join auth.users u on u.id = m.user_id
+    where u.email like '%@pacto.test' and u.email <> 'ana@pacto.test' and u.encrypted_password is not null
+      and (select count(distinct c.goal) from checkins c where c.user_id = m.user_id and c.day = sp_today() and c.goal <> 'project') < 3
+    order by u.email limit 1`);
+  if (!pending) {
+    console.log(`(no member with pending goals at ${w} px: the pending view was not audited)`);
+    await ctx2.close();
+    await ctx.close();
+    continue;
   }
+  await bia.goto(`${APP}/login`);
+  await bia.fill("#email", pending);
+  await bia.fill("#password", "senha123");
+  await bia.click("button:text-is('Entrar')");
+  await bia.waitForURL("**/hoje");
   await bia.waitForLoadState("networkidle");
   report[`hoje-pendente@${w}`] = await bia.evaluate(check);
   await bia.screenshot({ path: `${OUT}/hoje-pendente-${w}.png`, fullPage: true });
