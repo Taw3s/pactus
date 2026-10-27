@@ -73,7 +73,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
       <PageHeader
         title={isMe ? "Perfil" : "Histórico"}
         right={
-          <Link href="/config" className="btn-secondary min-h-11 px-3 text-sm">
+          <Link href="/config" className="btn-secondary min-h-12 px-3 text-sm">
             <Settings size={18} aria-hidden />
             Configurações
           </Link>

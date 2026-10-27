@@ -81,7 +81,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
   return (
     <div className="space-y-6">
       <section aria-labelledby="identidade" className="card space-y-4">
-        <h2 id="identidade" className="text-lg font-semibold leading-6">
+        <h2 id="identidade" className="pixel text-xl uppercase leading-6">
           Identidade
         </h2>
         <div className="flex items-center gap-4">
@@ -107,7 +107,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
       </section>
 
       <section aria-labelledby="folga" className="card">
-        <h2 id="folga" className="text-lg font-semibold leading-6">
+        <h2 id="folga" className="pixel text-xl uppercase leading-6">
           Dia de folga
         </h2>
         <p className="mb-4 mt-1 text-sm text-muted">
@@ -141,7 +141,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
       <PushToggle />
 
       <section aria-labelledby="sessao" className="border-t border-divider pt-6">
-        <h2 id="sessao" className="mb-3 text-sm font-semibold text-muted">
+        <h2 id="sessao" className="pixel mb-3 text-xl uppercase leading-6">
           Sessão
         </h2>
         <button className="btn-secondary w-full" onClick={logout}>

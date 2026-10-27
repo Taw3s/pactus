@@ -136,10 +136,10 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           <CalendarClock size={18} aria-hidden className="mt-0.5 shrink-0 text-warn" />
           <span>
             <span className="block font-semibold">Data do arquivo</span>
-            {/* Only the first photo carries a date; the other files are not described. */}
+            {/* photo_taken_at is the OLDEST date among the proof's photos (TodayChecklist, migration 0009), not the first photo's. */}
             {/* Two lines, each date with its own event: "(3 dias antes)" after the send date read backwards. */}
             <span className="block">
-              Data informada {photos.length > 1 ? "pela primeira foto" : "pela foto"}: {ddmm(spToday(new Date(checkin.photo_taken_at!)))}.
+              {photoPaths.length > 1 ? "Data mais antiga informada pelas fotos" : "Data informada pela foto"}: {ddmm(spToday(new Date(checkin.photo_taken_at!)))}.
             </span>
             <span className="block">
               Enviada em {ddmm(checkin.day)}, {daysBefore === 1 ? "1 dia depois" : `${daysBefore} dias depois`}.
