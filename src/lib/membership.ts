@@ -9,7 +9,12 @@ export async function removeUserMedia(admin: SupabaseClient, groupId: string, us
   for (;;) {
     const { data } = await media.list(`${groupId}/${userId}`, { limit: 1000 });
     if (!data?.length) return;
-    await media.remove(data.map((f) => `${groupId}/${userId}/${f.name}`));
+    const { error } = await media.remove(data.map((f) => `${groupId}/${userId}/${f.name}`));
+    // A photo left behind after someone leaves or deletes the account must not go unnoticed.
+    if (error) {
+      console.error("media cleanup failed", groupId, userId, error.message);
+      return;
+    }
     if (data.length < 1000) return;
   }
 }
