@@ -1,6 +1,6 @@
 # Pacto — ideias, decisões e pendências
 
-Documento vivo: anote aqui o que for surgindo. Atualizado em 26/10/2026.
+Documento vivo: anote aqui o que for surgindo. Atualizado em 27/10/2026.
 
 ## Visão
 
@@ -19,7 +19,11 @@ O Pacto tem duas camadas:
 
 ## Bugs para corrigir
 
-- [ ] **Imagem da prova de digitação não muda ao refazer o teste.** A prova guarda a imagem do primeiro teste e provas não podem ser editadas, então ao refazer só o texto ao lado muda. Na página da prova, até o número fica o do primeiro teste. Correção: mostrar o cartão do resultado gerado na hora, a partir do **melhor teste do dia**, no Feed, na Hoje, na página da prova e no tribunal (a imagem antiga fica só como reserva).
+- [x] **Imagem da prova de digitação não mudava ao refazer o teste** (PR #26): Hoje, Feed e página da prova desenham o cartão do melhor teste do dia. Falta: o tribunal ainda mostra a imagem guardada.
+- [x] **Palavras "se mexendo" no teste de digitação** (feedback do grupo, 26/10): a partir da 40ª palavra a tela apagava a mais antiga e todas as quebras de linha mudavam. Corrigido no PR seguinte ao #26.
+- [x] **Não dava para voltar e corrigir uma palavra** (feedback do grupo): agora Backspace numa palavra vazia volta para a anterior, se ela estiver errada (como no Monkeytype). No celular depende do teclado mandar o evento de apagar; conferir no Android e no iPhone.
+- [x] **Leitura "pendente" que não deixava enviar** (Daniel, 26/10): o envio tinha funcionado, mas a tela não atualizou; o segundo envio dava "já enviada". Agora o app atualiza a tela em vez de mostrar erro.
+- [ ] Ouvir o grupo sobre o que mais está "horrível" no teste de digitação depois dessas correções (pedir prints ou vídeo).
 
 ## Pendências de lançamento
 

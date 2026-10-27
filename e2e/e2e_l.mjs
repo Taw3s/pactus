@@ -20,9 +20,11 @@ async function oldJpeg(page, daysAgo) {
     return c.toDataURL("image/jpeg").split(",")[1];
   });
   const jpeg = Buffer.from(b64, "base64");
-  const d = new Date(Date.now() - daysAgo * 86_400_000);
+  // Counted from today in São Paulo, as the app does (the runner's clock may already be on the next day in UTC).
+  const sp = new Date(Date.now() - 3 * 3_600_000);
+  const d = new Date(Date.UTC(sp.getUTCFullYear(), sp.getUTCMonth(), sp.getUTCDate() - daysAgo));
   const pad = (n) => String(n).padStart(2, "0");
-  const stamp = `${d.getFullYear()}:${pad(d.getMonth() + 1)}:${pad(d.getDate())} 12:00:00`;
+  const stamp = `${d.getUTCFullYear()}:${pad(d.getUTCMonth() + 1)}:${pad(d.getUTCDate())} 12:00:00`;
   // TIFF (little endian): IFD0 -> Exif IFD -> DateTimeOriginal
   const t = Buffer.alloc(64);
   t.write("II", 0, "ascii");
@@ -160,7 +162,23 @@ await step("typing: a 5-minute test is timed by the server for its length and ke
   const again = p.locator("[data-goal=typing][data-state=again]");
   await again.getByTestId("typing-minutes-5").click();
   await again.getByText(/5 minutos digitando/).waitFor();
-  await typingTest(p, again);
+  // A wrong word can be reopened with Backspace and fixed (as on Monkeytype); a right one cannot.
+  await again.getByRole("button", { name: "Começar teste" }).click();
+  const input = again.getByTestId("typing-input");
+  await input.waitFor();
+  const first = await again.getByTestId("typing-word-current").innerText();
+  await input.pressSequentially("zzz ", { delay: 30 });
+  await input.press("Backspace");
+  assert((await input.inputValue()) === "zzz", `reopened ${await input.inputValue()}`);
+  await input.fill("");
+  await input.pressSequentially(`${first} `, { delay: 30 });
+  await input.press("Backspace");
+  assert((await input.inputValue()) === "", "a right word was reopened");
+  while ((await again.getByTestId("typing-test").getAttribute("data-phase").catch(() => "gone")) === "running") {
+    const word = await again.getByTestId("typing-word-current").innerText().catch(() => "");
+    if (!word) break;
+    await input.pressSequentially(`${word} `, { delay: 60 }).catch(() => {});
+  }
   await p.getByTestId("typing-moved").or(p.getByRole("button", { name: /Tentar de novo/ })).first().waitFor();
   const row = sql("select t.minutes || '|' || t.seconds from typing_tests t join members m using (user_id) where m.display_name = 'Caio' order by t.started_at desc limit 1");
   // e2e/setup.sql makes a "minute" last 3 seconds.

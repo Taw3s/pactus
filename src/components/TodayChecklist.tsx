@@ -383,6 +383,14 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           ...(extraPhotos.length ? { extra_photos: extraPhotos } : {}),
           ...(oldest ? { photo_taken_at: oldest.toISOString() } : {}),
         });
+      // Already sent (the first send went through but its answer never arrived, or this page is
+      // older than the proof): show the proof instead of an error.
+      if (error?.code === "23505" && goal !== "project" && !extra) {
+        setBusy(false);
+        router.refresh();
+        onDone?.();
+        return;
+      }
       if (error) {
         throw new Error(
           error.code === "23505"
