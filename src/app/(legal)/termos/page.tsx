@@ -48,8 +48,9 @@ export default function TermsPage() {
 
       <h2>Responsabilidade</h2>
       <p>
-        O Pacto é oferecido como está, de graça, sem garantia de que vai funcionar sem falhas. Na medida em que a lei permite, o responsável
-        pelo Pacto não responde por perdas causadas pelo uso do app, por combinados entre membros ou por conteúdo enviado por eles.
+        O Pacto é gratuito e está em fase de testes: falhas podem acontecer, e o app pode ficar fora do ar. Os combinados entre os membros e o
+        conteúdo que cada pessoa envia são de quem os fez. Nada nestes termos tira ou limita direitos que a lei garante a você, como os do
+        Código de Defesa do Consumidor.
       </p>
 
       <h2>Lei aplicável</h2>

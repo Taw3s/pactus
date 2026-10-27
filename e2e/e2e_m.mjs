@@ -57,8 +57,12 @@ await step("a member leaves the group from Configurações", async () => {
   await p.context().close();
 });
 
-await step("a member deletes the account (typing EXCLUIR): the user and the photos are gone", async () => {
+await step("a member deletes the account (typing EXCLUIR): the user, the photos and the name on receipts are gone", async () => {
   const id = idOf(deleter);
+  // Make sure a receipt carries the person's name, so the check below is not empty.
+  const name = sql(`select display_name from members where user_id = '${id}'`).replace(/'/g, "''");
+  sql(`update payments set received_by = '${id}', received_name = '${name}' where id = (select id from payments where group_id = '${group}' and debtor_id <> '${id}' limit 1)`);
+  assert(sql(`select count(*) from payments where received_name = '${name}'`) !== "0", "no receipt to check");
   const p = await loginAs(browser, deleter);
   p.removeAllListeners("dialog");
   p.on("dialog", (d) => d.accept("excluir"));
@@ -67,6 +71,7 @@ await step("a member deletes the account (typing EXCLUIR): the user and the phot
   await p.waitForURL("**/login**");
   assert(sql(`select count(*) from auth.users where id = '${id}'`) === "0", "the account still exists");
   assert(files(id) === 0, "photos left behind");
+  assert(sql(`select count(*) from payments where received_name = '${name}'`) === "0", "the name stayed on receipts");
   await p.context().close();
 });
 

@@ -14,7 +14,8 @@ export default function PrivacyPage() {
       <p className="text-sm text-muted">Atualizada em {LEGAL_UPDATED}.</p>
       <p>
         O Pacto é um app para grupos de amigos cumprirem metas diárias juntos. Esta página explica quais dados o app guarda, quem vê, com quem
-        eles são compartilhados e como você apaga tudo. Responsável pelos dados (controlador, na LGPD): {CONTROLLER_NAME}. Contato: {contact}.
+        eles são compartilhados e como você apaga tudo. Responsável pelos dados (controlador, na LGPD): {CONTROLLER_NAME}, que também é o
+        encarregado pelo tratamento de dados (LGPD, art. 41). Contato: {contact}.
       </p>
 
       <h2>O que o Pacto guarda</h2>
@@ -55,7 +56,10 @@ export default function PrivacyPage() {
       </p>
 
       <h2>Com quem compartilhamos</h2>
-      <p>O Pacto depende destes serviços, que tratam dados em nome dele e podem guardá-los em servidores fora do Brasil:</p>
+      <p>
+        O Pacto depende destes serviços, que tratam dados em nome dele. Eles podem guardar os dados em servidores fora do Brasil: essa
+        transferência internacional é necessária para o serviço funcionar (LGPD, art. 33, IX, com o art. 7º, V).
+      </p>
       <ul>
         <li>
           <b>Supabase:</b> banco de dados, arquivos (as fotos) e login.
@@ -95,28 +99,37 @@ export default function PrivacyPage() {
           acusações que você fez e os seus votos (sem o seu nome), para que decisões já tomadas não mudem.
         </li>
         <li>
-          Quando você <b>exclui a conta</b>, acontece o mesmo e, além disso, o seu login é apagado.
+          Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos (eles passam a dizer "ex-membro") e o seu login é
+          apagado.
         </li>
       </ul>
 
       <h2>Seus direitos</h2>
-      <p>Pela LGPD (art. 18) você pode, a qualquer momento:</p>
+      <p>Pela LGPD (art. 18) você pode, a qualquer momento e sem custo:</p>
       <ul>
-        <li>saber quais dados seus o Pacto tem e pedir uma cópia;</li>
-        <li>corrigir o seu nome e a sua foto (em Configurações);</li>
-        <li>sair do grupo ou excluir a conta (em Configurações), sem precisar pedir para ninguém;</li>
-        <li>retirar o consentimento dos avisos (em Configurações ou no seu aparelho);</li>
-        <li>pedir informações sobre com quem os dados são compartilhados.</li>
+        <li>confirmar se o Pacto trata dados seus e ter acesso a eles;</li>
+        <li>corrigir dados incompletos ou errados (nome e foto, direto em Configurações);</li>
+        <li>pedir a anonimização, o bloqueio ou a eliminação de dados desnecessários ou tratados fora da lei;</li>
+        <li>pedir a portabilidade dos seus dados (uma cópia para levar a outro serviço);</li>
+        <li>eliminar seus dados saindo do grupo ou excluindo a conta, em Configurações, sem precisar pedir para ninguém;</li>
+        <li>saber com quem os seus dados são compartilhados (a lista acima);</li>
+        <li>retirar o consentimento dos avisos (em Configurações ou no seu aparelho) e saber o que muda se não der o consentimento: só deixa de receber avisos.</li>
       </ul>
-      <p>Para o que não está em Configurações, escreva para {contact}. Você também pode reclamar à ANPD (gov.br/anpd).</p>
+      <p>
+        Para o que não está em Configurações, escreva para {contact}. Se não for atendido, você pode reclamar à ANPD (gov.br/anpd) ou a um
+        órgão de defesa do consumidor, como o Procon.
+      </p>
 
       <h2>Menores de idade</h2>
-      <p>O Pacto é feito para maiores de 18 anos. Menores só podem usar com a autorização de um responsável.</p>
+      <p>
+        O Pacto é feito para maiores de 18 anos. Crianças (menores de 12 anos) não podem usar: a lei exige um consentimento dos pais que o
+        app não tem como verificar (LGPD, art. 14). Adolescentes (de 12 a 17 anos) só podem usar com a autorização de um responsável.
+      </p>
 
       <h2>Segurança</h2>
       <p>
         Toda a comunicação é cifrada (HTTPS), as fotos ficam num armazenamento privado com links temporários e o banco de dados só entrega a
-        cada pessoa os dados do próprio grupo. Nenhum sistema é perfeitamente seguro: se acontecer um incidente que afete você, avisaremos.
+        cada pessoa os dados do próprio grupo. Nenhum sistema é perfeitamente seguro: se acontecer um incidente que possa trazer risco a você, avisaremos você e a ANPD (LGPD, art. 48).
       </p>
 
       <h2>Mudanças</h2>
