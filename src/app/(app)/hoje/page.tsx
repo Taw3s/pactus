@@ -115,5 +115,10 @@ function typingToday(
   rows: { wpm: number | null; accuracy: number | null; score: number | null; device: "pc" | "mobile"; minutes: number; finished_at: string | null }[],
 ) {
   const best = rows.filter((r) => r.finished_at && r.score !== null).sort((a, b) => Number(b.score) - Number(a.score))[0];
-  return { used: rows.length, best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy!, minutes: best.minutes })} · ${DEVICE_LABEL[best.device]}` : null };
+  return {
+    used: rows.length,
+    best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy!, minutes: best.minutes })} · ${DEVICE_LABEL[best.device]}` : null,
+    // Drawn in place of the stored picture, which shows only the first test.
+    bestScore: best ? { wpm: Number(best.wpm), accuracy: Number(best.accuracy), device: best.device, minutes: Number(best.minutes) } : null,
+  };
 }

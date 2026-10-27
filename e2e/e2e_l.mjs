@@ -100,6 +100,16 @@ await step("typing: another attempt over a text keeps the place, English is offe
   await typingTest(p, again);
   await p.getByTestId("typing-moved").getByText(/Avançou \d+ palavras? em “O que é SQL”/).waitFor();
   await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
+  // The proof follows the day's best test: Hoje, the feed and the proof page draw its card.
+  const best = sql("select round(max(t.wpm))::int from typing_tests t join members m using (user_id) where m.display_name like 'Ana%' and t.day = sp_today() and t.score = (select max(score) from typing_tests t2 where t2.user_id = t.user_id and t2.day = t.day)");
+  await p.locator("[data-goal=typing][data-state=done]").getByTestId("typing-card").getByText(best).waitFor();
+  await p.goto(`${APP}/feed`);
+  const tile = p.locator('[data-member^="Ana"] a', { hasText: "Digitação" });
+  await tile.getByTestId("typing-card").getByText(best).waitFor();
+  await tile.click();
+  await p.waitForURL("**/checkin/**");
+  await p.getByTestId("typing-card").getByText(best, { exact: true }).waitFor();
+  await p.goto(`${APP}/hoje`);
   const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name like 'Ana%' and p.text_id = 'sql-o-que-e'"));
   assert(place > 0, `place ${place}`);
   // The choice is remembered, with the place shown next to the text.

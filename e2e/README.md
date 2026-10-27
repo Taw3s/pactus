@@ -20,6 +20,9 @@ ficam no artefato **e2e-screens-and-logs** da execução.
 | `e2e_e.mjs` | PWA instalável |
 | `e2e_h.mjs` | Acessibilidade (axe) em todas as telas, desktop e página "Sem conexão" |
 | `e2e_i.mjs` | Baú do dia, coleção, desafio da semana e avisos push (servidor de push falso) |
+| `e2e_j.mjs` | Prova refeita depois de condenada e sessões extras de estudo |
+| `e2e_k.mjs` | Animações do juiz, tribunal, várias fotos, guia do juiz, Google, sessão órfã, criar desafio e cardápio |
+| `e2e_l.mjs` | Data da foto, carimbos, resumo semanal e teste de digitação (texto, inglês, 5 minutos, cartão do melhor teste) |
 
 As etapas compartilham estado (usuários criados em `a`, histórico semeado antes de `d`): rode sempre
 o conjunto inteiro com `run.sh`, num banco recém-criado.
