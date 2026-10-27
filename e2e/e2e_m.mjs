@@ -61,7 +61,12 @@ await step("a member deletes the account (typing EXCLUIR): the user, the photos 
   const id = idOf(deleter);
   // Make sure a receipt carries the person's name, so the check below is not empty.
   const name = sql(`select display_name from members where user_id = '${id}'`).replace(/'/g, "''");
-  sql(`update payments set received_by = '${id}', received_name = '${name}' where id = (select id from payments where group_id = '${group}' and debtor_id <> '${id}' limit 1)`);
+  // (Bia's paid debts left with her above, so add one: Eva received Ana's Coca 3 days ago. Superuser, trigger off.)
+  sql(`alter table payments disable trigger payments_before_insert;
+    insert into payments (group_id, debtor_id, day, item, received_by, received_name)
+    values ('${group}', (select id from auth.users where email = '${ownerEmail}'), sp_today() - 3, 'coke', '${id}', '${name}')
+    on conflict do nothing;
+    alter table payments enable trigger payments_before_insert;`);
   assert(sql(`select count(*) from payments where received_name = '${name}'`) !== "0", "no receipt to check");
   const p = await loginAs(browser, deleter);
   p.removeAllListeners("dialog");

@@ -99,7 +99,7 @@ export default function PrivacyPage() {
           acusações que você fez e os seus votos (sem o seu nome), para que decisões já tomadas não mudem.
         </li>
         <li>
-          Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos (eles passam a dizer "ex-membro") e o seu login é
+          Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos (eles passam a dizer “ex-membro”) e o seu login é
           apagado.
         </li>
       </ul>
