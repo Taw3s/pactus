@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen, Check, Keyboard, Loader, Shuffle } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel, type TypingLang } from "@/lib/typing";
 import { loadTypingTexts, progressAfter, textWords, TYPING_CATEGORIES, wordsFrom, type TypingText } from "@/lib/typing-texts";
@@ -200,6 +200,33 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setCurrent(value);
   }
 
+  /**
+   * Backspace on an empty word goes back into the previous one when it was typed wrong (as on
+   * Monkeytype), so it can be fixed. A word typed right stays done. The result is counted from the
+   * final words, so a fixed word counts as right.
+   */
+  function back(): boolean {
+    const r = run.current;
+    const n = r.committed.length;
+    if (phase !== "running" || r.current !== "" || n === 0 || r.committed[n - 1] === r.words[n - 1]) return false;
+    r.current = r.committed[n - 1];
+    r.committed = r.committed.slice(0, -1);
+    setCommitted(r.committed);
+    setCurrent(r.current);
+    return true;
+  }
+
+  // Phones often send no usable key for Backspace on an empty field, only a "delete" input event.
+  useEffect(() => {
+    const el = input.current;
+    if (!el || phase !== "running") return;
+    const onBeforeInput = (e: InputEvent) => {
+      if (e.inputType === "deleteContentBackward" && el.value === "" && back()) e.preventDefault();
+    };
+    el.addEventListener("beforeinput", onBeforeInput);
+    return () => el.removeEventListener("beforeinput", onBeforeInput);
+  });
+
   const at = committed.length;
 
   return (
@@ -290,6 +317,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               aria-invalid={!!current && !(words[at] ?? "").startsWith(current)}
               value={current}
               onChange={(e) => type(e.target.value)}
+              onKeyDown={(e) => e.key === "Backspace" && back() && e.preventDefault()}
               onPaste={(e) => e.preventDefault()}
               onDrop={(e) => e.preventDefault()}
               onFocus={() => setFocused(true)}
@@ -315,7 +343,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
 }
 
 /** One word, letter by letter: typed letters right or wrong, extras in red, a wrong word underlined. */
-function Word({ target, typed, state, caret }: { target: string; typed: string; state: "done" | "current" | "next"; caret: boolean }) {
+const Word = memo(function Word({ target, typed, state, caret }: { target: string; typed: string; state: "done" | "current" | "next"; caret: boolean }) {
   const wrongWord = state === "done" && typed !== target;
   const letters = [...target];
   const extra = [...typed].slice(letters.length);
@@ -344,7 +372,7 @@ function Word({ target, typed, state, caret }: { target: string; typed: string; 
       {caretAt >= Math.max(letters.length, [...typed].length) && <span className="relative">{bar}</span>}
     </span>
   );
-}
+});
 
 /**
  * The text as the typing field: three lines, scrolling a line at a time so the current word stays
@@ -382,8 +410,8 @@ function Board({
     setScroll(above.length ? Math.max(...above) - tops[0] : 0);
   }, [at, words]);
 
-  // Only a window around the current word is drawn; earlier lines are scrolled away anyway.
-  const from = Math.max(0, at - 40);
+  // Every word from the first is drawn (memoized, so only the words that change re-render): drawing
+  // a sliding window shifted all line breaks at each word and made the text move around.
   return (
     <div className={`relative h-[128px] overflow-hidden rounded-sm border-2 bg-bg px-3 py-2 ${focused || !running ? "border-bevel-dark" : "border-control"}`}>
       <div
@@ -393,8 +421,7 @@ function Board({
         className="text-xl leading-9 transition-transform duration-100 motion-reduce:transition-none"
         style={{ transform: `translateY(-${scroll}px)` }}
       >
-        {words.slice(from, at + 60).map((w, i) => {
-          const n = from + i;
+        {words.slice(0, at + 60).map((w, n) => {
           const state = n < at ? "done" : n === at ? "current" : "next";
           return <Word key={n} target={w} typed={n < at ? committed[n] : n === at ? current : ""} state={state} caret={n === at && running} />;
         })}
