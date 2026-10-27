@@ -105,7 +105,7 @@ export default async function FeedPage() {
             {/* A long name keeps whole words: the status badge drops to the next line instead of squeezing it. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
-              <Link href={`/historico/${m.user_id}`} className="min-w-[9rem] flex-1">
+              <Link href={`/historico/${m.user_id}`} className="flex min-h-11 min-w-[9rem] flex-1 items-center">
                 <p className="pixel break-words text-xl uppercase leading-6">
                   {m.display_name}
                   {m.user_id === me.user_id && <span className="text-sm font-normal text-muted"> · você</span>}

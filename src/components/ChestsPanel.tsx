@@ -55,7 +55,7 @@ export function ChestsPanel({ dayComplete, daily, weekly, week, eligible }: Prop
         <ul className="space-y-1.5">
           {week.map((r) => (
             <li key={r.userId} className="flex items-center gap-3" data-week-member={r.name}>
-              <span className="min-w-0 flex-1 truncate text-sm">
+              <span className="min-w-0 flex-1 break-words text-sm">
                 {r.name}
                 {r.me && <span className="text-muted"> · você</span>}
               </span>

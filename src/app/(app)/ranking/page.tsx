@@ -199,7 +199,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                         <ol className="space-y-1 text-sm">
                           {list.map(([id, r], n) => (
                             <li key={id} className="flex justify-between gap-2">
-                              <span className="truncate">
+                              <span className="min-w-0 break-words">
                                 {n + 1}. {byId.get(id)?.display_name ?? "?"}
                               </span>
                               <span className="tabular shrink-0 font-semibold">{typingLabel(r)}</span>
@@ -216,7 +216,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         </section>
 
         <details className="card min-w-0 text-sm">
-          <summary className="cursor-pointer font-semibold">Como a pontuação funciona</summary>
+          <summary className="cursor-pointer py-3 font-semibold">Como a pontuação funciona</summary>
           <ul className="mt-3 space-y-1 text-muted">
             <li>Dia cumprido (3 metas): {SCORING.completedDay} pts</li>
             <li>

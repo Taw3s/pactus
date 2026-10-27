@@ -53,7 +53,7 @@ export function GroupSidebar() {
             {data.tribunals.map((t) => (
               <li key={t.checkinId}>
                 <Link href={`/checkin/${t.checkinId}`} className="flex min-h-11 items-center justify-between gap-2 rounded-sm px-1 hover:bg-raised">
-                  <span className="min-w-0 truncate">
+                  <span className="min-w-0 break-words">
                     {t.goal} de <b>{t.name}</b> <span className="text-sm text-muted">· {t.day}</span>
                   </span>
                   <span className="pixel shrink-0 text-base uppercase text-warn">Votar</span>
@@ -81,7 +81,7 @@ export function GroupSidebar() {
               <li key={p.userId}>
                 <Link href={`/historico/${p.userId}`} className="flex min-h-11 items-center gap-3 rounded-sm px-1 hover:bg-raised">
                   <Avatar name={p.name} url={p.avatarUrl} size={32} />
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 break-words">
                     {p.name}
                     {p.me && <span className="text-sm text-muted"> · você</span>}
                   </span>
@@ -127,7 +127,7 @@ export function GroupSidebar() {
               <li key={r.userId} className="flex min-h-11 items-center gap-3 px-1">
                 <span className={`pixel tabular w-7 text-lg ${r.points > 0 && r.position <= 3 ? PODIUM[r.position - 1] : "text-muted"}`}>{r.position}º</span>
                 <Avatar name={r.name} url={r.avatarUrl} size={32} />
-                <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                <span className="min-w-0 flex-1 break-words">{r.name}</span>
                 <span className="pixel tabular text-lg">
                   {r.points} <span className="font-sans text-xs text-muted">pts</span>
                 </span>
