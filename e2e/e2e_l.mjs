@@ -59,7 +59,7 @@ await step("a photo the phone dates 3 days back: warned before sending, flagged 
   await row.click();
   await p.waitForURL("**/checkin/**");
   proofUrl = p.url();
-  await p.getByTestId("photo-age").getByText(/o envio foi em .* \(3 dias antes\)/).waitFor();
+  await p.getByTestId("photo-age").getByText(/Enviada em .*, 3 dias depois\./).waitFor();
   // The owner sees the stamps but cannot stamp their own proof.
   assert(await p.getByTestId("reactions").locator('[data-reaction="respeito"]').isDisabled(), "owner can stamp own proof");
 });

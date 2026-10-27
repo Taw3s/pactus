@@ -125,11 +125,14 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         <figcaption className="mt-2 flex gap-2 rounded-sm border-l-[3px] border-warn bg-surface p-3 text-sm" data-testid="photo-age">
           <CalendarClock size={18} aria-hidden className="mt-0.5 shrink-0 text-warn" />
           <span>
-            <span className="block font-semibold">Data informada pelo arquivo</span>
+            <span className="block font-semibold">Data do arquivo</span>
             {/* Only the first photo carries a date; the other files are not described. */}
+            {/* Two lines, each date with its own event: "(3 dias antes)" after the send date read backwards. */}
             <span className="block">
-              {photos.length > 1 ? "A primeira foto informa" : "Esta foto informa"} {ddmm(spToday(new Date(checkin.photo_taken_at!)))}; o envio foi em {ddmm(checkin.day)}
-              {daysBefore === 1 ? " (1 dia antes)." : ` (${daysBefore} dias antes).`}
+              Data informada {photos.length > 1 ? "pela primeira foto" : "pela foto"}: {ddmm(spToday(new Date(checkin.photo_taken_at!)))}.
+            </span>
+            <span className="block">
+              Enviada em {ddmm(checkin.day)}, {daysBefore === 1 ? "1 dia depois" : `${daysBefore} dias depois`}.
             </span>
             <span className="mt-1 block text-muted">Essa data pode estar incorreta ou vir de uma captura ou edição. Ela não comprova quando a atividade aconteceu.</span>
           </span>

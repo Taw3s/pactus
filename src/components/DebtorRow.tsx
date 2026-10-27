@@ -98,9 +98,12 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
                           <Sprite name={DEBT_ITEM[item].sprite} />
                           <span className="min-w-0 flex-1">
                             <span className="block font-semibold">{DEBT_ITEM[item].label}</span>
-                            <span className="block">Referente a {d.label}</span>
-                            <span className="block">Recebido por {receivedBy}</span>
+                            <span className="block">Dia da dívida: {d.label}</span>
+                            <span className="block break-words">Recebido por {receivedBy}</span>
                           </span>
+                        </p>
+                        {/* On its own line, so a long name keeps the whole width. */}
+                        <p className="mt-2 flex justify-end">
                           <span className="receipt-stamp">Recebido</span>
                         </p>
                       </li>

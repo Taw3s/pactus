@@ -102,9 +102,10 @@ export default async function FeedPage() {
       <div className="grid gap-3 desk:grid-cols-2 desk:items-start desk:gap-6">
         {rows.map(({ m, mine, project, done, extraMinutes, off }) => (
           <section key={m.user_id} className="card" data-member={m.display_name} aria-label={m.display_name}>
-            <div className="flex items-center gap-3">
+            {/* A long name keeps whole words: the status badge drops to the next line instead of squeezing it. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
-              <Link href={`/historico/${m.user_id}`} className="min-w-0 flex-1">
+              <Link href={`/historico/${m.user_id}`} className="min-w-[9rem] flex-1">
                 <p className="pixel break-words text-xl uppercase leading-6">
                   {m.display_name}
                   {m.user_id === me.user_id && <span className="text-sm font-normal text-muted"> · você</span>}
@@ -154,27 +155,29 @@ export default async function FeedPage() {
                         )}
                       </span>
                       <p className="pixel mt-1.5 text-base uppercase">{g.label}</p>
-                      {value && (
-                        <p className="tabular text-xs text-muted">
+                      {/* The typing card already shows WPM, accuracy and device: the numbers are read once. */}
+                      {value && !best && (
+                        <p className="tabular text-xs leading-4 text-muted">
                           {value}
                           {g.id === "study" && extraMinutes > 0 && ` + ${extraMinutes} extra`}
                         </p>
                       )}
                     </Link>
+                    {/* Fixed order under every proof: tribunal or AI, then the file's date, then the group's stamps. */}
+                    <div className="mt-1">
+                      <PrimaryBadge dispute={resultByCheckin.get(c.id)?.status} ai={reviewOf.get(c.id)} />
+                    </div>
                     {/* The file's date, as context next to the metadata: never over the evidence. */}
                     {older && (
-                      <p className="mt-0.5 inline-flex items-center gap-1 rounded-sm bg-warn-bg px-1 text-xs font-semibold text-warn" data-testid="photo-older">
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-sm bg-warn-bg px-1 text-xs font-semibold leading-4 text-warn" data-testid="photo-older">
                         <CalendarClock size={14} aria-hidden /> Data anterior
                       </p>
                     )}
                     {(stamps.get(c.id) ?? 0) > 0 && (
-                      <p className="tabular mt-0.5 border-t border-divider pt-0.5 text-xs text-accent" data-testid="stamp-count">
+                      <p className="tabular mt-1 border-t border-divider pt-0.5 text-xs leading-4 text-accent" data-testid="stamp-count">
                         {stamps.get(c.id)} {stamps.get(c.id) === 1 ? "carimbo" : "carimbos"}
                       </p>
                     )}
-                    <div className="mt-1">
-                      <PrimaryBadge dispute={resultByCheckin.get(c.id)?.status} ai={reviewOf.get(c.id)} />
-                    </div>
                   </li>
                 );
               })}
@@ -183,8 +186,15 @@ export default async function FeedPage() {
             {project && (
               <Link href={`/checkin/${project.id}`} className="mt-3 flex min-h-12 items-center gap-2 border-t border-divider pt-3 text-sm">
                 <Sprite name="computer" />
-                <span className="line-clamp-2 min-w-0 flex-1 break-words">Projeto: {project.title}</span>
-                <PrimaryBadge dispute={resultByCheckin.get(project.id)?.status} ai={reviewOf.get(project.id)} />
+                {/* The whole name (it wraps); the badge goes on its own line instead of squeezing it. */}
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words">Projeto: {project.title}</span>
+                  {(resultByCheckin.get(project.id) || reviewOf.get(project.id)) && (
+                    <span className="mt-1 block">
+                      <PrimaryBadge dispute={resultByCheckin.get(project.id)?.status} ai={reviewOf.get(project.id)} />
+                    </span>
+                  )}
+                </span>
                 <ChevronRight size={18} aria-hidden className="shrink-0 text-muted" />
               </Link>
             )}
