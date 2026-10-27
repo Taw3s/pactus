@@ -406,6 +406,18 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
         onDone?.();
         return;
       }
+      // The proof may be saved even though its answer never arrived (the phone switched networks or
+      // left the app mid-request): the photo path is unique to this send, so look for it first.
+      if (error && !["23505", "P0001"].includes(error.code)) {
+        const { data: saved } = await supabase.from("checkins").select("id").eq("photo_path", path).maybeSingle();
+        if (saved) {
+          justSent = extra ? "extra" : goal;
+          setBusy(false);
+          router.refresh();
+          onDone?.();
+          return;
+        }
+      }
       if (error) {
         throw new Error(
           error.code === "23505"
@@ -418,7 +430,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
                 ? `Limite de ${MAX_EXTRA_SESSIONS} sessões extras por dia.`
                 : error.message.includes("study proof first")
                   ? "A prova de estudo de hoje precisa estar valendo para somar sessões."
-                  : "Não foi possível enviar. Seus dados continuam aqui: tente de novo.",
+                  : // The code tells a dropped connection ("rede") from a server refusal in a friend's screenshot.
+                    `Não foi possível enviar (código ${error.code || "rede"}). Seus dados continuam aqui: tente de novo.`,
         );
       }
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
