@@ -23,9 +23,13 @@ export function MilestonePlaque({ milestone, viewerId, personId }: { milestone: 
   return (
     <div className="card mb-4 flex items-center gap-3 !border-gold !bg-warn-bg" data-testid="milestone" role="status">
       <Sprite name="trophy" />
-      <p className={`pixel text-2xl font-bold uppercase leading-7 text-gold ${play ? "animate-[stamp_260ms_steps(4)_both]" : ""}`}>
-        {milestone} dias seguidos
-      </p>
+      <div>
+        {/* A milestone the current streak has passed, not the streak itself (shown in its own card). */}
+        <p className="text-xs leading-4 text-fg">Marco alcançado</p>
+        <p className={`pixel text-2xl font-bold uppercase leading-7 text-gold ${play ? "animate-[stamp_260ms_steps(4)_both]" : ""}`}>
+          {milestone} dias seguidos
+        </p>
+      </div>
     </div>
   );
 }

@@ -21,11 +21,13 @@ export function PageHeader({ title, subtitle, right, backFallback }: Props) {
         </div>
         {(right || !backFallback) && (
           <div className="flex shrink-0 items-center gap-2">
-            {right}
+            {right && <div className="hidden items-center gap-2 sm:flex">{right}</div>}
             {!backFallback && <GuideButton place="header" />}
           </div>
         )}
       </div>
+      {/* Below 640 px the actions get their own row: beside the title they squeezed it letter by letter ("PER / FIL"). */}
+      {right && <div className="mt-2 flex items-center gap-2 sm:hidden">{right}</div>}
     </header>
   );
 }
