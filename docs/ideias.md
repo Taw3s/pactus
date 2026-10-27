@@ -81,7 +81,7 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 - **Código aberto?** Bom como portfólio, sem esperar que traga usuários. Licença MIT (portfólio) ou AGPL (se um dia quiser ganhar dinheiro). O histórico do git já foi varrido e não tem segredos.
 - **Pontos do teste de 5 minutos:** hoje vale o melhor teste do dia de qualquer duração, então o de 5 minutos quase nunca conta. Mudar isso muda a regra.
-- **Identidade jurídica (brief de 26/10):** feito o passo 1 (provas como documentos, recibos de dívida, contraste da digitação). Falta revisar os prints e decidir os passos 2–4: Perfil como arquivo mensal, pasta na cena de entrada, autoria dos selos e legibilidade do tribunal. O brief não veio do Astra: vale ele revisar antes de seguir.
+- **Identidade jurídica (brief de 26/10):** passo 1 feito (PR #29) e revisado em 27/10: aprovado com ajustes (frase da data da foto, Feed no celular). Próximos: Perfil como arquivo mensal e pasta na cena de entrada; depois, autoria dos selos e legibilidade do tribunal. Para estudar: dossiê sem tribunal em duas colunas no desktop (foto à esquerda).
 - **Inglês na digitação:** rende mais WPM que português; os recordes são separados, mas os pontos não.
 
 ## Decisões já tomadas (para não rediscutir)
