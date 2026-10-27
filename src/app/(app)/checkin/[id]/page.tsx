@@ -125,7 +125,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
         <figcaption className="mt-2 flex gap-2 rounded-sm border-l-[3px] border-warn bg-surface p-3 text-sm" data-testid="photo-age">
           <CalendarClock size={18} aria-hidden className="mt-0.5 shrink-0 text-warn" />
           <span>
-            <span className="block font-semibold">Data informada pelo arquivo</span>
+            <span className="block font-semibold">Data do arquivo</span>
             {/* Only the first photo carries a date; the other files are not described. */}
             {/* Two lines, each date with its own event: "(3 dias antes)" after the send date read backwards. */}
             <span className="block">

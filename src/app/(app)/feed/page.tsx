@@ -102,9 +102,10 @@ export default async function FeedPage() {
       <div className="grid gap-3 desk:grid-cols-2 desk:items-start desk:gap-6">
         {rows.map(({ m, mine, project, done, extraMinutes, off }) => (
           <section key={m.user_id} className="card" data-member={m.display_name} aria-label={m.display_name}>
-            <div className="flex items-center gap-3">
+            {/* A long name keeps whole words: the status badge drops to the next line instead of squeezing it. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <Avatar name={m.display_name} url={m.avatar_path ? urls.get(m.avatar_path) : null} />
-              <Link href={`/historico/${m.user_id}`} className="min-w-0 flex-1">
+              <Link href={`/historico/${m.user_id}`} className="min-w-[9rem] flex-1">
                 <p className="pixel break-words text-xl uppercase leading-6">
                   {m.display_name}
                   {m.user_id === me.user_id && <span className="text-sm font-normal text-muted"> · você</span>}
