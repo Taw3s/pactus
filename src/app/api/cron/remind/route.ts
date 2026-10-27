@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { spToday } from "@/lib/dates";
 import { plural } from "@/lib/text";
 import { groupToday, notifyOnce } from "@/lib/push";
+import { trimOldPhotos } from "@/lib/media-retention";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,8 @@ export const maxDuration = 60;
 /**
  * Daily reminder (Vercel cron, see vercel.json: 20:00 in São Paulo). Everyone with goals still
  * pending today gets one notice. Safe to call more than once: each person gets at most one a day.
+ * The same daily run trims old proofs to their thumbnail (media-retention.ts): the free plan allows
+ * two crons, both taken.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -29,5 +32,9 @@ export async function GET(request: NextRequest) {
       return { title: "Pacto: ainda dá tempo", body: `Falta${left === 1 ? "" : "m"} ${plural(left, "meta", "metas")} hoje. O prazo é 23:59.`, url: "/hoje" };
     });
   }
-  return NextResponse.json({ reminded });
+  const trimmed = await trimOldPhotos(admin, today).catch((e) => {
+    console.error("photo trim failed", e);
+    return 0;
+  });
+  return NextResponse.json({ reminded, trimmed });
 }
