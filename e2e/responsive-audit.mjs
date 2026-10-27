@@ -81,7 +81,7 @@ for (const w of WIDTHS) {
   const mobile = w < 768;
   const ctx = await b.newContext({ viewport: { width: w, height: mobile ? 780 : 900 }, isMobile: mobile, hasTouch: mobile, locale: "pt-BR" });
   const anon = await ctx.newPage();
-  for (const [name, path, auth] of PAGES.filter((p) => !p[2])) {
+  for (const [name, path] of PAGES.filter((p) => !p[2])) {
     await anon.goto(APP + path);
     await anon.waitForLoadState("networkidle");
     report[`${name}@${w}`] = await anon.evaluate(check);
