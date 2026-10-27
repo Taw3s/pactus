@@ -187,5 +187,27 @@ await step("typing: a 5-minute test is timed by the server for its length and ke
   await p.getByTestId("typing-records").locator('[data-minutes="5"]').getByText(/Caio/).first().waitFor();
 });
 
+await step("a proof older than 30 days keeps only its thumbnail, and the proof page still shows it", async () => {
+  // Move one of Ana's photo proofs to 31 days ago (a day she has no proof of that kind), then run the daily cron.
+  const row = sql(`select c.id || '|' || c.photo_path || '|' || c.goal from checkins c join auth.users u on u.id = c.user_id
+    where u.email = 'ana@pacto.test' and c.goal in ('study', 'reading') and not c.extra and c.typing_test_id is null order by c.created_at limit 1`);
+  const [id, photo, goal] = row.split("|");
+  const old = sql(`select (sp_today() - 31)::text`);
+  sql(`delete from checkins c using auth.users u where u.id = c.user_id and u.email = 'ana@pacto.test' and c.day = '${old}' and c.goal = '${goal}' and c.id <> '${id}'`);
+  sql(`update checkins set day = '${old}' where id = '${id}'`);
+  const thumb = photo.replace(/\.jpg$/, ".thumb.jpg");
+  const has = (name) => sql(`select count(*) from storage.objects where name = '${name}'`) === "1";
+  assert(has(photo) && has(thumb), "the proof has its photo and thumbnail");
+  const r = await fetch(`${APP}/api/cron/remind`).then((res) => res.json());
+  assert(r.trimmed >= 1, `trimmed ${JSON.stringify(r)}`);
+  assert(!has(photo), "the full photo is still stored");
+  assert(has(thumb), "the thumbnail was deleted");
+  const p = await loginAs(browser, "ana@pacto.test");
+  await p.goto(`${APP}/checkin/${id}`);
+  await p.getByTestId("photo-trimmed").waitFor();
+  assert(await p.locator("figure img").first().evaluate((img) => img.complete && img.naturalWidth > 0), "no image shown");
+  await p.context().close();
+});
+
 await browser.close();
 done();

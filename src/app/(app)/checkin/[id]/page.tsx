@@ -17,6 +17,8 @@ import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
 import { addDays, formatDayPt, spToday } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
+import { thumbPath } from "@/lib/image";
+import { KEEP_FULL_DAYS } from "@/lib/media-retention";
 import { GOAL_ICON } from "@/lib/goal-icons";
 import { checkinNumbers, goalMeta, type Checkin, type CheckinReview, type Dispute, type DisputeResult, type DisputeVote, type Member } from "@/lib/types";
 
@@ -62,8 +64,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const jurors = dispute ? members.filter((m) => m.user_id !== checkin.user_id && m.created_at <= dispute.created_at) : [];
   const accuserMember = dispute?.author_id ? byId.get(dispute.author_id) : undefined;
   const photoPaths = [checkin.photo_path, ...(checkin.extra_photos ?? [])];
-  const urls = await signUrls(supabase, [...photoPaths, owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
-  const photos = photoPaths.map((p) => urls.get(p)).filter((u): u is string => !!u);
+  const urls = await signUrls(supabase, [...photoPaths, thumbPath(checkin.photo_path), owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
+  const fullPhotos = photoPaths.map((p) => urls.get(p)).filter((u): u is string => !!u);
+  // After KEEP_FULL_DAYS only the first photo's thumbnail is kept (media-retention.ts).
+  const trimmed = fullPhotos.length === 0 && !!urls.get(thumbPath(checkin.photo_path));
+  const photos = trimmed ? [urls.get(thumbPath(checkin.photo_path))!] : fullPhotos;
   const photo = photos[0];
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
@@ -100,6 +105,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
               <Maximize2 size={14} aria-hidden /> Ampliar foto
             </span>
           </PhotoViewer>
+          {trimmed && (
+            <p className="mt-2 text-sm text-muted" data-testid="photo-trimmed">
+              Prova com mais de {KEEP_FULL_DAYS} dias: fica guardada só a foto reduzida.
+            </p>
+          )}
           {photos.length > 1 && (
             <ul className="mt-2 grid grid-cols-4 gap-2" data-testid="proof-photos">
               {photos.map((src, n) => (
