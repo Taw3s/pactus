@@ -177,6 +177,29 @@ body {
   transform: rotate(-2deg);
 }
 
+/* Long reading pages (privacy policy, terms): Inter, comfortable rhythm, pixel type only in titles. */
+@utility legal {
+  & h1 {
+    @apply pixel text-[28px] font-bold uppercase leading-[34px];
+  }
+  & h2 {
+    @apply pixel mt-8 text-xl uppercase leading-6 text-accent;
+  }
+  & p,
+  & li {
+    @apply mt-3 leading-7;
+  }
+  & ul {
+    @apply mt-2 list-disc space-y-1 pl-5;
+  }
+  & li {
+    @apply mt-1;
+  }
+  & a {
+    @apply font-semibold text-accent underline;
+  }
+}
+
 @utility input {
   @apply min-h-12 w-full rounded-sm border-2 bg-bg px-3 py-3 text-base text-fg placeholder:text-muted transition-colors duration-150 focus:border-accent focus:outline-none;
   border-color: var(--color-bevel-dark) var(--color-control) var(--color-control) var(--color-bevel-dark);
