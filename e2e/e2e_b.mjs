@@ -73,8 +73,18 @@ await step("typing + reading complete the day", async () => {
       assert(await card.getByRole("button", { name: "Enviar prova" }).isDisabled(), "reading needs pages");
       await card.getByTestId("pages").fill("23");
     }
+    // The proof is saved but its answer is lost (the phone switched networks): no error, the proof shows (friends' report, 27/10).
+    let dropped = 0;
+    await p.route("**/rest/v1/checkins*", async (route) => {
+      if (route.request().method() !== "POST" || dropped++) return route.continue();
+      await route.fetch();
+      await route.abort("failed");
+    });
     await card.getByRole("button", { name: "Enviar prova" }).click();
     await p.locator(`[data-goal=${goal}][data-state=done]`).waitFor();
+    await p.unroute("**/rest/v1/checkins*");
+    assert(dropped === 1, `answer dropped ${dropped} times`);
+    assert((await p.getByText("Não foi possível enviar").count()) === 0, "error shown for a saved proof");
   }
   await p.getByTestId("scoreboard").getByText("Dia cumprido").waitFor();
   await p.getByText("3/3").waitFor();
