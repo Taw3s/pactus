@@ -131,6 +131,8 @@ await step("Google sign-in sends the browser to Supabase's Google authorize page
   const p = await ctx.newPage();
   await p.goto(`${APP}/login`);
   const google = p.getByTestId("google-login");
+  // The login form is client-rendered (inside Suspense): wait for it before deciding the button is missing.
+  await p.locator("#email").waitFor();
   if ((await google.count()) === 0) throw new Error("no Google button: build the app with NEXT_PUBLIC_GOOGLE_LOGIN=1");
   const [req] = await Promise.all([p.waitForRequest((r) => r.url().includes("/auth/v1/authorize")), google.click()]);
   const u = new URL(req.url());
