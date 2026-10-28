@@ -3,8 +3,14 @@ import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pacto",
-  description: "Desafio diário de estudo do grupo",
+  title: "Pacto — seu compromisso com o grupo",
+  description: "Estudo, digitação e leitura em um desafio entre amigos. Registre provas, acompanhe o progresso e cumpra o combinado.",
+  openGraph: {
+    title: "Pacto — seu compromisso com o grupo",
+    description: "Estudo, digitação e leitura em um desafio entre amigos. Registre provas, acompanhe o progresso e cumpra o combinado.",
+    locale: "pt_BR",
+    type: "website",
+  },
   applicationName: "Pacto",
   appleWebApp: { capable: true, title: "Pacto", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
