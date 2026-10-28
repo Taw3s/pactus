@@ -17,6 +17,7 @@ const PEOPLE = ["Ana", "Bruno", "Carla", "Diego", "Elisa"];
 const email = (name) => `${name.toLowerCase()}@demo.pacto`;
 fs.mkdirSync(OUT, { recursive: true });
 const meta = {};
+const pages = [];
 
 const sql = (q) => execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-tAc", q]).toString().trim();
 const psqlFile = (f) => execFileSync("psql", ["-q", "-f", path.join(DIR, f)], { stdio: "inherit" });
@@ -31,6 +32,7 @@ const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePa
 async function phone(name, { width = 390, height = 844 } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: DPR, isMobile: width < 600, hasTouch: width < 600, locale: "pt-BR", timezoneId: "America/Sao_Paulo", reducedMotion: "reduce" });
   const page = await ctx.newPage();
+  pages.push({ name: name ?? "guest", page });
   page.on("pageerror", (e) => console.log(`  [${name ?? "guest"} pageerror]`, e.message));
   if (name) {
     await page.goto(`${APP}/login`);
@@ -60,6 +62,7 @@ async function shot(page, id, locator) {
   }
   await locator.screenshot({ path: path.join(OUT, `${id}.png`) });
   meta[id] = entry;
+  fs.writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2) + "\n");
   console.log(`✔ ${id} ${Math.round(box.width)}×${Math.round(box.height)}`);
 }
 
@@ -88,6 +91,7 @@ const study = (summary) => async (card) => {
 };
 const reading = (pages) => async (card) => card.getByTestId("pages").fill(String(pages));
 
+try {
 // --- the group ---
 for (const name of PEOPLE) {
   const r = await fetch(`${SUPABASE}/auth/v1/signup`, {
@@ -187,6 +191,11 @@ await row.locator("[data-receipt=coke]").waitFor();
 await shot(ana, "debt-received", row);
 await ana.screenshot({ path: path.join(OUT, "debts-page.png"), fullPage: true });
 
-fs.writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2) + "\n");
-await browser.close();
+} catch (e) {
+  // What every open page showed when it failed, for the log on the video-shots branch.
+  for (const [i, { name, page }] of pages.entries()) await page.screenshot({ path: path.join(OUT, `fail-${i}-${name}.png`) }).catch(() => {});
+  throw e;
+} finally {
+  await browser.close();
+}
 console.log("demo/out: done");

@@ -8,6 +8,10 @@ on:
     branches: ["video/**"]
     paths: ["tools/video/demo/**", ".github/workflows/video-shots.yml"]
 
+# Pushes the shots to the video-shots branch (an orphan branch with only the latest run), so they can be fetched with git.
+permissions:
+  contents: write
+
 jobs:
   shots:
     name: Demo group screenshots
@@ -64,7 +68,7 @@ jobs:
           cat next.log; exit 1
 
       - name: Demo group and screenshots
-        run: bash tools/video/demo/run.sh
+        run: bash tools/video/demo/run.sh 2>&1 | tee tools/video/demo/out-capture.log; exit ${PIPESTATUS[0]}
 
       - name: Upload the shots
         if: always()
@@ -77,3 +81,16 @@ jobs:
             next.log
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Publish the shots to the video-shots branch
+        if: always()
+        run: |
+          mkdir -p /tmp/pub && cp -r tools/video/demo/out/. /tmp/pub/ 2>/dev/null || true
+          cp tools/video/demo/out-capture.log tools/video/demo/gemini_mock.log next.log /tmp/pub/ 2>/dev/null || true
+          cd /tmp/pub
+          git init -q -b video-shots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Video shots from run ${{ github.run_id }} (${{ github.sha }})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" video-shots
