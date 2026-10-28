@@ -44,26 +44,57 @@ async function phone(name, { width = 390, height = 844 } = {}) {
   return page;
 }
 
-/** Screenshot of one element (and, if it holds the judge, a copy without him plus his box) as demo/out/<id>.png. */
-async function shot(page, id, locator) {
-  await locator.scrollIntoViewIfNeeded();
+// The judge (animated or a plain sprite) and the proof folder: the video draws them itself, frame by frame.
+const JUDGE = 'img[data-judge], img[src*="/lowpoly/judge-"]';
+const FOLDER = 'img[src*="/lowpoly/evidenceFolder"]';
+const hiding = (sel) => `${sel}{visibility:hidden!important}`;
+
+/**
+ * Screenshot of a region of the page as demo/out/<id>.png: one element, or from the top of `from` to the bottom of `to`.
+ * Also records, relative to it, the judge, the folder and the `parts` (selectors, or "children" for every direct child),
+ * and saves copies without the judge (-nojudge) and without judge and folder (-bare).
+ */
+async function shot(page, id, from, { to = from, parts = {}, pad = 0 } = {}) {
+  await from.scrollIntoViewIfNeeded();
   await page.evaluate(() => document.fonts.ready);
   await wait(400);
-  const box = await locator.boundingBox();
-  const judge = locator.locator("img[data-judge]").first();
-  const entry = { width: box.width, height: box.height, dpr: DPR };
-  if (await judge.count()) {
-    const j = await judge.boundingBox();
-    entry.judge = { x: j.x - box.x, y: j.y - box.y, size: j.width, frame: await judge.getAttribute("data-frame") };
-    await page.addStyleTag({ content: "img[data-judge]{visibility:hidden!important}" }).then(async (tag) => {
-      await locator.screenshot({ path: path.join(OUT, `${id}-nojudge.png`) });
-      await tag.evaluate((t) => t.remove());
-    });
+  const abs = (loc) => loc.evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }; });
+  const a = await abs(from);
+  const b = await abs(to);
+  const clip = { x: a.x - pad, y: a.y - pad, width: a.w + 2 * pad, height: b.y + b.h - a.y + 2 * pad };
+  const rel = async (loc) => { const r = await abs(loc); return { x: r.x - clip.x, y: r.y - clip.y, w: r.w, h: r.h }; };
+  const entry = { width: clip.width, height: clip.height, dpr: DPR, parts: {} };
+  const inside = (sel) => page.locator(sel).filter({ visible: true }).evaluateAll((els, c) => els.filter((el) => {
+    const r = el.getBoundingClientRect(), x = r.x + scrollX, y = r.y + scrollY;
+    return x >= c.x - 1 && y >= c.y - 1 && x + r.width <= c.x + c.width + 1 && y + r.height <= c.y + c.height + 1;
+  }).length, clip);
+  const take = (suffix) => page.screenshot({ path: path.join(OUT, `${id}${suffix}.png`), clip, fullPage: true });
+  const judge = page.locator(JUDGE).filter({ visible: true });
+  if (await inside(JUDGE)) {
+    for (const j of await judge.all()) {
+      const r = await rel(j);
+      if (r.x >= 0 && r.y >= 0 && r.x + r.w <= clip.width && r.y + r.h <= clip.height) entry.judge = { x: r.x, y: r.y, size: r.w, frame: await j.getAttribute("data-frame") };
+    }
   }
-  await locator.screenshot({ path: path.join(OUT, `${id}.png`) });
+  const folder = page.locator(FOLDER).filter({ visible: true });
+  if (await inside(FOLDER)) for (const f of await folder.all()) { const r = await rel(f); if (r.x >= 0 && r.y >= 0) entry.folder = { x: r.x, y: r.y, size: r.w }; }
+  for (const [name, sel] of Object.entries(parts)) {
+    if (sel === "children") {
+      const kids = from.locator(":scope > *");
+      entry.parts.children = [];
+      for (const k of await kids.all()) entry.parts.children.push(await rel(k));
+    } else entry.parts[name] = await rel(from.locator(sel).first());
+  }
+  for (const [suffix, css] of [["-nojudge", entry.judge && hiding(JUDGE)], ["-bare", entry.folder && hiding(`${JUDGE},${FOLDER}`)]]) {
+    if (!css) continue;
+    const tag = await page.addStyleTag({ content: css });
+    await take(suffix);
+    await tag.evaluate((t) => t.remove());
+  }
+  await take("");
   meta[id] = entry;
   fs.writeFileSync(path.join(OUT, "meta.json"), JSON.stringify(meta, null, 2) + "\n");
-  console.log(`✔ ${id} ${Math.round(box.width)}×${Math.round(box.height)}`);
+  console.log(`✔ ${id} ${Math.round(clip.width)}×${Math.round(clip.height)}${entry.judge ? " (judge)" : ""}${entry.folder ? " (folder)" : ""}`);
 }
 
 async function send(page, goal, fill) {
@@ -107,7 +138,7 @@ psqlFile("history.sql");
 for (const [id, size] of [["room-desktop", { width: 1440, height: 900 }], ["room-phone", { width: 390, height: 844 }]]) {
   const p = await phone(null, size);
   await p.goto(`${APP}/`);
-  await shot(p, id, p.locator("figure").first());
+  await shot(p, id, p.locator("figure > div[aria-hidden]").first());
   await p.screenshot({ path: path.join(OUT, `${id}-page.png`) });
   await p.context().close();
 }
@@ -128,8 +159,10 @@ for (const goal of ["study", "typing", "reading"]) {
   const id = sql(`select c.id from checkins c join members m on m.user_id = c.user_id where m.display_name = 'Ana' and c.day = public.sp_today() and c.goal = '${goal}'`);
   await ana.goto(`${APP}/checkin/${id}`);
   await ana.waitForLoadState("networkidle");
+  await ana.addStyleTag({ content: "nav{display:none!important}" });
   await ana.screenshot({ path: path.join(OUT, `proof-${goal}-page.png`), fullPage: true });
-  await shot(ana, `proof-${goal}`, ana.locator("main").first());
+  // From the document tab to the photo (or the typing card): owner, what was declared, the AI badge and the proof.
+  await shot(ana, `proof-${goal}`, ana.locator("main header.doc-tab").first(), { to: ana.locator("main figure").first(), pad: 12 });
 }
 
 // --- another example: Carla's reading goes to the tribunal, and the group keeps it ---
@@ -153,7 +186,7 @@ const elisa = await phone("Elisa");
 async function courtroom(id) {
   await elisa.goto(url);
   await elisa.waitForLoadState("networkidle");
-  await shot(elisa, id, elisa.getByTestId("dispute"));
+  await shot(elisa, id, elisa.getByTestId("dispute"), { parts: { blocks: "children" } });
 }
 async function vote(name, reason) {
   const p = name === "Elisa" ? elisa : await phone(name);
@@ -165,12 +198,12 @@ async function vote(name, reason) {
   await p.getByText("Seu voto: manter a prova").or(p.getByTestId("verdict")).first().waitFor();
   if (p !== elisa) await p.context().close();
 }
+// Four jurors (Diego's accusation counts as a vote to annul): two votes to keep the proof decide it.
 await courtroom("tribunal-open");
 await vote("Ana", "Dá para ver o capítulo 4 no alto da página.");
 await courtroom("tribunal-vote1");
 await vote("Bruno", "Ontem ela estava no capítulo 3.");
-await courtroom("tribunal-vote2");
-await vote("Elisa", "O marcador está em outra página.");
+await elisa.goto(url);
 await elisa.getByTestId("verdict").waitFor();
 await courtroom("tribunal-verdict");
 await elisa.screenshot({ path: path.join(OUT, "tribunal-page.png"), fullPage: true });
