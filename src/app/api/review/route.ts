@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { trustedMutationOrigin } from "@/lib/request-origin";
 import { buildPrompt, decideVerdict, parseAnswer } from "@/lib/ai-review";
 import { askGemini, geminiConfigured } from "@/lib/gemini";
 import { studyPrompt } from "@/lib/study-prompts";
@@ -14,11 +15,13 @@ export const maxDuration = 60;
 // Every Gemini call is claimed first (claim_ai_review, migration 0014): one at a time per proof,
 // 3 attempts per proof and 30 per member a day, so failures and bursts cannot drain the quota.
 export async function POST(request: NextRequest) {
+  if (!trustedMutationOrigin(request)) return NextResponse.json({ error: "forbidden origin" }, { status: 403 });
   const admin = createAdminClient();
   if (!admin || !geminiConfigured()) return NextResponse.json({ status: "disabled" }, { status: 501 });
 
-  const { checkinId } = (await request.json().catch(() => ({}))) as { checkinId?: string };
-  if (!checkinId || !/^[0-9a-f-]{36}$/i.test(checkinId)) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  const checkinId = body && typeof body === "object" && !Array.isArray(body) ? body.checkinId : undefined;
+  if (typeof checkinId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(checkinId)) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
   // Read through the caller's session: RLS guarantees the check-in belongs to their group.
   const supabase = await createClient();
@@ -69,7 +72,6 @@ export async function POST(request: NextRequest) {
       verdict: decideVerdict(checkin, answer),
       seen: answer.seen,
       detected: answer.number,
-      // Only a summary that answers a question is rated (the model may fill the field anyway).
       ...(answer.answer && checkin.summary && studyPrompt(checkin.study_prompt) ? { answer_check: answer.answer } : {}),
       model,
     });

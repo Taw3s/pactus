@@ -94,6 +94,10 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 ## Decisões em aberto
 
+- **Vínculo da limpeza (0023):** a API passou a exigir que o grupo consultado ainda seja o grupo da alteração; reentrada/mudança durante a chamada não pode apagar fotos do grupo anterior. Testado com sessão válida e armazenamento real no laboratório. Não aplicado em produção.
+
+- **Auditoria local (27/10):** protegidos os limites de IA/digitação, remoção de fotos, origem de requisições e RPC de cardápio. Migrações da auditoria agora 0018–0022, posteriores à pergunta do dia (0017); nada publicado. Os testes reproduziram remoção pelo proprietário que já saiu e excesso de sessões extras simultâneas; corrigidos em 0022. Permanecem decisões de desenho: revogação de links de mídia/JWT já emitidos e validação de resultados de digitação autodeclarados. Os erros atuais do site/IA ainda dependem de confirmação nos logs de produção; não atribuir a uma indisponibilidade global sem evidência.
+
 - **Código aberto?** Bom como portfólio, sem esperar que traga usuários. Licença MIT (portfólio) ou AGPL (se um dia quiser ganhar dinheiro). O histórico do git já foi varrido e não tem segredos.
 - **Pontos do teste de 5 minutos:** hoje vale o melhor teste do dia de qualquer duração, então o de 5 minutos quase nunca conta. Mudar isso muda a regra.
 - **Identidade jurídica (brief de 26/10):** passo 1 feito (PR #29) e revisado em 27/10: aprovado com ajustes (frase da data da foto, Feed no celular). Próximos: Perfil como arquivo mensal e pasta na cena de entrada; depois, autoria dos selos e legibilidade do tribunal. Para estudar: dossiê sem tribunal em duas colunas no desktop (foto à esquerda).

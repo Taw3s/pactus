@@ -12,6 +12,7 @@ export const APP_DIR = process.env.APP_DIR || path.join(DIR, "..");
 export const SUPABASE = process.env.SUPABASE_URL || "http://127.0.0.1:54321";
 export const ANON = process.env.SUPABASE_ANON_KEY;
 export const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export const CRON_HEADERS = process.env.CRON_SECRET ? { authorization: `Bearer ${process.env.CRON_SECRET}` } : {};
 export const MAIL = process.env.MAIL_URL || "http://127.0.0.1:54324";
 export const SHOTS = path.join(DIR, "shots");
 fs.mkdirSync(SHOTS, { recursive: true });

@@ -24,6 +24,8 @@ const FIRST_TEXT: Record<TypingLang, string> = { pt: "algoritmo", en: "en-algori
 const PREF = "pacto:typing";
 
 const ERRORS: [string, string][] = [
+  ["stale typing test", "Seu progresso mudou em outro teste. Atualize a página antes de continuar."],
+  ["invalid text", "O texto foi atualizado. Atualize a página e tente novamente."],
   ["no attempts left", "Você já usou as 3 tentativas de hoje."],
   ["timing", "O tempo do teste não bateu (o app ficou em segundo plano?). Faça outro."],
   ["implausible", "Resultado impossível para esse tempo. Faça outro."],

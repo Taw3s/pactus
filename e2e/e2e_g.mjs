@@ -29,7 +29,7 @@ await step("check-ins sent earlier today were reviewed in the background", async
   const c = calls();
   assert(c.length >= 3, `expected reviews already, got ${c.length} Gemini calls`);
   const first = c[0];
-  assert(first.key === "test-key", "API key header");
+  assert(first.key === (process.env.GEMINI_API_KEY || "test-key"), "API key header");
   assert(first.url.includes("gemini-flash-latest:generateContent"), first.url);
   assert(first.schema && first.mime === "image/jpeg" && first.imageBytes > 10000, JSON.stringify(first));
 });

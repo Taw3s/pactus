@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trustedMutationOrigin } from "@/lib/request-origin";
 import { removeGroupMedia, removeUserMedia } from "@/lib/membership";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
  * Deletes the signed-in account (LGPD; the stores require it in the app): leaves the group the
  * same way as "Sair do grupo" (the group's history stays), deletes the photos, then the user.
  */
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  if (!trustedMutationOrigin(request)) return NextResponse.json({ error: "forbidden origin" }, { status: 403 });
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;

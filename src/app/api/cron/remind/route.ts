@@ -4,6 +4,7 @@ import { plural } from "@/lib/text";
 import { groupToday, notifyOnce } from "@/lib/push";
 import { trimOldPhotos } from "@/lib/media-retention";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { retryPendingMediaCleanup } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,10 +16,17 @@ export const maxDuration = 60;
  * two crons, both taken.
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+const secret = process.env.CRON_SECRET;
+
+if (
+  !secret ||
+  request.headers.get("authorization") !== `Bearer ${secret}`
+) {
+  return NextResponse.json(
+    { error: "unauthorized" },
+    { status: 401 }
+  );
+}
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ status: "disabled" }, { status: 501 });
 
@@ -36,5 +44,9 @@ export async function GET(request: NextRequest) {
     console.error("photo trim failed", e);
     return 0;
   });
-  return NextResponse.json({ reminded, trimmed });
+  const mediaCleaned = await retryPendingMediaCleanup(admin).catch(() => {
+    console.error("media cleanup retry failed");
+    return 0;
+  });
+  return NextResponse.json({ reminded, trimmed, mediaCleaned });
 }

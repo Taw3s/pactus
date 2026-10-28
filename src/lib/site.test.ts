@@ -20,6 +20,8 @@ describe("safeNextPath (post-login redirect)", () => {
       "https://pactus-rho.vercel.app.evil.com/",
       "javascript:alert(1)",
       " //evil.com",
+      "/a/..//evil.com",
+      "https://pactus-rho.vercel.app//evil.com",
     ]) {
       expect(safeNextPath(evil, ORIGIN), evil).toBe("/hoje");
     }

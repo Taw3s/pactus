@@ -56,6 +56,29 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
    - [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) — correções da auditoria de segurança;
    - [`supabase/migrations/0003_ranking_projects.sql`](supabase/migrations/0003_ranking_projects.sql) — minutos, páginas, projetos e ranking;
    - [`supabase/migrations/0004_ai_reviews.sql`](supabase/migrations/0004_ai_reviews.sql) — parecer da IA sobre as fotos.
+   - `0005_ai_judge.sql` — tribunal iniciado pela análise da foto;
+   - `0006_chests_push.sql` — baús e notificações;
+   - `0007_retake_extra_study.sql` — provas refeitas e sessões extras;
+   - `0008_extra_photos.sql` — várias fotos por prova;
+   - `0009_photo_date_reactions.sql` — data da foto e reações;
+   - `0010_typing_test.sql` — digitação dentro do app;
+   - `0011_typing_texts.sql` — progresso nos textos;
+   - `0012_typing_english.sql` — textos em inglês;
+   - `0013_typing_five_minutes.sql` — duração de cinco minutos;
+   - `0014_ai_review_limits.sql` — limites de chamadas à IA;
+   - `0015_create_challenge_debt_menu.sql` — criação de grupos e cardápio;
+   - `0016_leave_remove_delete.sql` — saída, remoção e exclusão de conta;
+   - `0017_study_prompt.sql` — pergunta do dia e avaliação da resposta;
+   - `0018_concurrent_attempt_limits.sql` — cotas protegidas contra concorrência;
+   - `0019_debt_menu_rpc_privacy.sql` — privacidade do cardápio entre grupos;
+   - `0020_retry_media_cleanup.sql` — limpeza de fotos com repetição após falha;
+   - `0021_typing_progress_integrity.sql` — catálogo de textos e versões do progresso;
+   - `0022_atomic_membership_and_proofs.sql` — permissões e limite de sessões extras em operações simultâneas.
+   - `0023_bound_membership_cleanup.sql` — vincula a alteração ao grupo cujas fotos o servidor pode apagar.
+
+   Esses arquivos ficam em `supabase/migrations`. **Aplique as migrações necessárias antes de publicar o código correspondente.**
+   Em particular, a tela com a pergunta do dia precisa da 0017; só atualizar o site não cria as colunas no banco.
+   As migrações da auditoria antes numeradas 0017–0020 agora são 0018–0021, para não colidir com a pergunta do dia.
 
    **Rode cada arquivo uma vez só, nessa ordem.** Quem já rodou os anteriores só roda os que faltam.
 3. **Crie o grupo e o código de convite** (mesmo SQL Editor):
@@ -118,6 +141,8 @@ Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **
 | `GEMINI_API_KEY` | chave criada em <https://aistudio.google.com> → *Get API key* |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → *Project Settings → API Keys* → chave **secret / service_role** |
 | `GEMINI_MODEL` | opcional; o padrão é `gemini-flash-latest`. Se ele estiver sobrecarregado (503) ou lento, o app tenta sozinho `GEMINI_FALLBACK_MODEL` (padrão `gemini-flash-lite-latest`) |
+
+Os endpoints agendados de lembrete/resumo exigem também `CRON_SECRET`, um segredo aleatório configurado somente no servidor. Sem ele, recusam a execução com 401; esse comportamento é intencional.
 
 > Essas duas chaves são **segredos de servidor**: nunca use o prefixo `NEXT_PUBLIC_` nelas e nunca as coloque no código.
 > No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. O grupo concordou com isso.

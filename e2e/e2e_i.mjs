@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { ANON, APP, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step, typingTest } from "./lib.mjs";
+import { ANON, APP, CRON_HEADERS, DIR, FIXTURE, SHOTS, SUPABASE, accessToken, assert, done, launch, loginAs, step, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const as = (email) => loginAs(browser, email);
@@ -89,9 +89,9 @@ await step("push: Davi turns notices on (fake push service), Caio closes the day
 
 await step("daily reminder (cron): pending members get one reminder a day", async () => {
   const before = pushes().filter((p) => p.path === "/push/davi").length;
-  const r1 = await fetch(`${APP}/api/cron/remind`).then((r) => r.json());
+  const r1 = await fetch(`${APP}/api/cron/remind`, { headers: CRON_HEADERS }).then((r) => r.json());
   assert(r1.reminded >= 1, `reminded ${JSON.stringify(r1)}`);
-  const r2 = await fetch(`${APP}/api/cron/remind`).then((r) => r.json());
+  const r2 = await fetch(`${APP}/api/cron/remind`, { headers: CRON_HEADERS }).then((r) => r.json());
   assert(r2.reminded === 0, `second run reminded ${JSON.stringify(r2)}`);
   assert(pushes().filter((p) => p.path === "/push/davi").length === before + 1, "exactly one reminder for Davi");
 });

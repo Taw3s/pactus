@@ -15,7 +15,10 @@ function allowedEndpoint(endpoint: string) {
     const url = new URL(endpoint);
     if (url.protocol === "https:" && PUSH_HOSTS.some((h) => h.test(url.hostname))) return true;
     // The end-to-end tests run a fake push service on 127.0.0.1 (never in production).
-    return process.env.PUSH_TEST_SERVICE === "1" && url.hostname === "127.0.0.1";
+    const localSite = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://invalid.example");
+    return process.env.PUSH_TEST_SERVICE === "1"
+      && ["localhost", "127.0.0.1", "[::1]"].includes(localSite.hostname)
+      && url.protocol === "http:" && url.hostname === "127.0.0.1";
   } catch {
     return false;
   }
@@ -78,6 +81,7 @@ export async function notifyOnce(admin: SupabaseClient, userIds: string[], kind:
             headers: req.headers as Record<string, string>,
             body: req.body ? new Uint8Array(req.body) : undefined,
             signal: AbortSignal.timeout(8000),
+            redirect: "error",
           });
           if (res.ok) notified.add(s.user_id);
           else if (res.status === 404 || res.status === 410) await admin.from("push_subscriptions").delete().eq("id", s.id);

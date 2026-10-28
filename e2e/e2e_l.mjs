@@ -1,7 +1,7 @@
 // Stage (l): old-photo warning, stamps on proofs and the weekly summary push (after stage k).
 import fs from "node:fs";
 import path from "node:path";
-import { ANON, APP, DIR, SUPABASE, accessToken, assert, done, launch, loginAs, sql, step, typingTest } from "./lib.mjs";
+import { ANON, APP, CRON_HEADERS, DIR, SUPABASE, accessToken, assert, done, launch, loginAs, sql, step, typingTest } from "./lib.mjs";
 
 const browser = await launch();
 const pushes = () => {
@@ -83,11 +83,11 @@ await step("friends stamp the proof; it stays after reload and the feed counts i
 
 await step("weekly summary: one push per subscribed member a day", async () => {
   const before = pushes().length;
-  const r1 = await fetch(`${APP}/api/cron/weekly`).then((r) => r.json());
+  const r1 = await fetch(`${APP}/api/cron/weekly`, { headers: CRON_HEADERS }).then((r) => r.json());
   assert(r1.summarized >= 1, `summarized ${JSON.stringify(r1)}`);
   for (let i = 0; i < 20 && pushes().length === before; i++) await new Promise((r) => setTimeout(r, 250));
   assert(pushes().length > before, "a summary reached the push service");
-  const r2 = await fetch(`${APP}/api/cron/weekly`).then((r) => r.json());
+  const r2 = await fetch(`${APP}/api/cron/weekly`, { headers: CRON_HEADERS }).then((r) => r.json());
   assert(r2.summarized === 0, `second run ${JSON.stringify(r2)}`);
 });
 
@@ -198,7 +198,7 @@ await step("a proof older than 30 days keeps only its thumbnail, and the proof p
   const thumb = photo.replace(/\.jpg$/, ".thumb.jpg");
   const has = (name) => sql(`select count(*) from storage.objects where name = '${name}'`) === "1";
   assert(has(photo) && has(thumb), "the proof has its photo and thumbnail");
-  const r = await fetch(`${APP}/api/cron/remind`).then((res) => res.json());
+  const r = await fetch(`${APP}/api/cron/remind`, { headers: CRON_HEADERS }).then((res) => res.json());
   assert(r.trimmed >= 1, `trimmed ${JSON.stringify(r)}`);
   assert(!has(photo), "the full photo is still stored");
   assert(has(thumb), "the thumbnail was deleted");
