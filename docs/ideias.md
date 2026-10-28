@@ -37,8 +37,13 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [x] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor (PR #35).
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
-- [ ] **Página de apresentação** e **primeiros passos** de um grupo novo (brief do Astra, implementação do Claude).
-- [ ] **Aviso de erros** (Sentry).
+- [x] **Página de apresentação** e **primeiros passos** de um grupo novo (rodada 4: PRs #44, #45 e #46). Convite com Google testado em produção (28/10): volta com o código preenchido.
+- [ ] **Aviso de erros** (Sentry ou parecido): sem isso, a falha de um desconhecido não chega a ninguém. Serviço novo: atualizar a política no mesmo PR.
+- [ ] **E-mail para quem é de fora:** conferir se o SMTP padrão do Supabase entrega para um e-mail que não é da equipe do projeto (cadastro com senha, confirmação e link mágico). Se não entregar, até o SMTP próprio só funciona o Google (e senha, se a confirmação de e-mail estiver desligada).
+- [ ] **Beta fechado de verdade?** Hoje qualquer pessoa cria um desafio pela apresentação em `/`. Decidir: aceitar (é um beta aberto e gratuito) ou exigir um código de beta para criar.
+- [ ] **Cópia do banco:** conferir se o plano atual do Supabase faz backup; se não, exportar com `pg_dump` toda semana ou subir de plano antes de chamar grupos de fora.
+- [ ] **Limites dos planos grátis** (Supabase, Vercel Hobby, Gemini): anotar os números atuais e o que acontece quando estouram (o juiz IA só deixa de conferir; a prova continua valendo).
+- [ ] **Canal de feedback** para quem testa (e-mail de contato ou grupo), dito na apresentação ou em Configurações.
 - [x] **Consulta de retenção** por grupo: `supabase/queries/retention.sql` (só leitura, roda no SQL Editor). A migration 0018 guarda as saídas (entrada, saída e semanas com prova, sem nome), então quem sai conta como perda. Quem saiu antes de rodar a 0018 não aparece.
 - [ ] **Quando virar empresa e cobrar:** o Marco Civil (Lei 12.965/2014, art. 15) obriga a guardar os registros de acesso (IP, data e hora) por 6 meses, sob sigilo. Hoje não se aplica (pessoa física, sem fins econômicos).
 - [ ] **Revisão jurídica** antes de cobrar: a política e os termos foram conferidos com o texto da LGPD, do CDC e do Marco Civil (repositório ctresb/leis), mas faltam as resoluções da ANPD para pequenos agentes (CD/ANPD nº 2/2022) e uma leitura de advogado.
