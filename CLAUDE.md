@@ -32,6 +32,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Toda migration nova precisa: teste em `supabase/tests/*_test.sql` + linha em `supabase/tests/run.sh`; aviso no PR de que deve ser rodada **antes do merge**.
 - RPCs `security definer` com `set search_path = public`; grants explícitos; RLS em toda tabela.
 - Estado em 28/10/2026: 0001–0017 rodadas em produção. A próxima é a 0018.
+- Consultas avulsas (só leitura, não são migrations): `supabase/queries/`. Retenção semana a semana do grupo: `retention.sql`. Quem saiu do grupo não aparece nela (0016 apaga as provas).
 - Testes do banco: `npm run test:db` (precisa de binários do Postgres 15+; no container da nuvem roda como usuário `postgres` copiando a pasta para um lugar legível).
 
 ## Testes
