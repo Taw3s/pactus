@@ -33,23 +33,27 @@ O Pacto tem duas camadas:
 
 Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 semanas → cobrar pelo site (plano por grupo) → Play Store → App Store. Para desconhecidos usarem:
 
-- [ ] **E-mail de login** com SMTP próprio (Resend) no painel do Supabase. Precisa de domínio verificado. (você)
+- [ ] **E-mail de login** com SMTP próprio (Resend, região São Paulo). Em 28/10: domínio comprado, DNS da Vercel válido, registros do Resend (DKIM, `send`, `rsend`) e `_dmarc` na zona do registro.br. Falta (você): Resend "Verified"; Supabase → SMTP (`smtp.resend.com`, 465, usuário `resend`, chave só no painel); Supabase → URL Configuration (Site URL e Redirect URLs em `https://www.pactus.dev.br`); `NEXT_PUBLIC_SITE_URL=https://www.pactus.dev.br` na Vercel + Redeploy; teste com e-mail de fora. Depois do teste: PR que troca "Serviço de e-mail" por Resend na política (e a data em `src/lib/legal.ts`).
 - [x] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor (PR #35).
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [x] **Página de apresentação** e **primeiros passos** de um grupo novo (rodada 4: PRs #44, #45 e #46). Convite com Google testado em produção (28/10): volta com o código preenchido.
 - [ ] **Aviso de erros** (Sentry ou parecido): sem isso, a falha de um desconhecido não chega a ninguém. Serviço novo: atualizar a política no mesmo PR.
-- [ ] **E-mail para quem é de fora:** conferir se o SMTP padrão do Supabase entrega para um e-mail que não é da equipe do projeto (cadastro com senha, confirmação e link mágico). Se não entregar, até o SMTP próprio só funciona o Google (e senha, se a confirmação de e-mail estiver desligada).
-- [ ] **Beta fechado de verdade?** Hoje qualquer pessoa cria um desafio pela apresentação em `/`. Decidir: aceitar (é um beta aberto e gratuito) ou exigir um código de beta para criar.
-- [ ] **Cópia do banco:** conferir se o plano atual do Supabase faz backup; se não, exportar com `pg_dump` toda semana ou subir de plano antes de chamar grupos de fora.
+- [ ] **E-mail para quem é de fora:** o SMTP padrão do Supabase só entrega para a equipe do projeto. Até o Resend funcionar, só o Google é garantido: não chamar ninguém antes do item acima.
+- [x] **Beta fechado** (decidido em 28/10): sem código de beta. O Davi cria o grupo e manda o link de convite (`/join?convite=…`) num grupo de WhatsApp; quem recebe cai no mesmo desafio. Medir com `retention.sql` na 1ª e 2ª semana.
+- [ ] **Cópia do banco:** pausa por inatividade não preocupa (o cron diário mantém o projeto ativo e a pausa se desfaz pelo painel). O risco é apagar algo por engano: sem cobertura no plano grátis. Combinado: baixar um backup antes de cada migration; plano Pro (backup diário) se entrar dinheiro do Apoia-se.
 - [ ] **Limites dos planos grátis** (Supabase, Vercel Hobby, Gemini): anotar os números atuais e o que acontece quando estouram (o juiz IA só deixa de conferir; a prova continua valendo).
-- [ ] **Canal de feedback** para quem testa (e-mail de contato ou grupo), dito na apresentação ou em Configurações.
+- [x] **Canal de feedback** (28/10): o próprio grupo de WhatsApp do beta.
 - [x] **Consulta de retenção** por grupo: `supabase/queries/retention.sql` (só leitura, roda no SQL Editor). A migration 0018 guarda as saídas (entrada, saída e semanas com prova, sem nome), então quem sai conta como perda. Quem saiu antes de rodar a 0018 não aparece.
 - [ ] **Quando virar empresa e cobrar:** o Marco Civil (Lei 12.965/2014, art. 15) obriga a guardar os registros de acesso (IP, data e hora) por 6 meses, sob sigilo. Hoje não se aplica (pessoa física, sem fins econômicos).
 - [ ] **Revisão jurídica** antes de cobrar: a política e os termos foram conferidos com o texto da LGPD, do CDC e do Marco Civil (repositório ctresb/leis), mas faltam as resoluções da ANPD para pequenos agentes (CD/ANPD nº 2/2022) e uma leitura de advogado.
 - [ ] Conferir em Configurações se você aparece como dono do grupo atual.
 - [x] **Preview da Vercel** (28/10): falhava desde o #8 por acentos no `CRON_SECRET` do ambiente Preview. Corrigido na Vercel; agora dá para testar cada mudança no celular antes do merge.
-- [ ] **Domínio** (`pactus.dev.br` no registro.br): trocar **antes** de chamar mais gente, porque o app instalado e os avisos não passam para o endereço novo.
+- [ ] **Domínio** `pactus.dev.br` comprado em 28/10; endereço principal **`https://www.pactus.dev.br`** (o sem `www` redireciona). Falta: o e-mail (acima) e avisar quem usa `pactus-rho.vercel.app` que instale de novo no domínio novo (login, primeiros passos e avisos push não passam). Opcional: aviso no domínio antigo.
+- [ ] **Apoia-se** (doação pura, sem vantagens no app): página `/apoiar` no ar (#49). Falta criar a campanha e pôr o link em `NEXT_PUBLIC_SUPPORT_URL` (Production) + Redeploy. Página com nomes de apoiadores só com 3 ou mais.
+- [ ] **Vídeo de apresentação** (#50): v1 de 43 s e 38 s aguardando revisão do Astra (tribunal com 2 votos, provas pequenas no 16:9, selo num painel, sem a pergunta do dia). Sem áudio; narração opcional, de preferência com a voz do Davi. Divulgar só depois que `pactus.dev.br` abrir.
+- [ ] **PR #40 (patch de segurança, de outra sessão):** numera migrations de 0018 a 0023, mas a 0018 do `main` (`membership_log`) já rodou em produção. Revisar e renumerar antes de qualquer merge; não rodar as migrations dele como estão.
+- [x] **Juiz IA no plano grátis do Gemini** (decidido em 28/10, #48): a política diz que o Google pode usar fotos e respostas, com revisão humana. Ativar o faturamento antes de abrir para desconhecidos (custo estimado abaixo de US$ 1/mês por 10 pessoas; o banco já limita a 30 chamadas por pessoa por dia).
 - [ ] **Astra:** revisar os sprites novos (troféus de prata e bronze, os 6 itens do cardápio) e as ideias de "elementos jurídicos" do ChatGPT.
 - [ ] Alguém que usa Java e TypeScript no dia a dia ler os textos dessas abas.
 
