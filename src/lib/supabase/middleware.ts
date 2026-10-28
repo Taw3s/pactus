@@ -4,6 +4,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // /api/cron is called by Vercel without a session (it checks CRON_SECRET itself).
 const PUBLIC_PATHS = ["/login", "/join", "/auth", "/api/cron", "/privacidade", "/termos"];
 
+/** Pages anyone may open. "/" (the presentation) is public on its own: nothing below it is. */
+export function isPublicPath(path: string) {
+  return path === "/" || PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -29,8 +34,7 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims?.sub;
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
-  if (!user && !isPublic) {
+  if (!user && !isPublicPath(path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
