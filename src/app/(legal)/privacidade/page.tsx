@@ -85,6 +85,10 @@ export default function PrivacyPage() {
         <li>Para o app funcionar como você pediu ao entrar num grupo: execução do serviço (LGPD, art. 7º, V).</li>
         <li>Para os avisos no aparelho: o seu consentimento, que você retira desativando os avisos.</li>
         <li>Para a segurança do app e para responder a problemas: legítimo interesse (art. 7º, IX).</li>
+        <li>
+          Para saber se os grupos continuam usando o app (as datas de entrada e saída e as semanas com prova, descritas abaixo): legítimo
+          interesse (art. 7º, IX, e art. 10), só com os dados estritamente necessários para isso.
+        </li>
       </ul>
 
       <h2>Por quanto tempo</h2>
@@ -97,6 +101,12 @@ export default function PrivacyPage() {
           Quando você <b>sai do grupo</b> ou é removido, suas provas, fotos, dívidas e testes saem junto. Ficam no histórico do grupo, sem
           ligação com a sua conta, os pagamentos que você recebeu (com o seu nome, para o recibo de quem pagou continuar valendo), as
           acusações que você fez e os seus votos (sem o seu nome), para que decisões já tomadas não mudem.
+        </li>
+        <li>
+          Também fica, sem o seu nome, e-mail ou ligação com a sua conta, um registro da sua passagem pelo grupo: o dia em que entrou, o dia
+          em que saiu e em quais semanas você enviou provas ou cumpriu um dia. Ele serve só para medir se os grupos continuam usando o app,
+          ninguém do grupo vê, e é apagado um ano depois da saída. Num grupo pequeno essas datas ainda podem lembrar quem foi, por isso o
+          tratamos como dado pessoal.
         </li>
         <li>
           Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos (eles passam a dizer “ex-membro”) e o seu login é

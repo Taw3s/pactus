@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { spToday } from "@/lib/dates";
+import { addDays, spToday } from "@/lib/dates";
 import { plural } from "@/lib/text";
 import { groupToday, notifyOnce } from "@/lib/push";
 import { trimOldPhotos } from "@/lib/media-retention";
@@ -11,8 +11,8 @@ export const maxDuration = 60;
 /**
  * Daily reminder (Vercel cron, see vercel.json: 20:00 in São Paulo). Everyone with goals still
  * pending today gets one notice. Safe to call more than once: each person gets at most one a day.
- * The same daily run trims old proofs to their thumbnail (media-retention.ts): the free plan allows
- * two crons, both taken.
+ * The same daily run trims old proofs to their thumbnail (media-retention.ts) and forgets stays that
+ * ended over a year ago (membership_log, 0018): the free plan allows two crons, both taken.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -36,5 +36,7 @@ export async function GET(request: NextRequest) {
     console.error("photo trim failed", e);
     return 0;
   });
-  return NextResponse.json({ reminded, trimmed });
+  const { count: forgotten, error } = await admin.from("membership_log").delete({ count: "exact" }).lt("left_on", addDays(today, -365));
+  if (error) console.error("membership log purge failed", error);
+  return NextResponse.json({ reminded, trimmed, forgotten: forgotten ?? 0 });
 }

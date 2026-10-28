@@ -37,7 +37,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [ ] **Página de apresentação** e **primeiros passos** de um grupo novo (brief do Astra, implementação do Claude).
 - [ ] **Aviso de erros** (Sentry).
-- [x] **Consulta de retenção** por grupo: `supabase/queries/retention.sql` (só leitura, roda no SQL Editor). Ponto cego: quem sai do grupo some dos dados (0016 apaga as provas), então o número fica otimista. Para medir o beta de verdade, falta guardar as saídas (data de entrada e saída, sem dados pessoais) numa migration.
+- [x] **Consulta de retenção** por grupo: `supabase/queries/retention.sql` (só leitura, roda no SQL Editor). A migration 0018 guarda as saídas (entrada, saída e semanas com prova, sem nome), então quem sai conta como perda. Quem saiu antes de rodar a 0018 não aparece.
 - [ ] **Quando virar empresa e cobrar:** o Marco Civil (Lei 12.965/2014, art. 15) obriga a guardar os registros de acesso (IP, data e hora) por 6 meses, sob sigilo. Hoje não se aplica (pessoa física, sem fins econômicos).
 - [ ] **Revisão jurídica** antes de cobrar: a política e os termos foram conferidos com o texto da LGPD, do CDC e do Marco Civil (repositório ctresb/leis), mas faltam as resoluções da ANPD para pequenos agentes (CD/ANPD nº 2/2022) e uma leitura de advogado.
 - [ ] Conferir em Configurações se você aparece como dono do grupo atual.
