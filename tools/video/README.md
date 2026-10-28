@@ -21,7 +21,7 @@ push em `video/*` que mexa no app ou em `demo/`, ou à mão. O resultado vai par
 
 ```bash
 git fetch origin video-shots
-mkdir -p demo/out && git archive origin/video-shots | tar -x -C demo/out
+mkdir -p demo/out && git -C ../.. archive origin/video-shots | tar -x -C demo/out
 ```
 
 As fotos das provas (`demo/photos`) são ilustrações feitas por `npm run photos`; não são fotos de ninguém.
