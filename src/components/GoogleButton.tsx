@@ -11,7 +11,8 @@ export const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_LOGIN === "1";
  * "Entrar com Google". Google only proves who the person is: someone without a group lands on
  * /join?step=code and still needs an invite code to get in.
  */
-export function GoogleButton() {
+/** `next`: where to land after Google (e.g. the join step with an invite code); defaults to Hoje. */
+export function GoogleButton({ next = "/hoje" }: { next?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,7 +21,7 @@ export function GoogleButton() {
     setError("");
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: confirmUrl("/hoje"), queryParams: { prompt: "select_account" } },
+      options: { redirectTo: confirmUrl(next), queryParams: { prompt: "select_account" } },
     });
     // On success the browser is already leaving for Google.
     if (error) {

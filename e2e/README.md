@@ -25,6 +25,7 @@ ficam no artefato **e2e-screens-and-logs** da execução.
 | `e2e_l.mjs` | Data da foto, carimbos, resumo semanal e teste de digitação (texto, inglês, 5 minutos, cartão do melhor teste) |
 | `e2e_m.mjs` | Remover membro, sair do grupo e excluir a conta (por último: tira pessoas do grupo) |
 | `e2e_n.mjs` | Apresentação pública em `/`: textos, larguras 320–1440, alvos, rotas privadas continuam fechadas, ações para visitante, membro e conta sem grupo |
+| `e2e_o.mjs` | Desafio novo: primeiros passos na Hoje (link copiado, combinado, primeira prova vinda do servidor, recolher e reabrir) e link de convite por cadastro com e-mail, login e Google; Feed e Ranking vazios |
 
 As etapas compartilham estado (usuários criados em `a`, histórico semeado antes de `d`): rode sempre
 o conjunto inteiro com `run.sh`, num banco recém-criado.

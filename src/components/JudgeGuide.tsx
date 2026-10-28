@@ -8,6 +8,11 @@ import { JudgeAnim } from "./JudgeAnim";
 
 const OPEN_GUIDE = "pacto:open-guide";
 
+/** Opens the guide from anywhere (e.g. "Ver regras e folga"), optionally on one answer; focus returns to `opener`. */
+export function openGuide(opener: HTMLElement, entry?: string) {
+  window.dispatchEvent(new CustomEvent(OPEN_GUIDE, { detail: { opener, entry } }));
+}
+
 /**
  * Opens the judge's guide. An action, not a destination: on phones it sits in the page header
  * (next to "Voltar" on pages that have it), on desktop at the end of the side bar.
@@ -44,8 +49,10 @@ export function JudgeGuide() {
 
   useEffect(() => {
     const show = (e: Event) => {
-      opener.current = (e as CustomEvent<HTMLElement>).detail ?? null;
-      setOpen(null);
+      const detail = (e as CustomEvent<HTMLElement | { opener: HTMLElement; entry?: string }>).detail;
+      const target = detail instanceof HTMLElement ? { opener: detail, entry: undefined } : detail;
+      opener.current = target?.opener ?? null;
+      setOpen(target?.entry ?? null);
       dialog.current?.showModal();
     };
     window.addEventListener(OPEN_GUIDE, show);
@@ -101,6 +108,10 @@ export function JudgeGuide() {
             </ul>
           )}
           <p className="mt-4 text-xs text-muted">Respostas fixas, escritas a partir das regras do app. O juiz não decide nada: quem decide é o grupo.</p>
+          {/* Brings back the "Primeiros passos" card on Hoje after it was closed. */}
+          <a href="/hoje?primeiros=1" className="mt-2 inline-flex min-h-12 items-center text-sm font-semibold text-accent underline" data-testid="reopen-first-steps">
+            Rever primeiros passos
+          </a>
         </div>
     </dialog>
   );

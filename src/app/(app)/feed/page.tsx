@@ -98,6 +98,16 @@ export default async function FeedPage() {
         </section>
       )}
 
+      {checkins.length === 0 && (
+        <div className="card mb-4 flex flex-wrap items-center gap-3" data-testid="feed-empty">
+          <Sprite name="evidenceFolder" />
+          <p className="min-w-0 flex-1">As primeiras provas vão aparecer aqui. Envie a sua na tela Hoje.</p>
+          <Link href="/hoje" className="btn-secondary min-h-12">
+            Ir para Hoje
+          </Link>
+        </div>
+      )}
+
       {/* Desktop: two equal columns, one card per person, reading order kept (no masonry). */}
       <div className="grid gap-3 desk:grid-cols-2 desk:items-start desk:gap-6">
         {rows.map(({ m, mine, project, done, extraMinutes, off }) => (

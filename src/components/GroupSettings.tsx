@@ -1,10 +1,11 @@
 "use client";
 
-import { Copy, Loader } from "lucide-react";
+import { Copy, Link2, Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatDayPt } from "@/lib/dates";
 import { menuPhrase, type DebtItem } from "@/lib/debt-items";
+import { inviteUrl } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/client";
 import { MenuPicker } from "./MenuPicker";
 
@@ -26,16 +27,18 @@ export function GroupSettings({ groupName, inviteCode, isOwner, menuToday, menuN
   const [menu, setMenu] = useState<DebtItem[]>(menuNext?.items ?? menuToday);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"" | "code" | "link" | "failed">("");
   const pending = menuNext?.items ?? menuToday;
   const changed = menu.join() !== pending.join();
 
-  async function copy() {
+  async function copy(what: "code" | "link") {
     try {
-      await navigator.clipboard.writeText(inviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
+      await navigator.clipboard.writeText(what === "code" ? inviteCode : inviteUrl(window.location.origin, inviteCode));
+      setCopied(what);
+      setTimeout(() => setCopied(""), 2000);
+    } catch {
+      setCopied("failed");
+    }
   }
 
   async function save() {
@@ -58,12 +61,21 @@ export function GroupSettings({ groupName, inviteCode, isOwner, menuToday, menuN
           <code className="pixel tabular flex-1 rounded-sm border-2 border-bevel-dark bg-bg px-3 py-2 text-2xl tracking-widest" data-testid="invite-code">
             {inviteCode}
           </code>
-          <button type="button" className="btn-secondary min-h-12 min-w-12 !px-3" onClick={copy} aria-label="Copiar código de convite">
+          <button type="button" className="btn-secondary min-h-12 min-w-12 !px-3" onClick={() => copy("code")} aria-label="Copiar código de convite">
             <Copy size={18} aria-hidden />
           </button>
         </div>
+        <button type="button" className="btn-secondary mt-2 min-h-12 w-full !text-base sm:w-auto" onClick={() => copy("link")}>
+          <Link2 size={18} aria-hidden /> Copiar link do convite
+        </button>
         <p className="mt-1 text-xs text-muted" role="status">
-          {copied ? "Código copiado." : "Quem entrar com ele começa a contar a partir do dia em que entrou."}
+          {copied === "code"
+            ? "Código copiado."
+            : copied === "link"
+              ? "Link copiado. Agora envie para seus amigos."
+              : copied === "failed"
+                ? "Não foi possível copiar. Copie o código manualmente."
+                : "Quem entrar com ele começa a contar a partir do dia em que entrou."}
         </p>
       </div>
 
