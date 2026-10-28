@@ -61,33 +61,99 @@ export function Judge({ action, start = 0, px, x, y }: { action: JudgeAction; st
   return <Sprite name={`judge-${judgeFrame(action, frame - start, fps)}`} px={px} x={x} y={y} />;
 }
 
-type ShotId = keyof typeof meta;
+export type ShotId = keyof typeof meta;
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 interface ShotMeta {
   width: number;
   height: number;
   dpr: number;
   judge?: { x: number; y: number; size: number; frame: string | null };
+  folder?: { x: number; y: number; size: number };
+  parts?: { blocks?: Box[] };
 }
-export const shotMeta = (id: ShotId) => meta[id] as ShotMeta;
+export const shotMeta = (id: ShotId) => meta[id] as unknown as ShotMeta;
+export const whole = (id: ShotId): Box => ({ x: 0, y: 0, w: shotMeta(id).width, h: shotMeta(id).height });
+/** The region from the top of block `a` to the bottom of block `b` (direct children of the shot's element). */
+export function blocks(id: ShotId, a: number, b: number): Box {
+  const bl = shotMeta(id).parts!.blocks!;
+  const m = shotMeta(id);
+  return { x: 0, y: bl[a].y, w: m.width, h: bl[b].y + bl[b].h - bl[a].y };
+}
 
 /** Scale (video px per CSS px) that puts the screenshot's judge at exactly `judgePx`. */
 export const judgeScale = (id: ShotId, judgePx: 96 | 144 | 192) => judgePx / shotMeta(id).judge!.size;
-
-/** Size of a shot drawn at `scale` video px per CSS px. */
-export const shotSize = (id: ShotId, scale: number) => ({ w: Math.round(shotMeta(id).width * scale), h: Math.round(shotMeta(id).height * scale) });
+/** Largest scale at which `box` fits in w × h. */
+export const fit = (box: Box, w: number, h: number) => Math.min(w / box.w, h / box.h);
+export const sized = (box: Box, scale: number) => ({ w: Math.round(box.w * scale), h: Math.round(box.h * scale) });
 
 /**
- * A screenshot of the real app at `scale`, top-left at (x, y). With `judge`, the still judge of the screenshot is
- * replaced by the animated one, at the same place and an exact sprite size.
+ * A screenshot of the real app (or the `crop` region of it) at `scale` video px per CSS px, top-left at (x, y).
+ * With `judge`, the screenshot's still judge is replaced by the animated one, at the same place and an exact sprite size.
+ * With `folder`, the proof folder is drawn as a sprite too, from local frame `folder.start` (stepping in).
  */
-export function Shot({ id, scale, x, y, judge }: { id: ShotId; scale: number; x: number; y: number; judge?: { action: JudgeAction; start?: number } }) {
+export function Shot({
+  id,
+  scale,
+  x,
+  y,
+  crop,
+  judge,
+  folder,
+}: {
+  id: ShotId;
+  scale: number;
+  x: number;
+  y: number;
+  crop?: Box;
+  judge?: { action: JudgeAction; start?: number };
+  folder?: { start: number };
+}) {
   const m = shotMeta(id);
-  const { w, h } = shotSize(id, scale);
-  const j = judge && m.judge;
+  const c = crop ?? whole(id);
+  const { w, h } = sized(c, scale);
+  const j = judge && m.judge && m.judge.y >= c.y && m.judge.y + m.judge.size <= c.y + c.h ? m.judge : undefined;
+  const f = folder && m.folder;
+  const file = f ? "-bare" : j ? "-nojudge" : "";
+  const W = Math.round(m.width * scale);
+  const H = Math.round(m.height * scale);
   return (
-    <div style={{ position: "absolute", left: Math.round(x), top: Math.round(y), width: w, height: h }}>
-      <Img src={staticFile(`shots/${id}${j ? "-nojudge" : ""}.png`)} style={{ width: w, height: h, display: "block" }} />
-      {j && <Judge action={judge.action} start={judge.start} px={Math.round(j.size * scale) as 96 | 144 | 192} x={j.x * scale} y={j.y * scale} />}
+    <div style={{ position: "absolute", left: Math.round(x), top: Math.round(y), width: w, height: h, overflow: "hidden" }}>
+      <Img src={staticFile(`shots/${id}${file}.png`)} style={{ position: "absolute", left: -Math.round(c.x * scale), top: -Math.round(c.y * scale), width: W, height: H }} />
+      {j && <Judge action={judge!.action} start={judge!.start} px={Math.round(j.size * scale) as 96 | 144 | 192} x={(j.x - c.x) * scale} y={(j.y - c.y) * scale} />}
+      {f && (
+        <StepIn start={folder!.start}>
+          <Sprite name="evidenceFolder" px={Math.round(f.size * scale) as 96 | 144 | 192} x={(f.x - c.x) * scale} y={(f.y - c.y) * scale} />
+        </StepIn>
+      )}
+    </div>
+  );
+}
+
+/** The app's card (bevelled panel with a hard shadow) at `scale`, around content placed by the caller. */
+export function Card({ x, y, w, h, scale, children }: { x: number; y: number; w: number; h: number; scale: number; children?: React.ReactNode }) {
+  const b = Math.round(2 * scale);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: Math.round(x),
+        top: Math.round(y),
+        width: Math.round(w),
+        height: Math.round(h),
+        background: "#363a41",
+        borderStyle: "solid",
+        borderWidth: b,
+        borderColor: "#575d67 #1a1c20 #1a1c20 #575d67",
+        borderRadius: Math.round(2 * scale),
+        boxShadow: `${Math.round(4 * scale)}px ${Math.round(4 * scale)}px 0 #141518`,
+      }}
+    >
+      {children}
     </div>
   );
 }

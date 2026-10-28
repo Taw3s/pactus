@@ -18,5 +18,5 @@ begin
   return new;
 end;
 $$;
-drop trigger if exists demo_default_day_off on public.day_off_changes;
+drop trigger if exists demo_default_day_off on public.day_off_changes; -- (a NOTICE on the first run is expected)
 create trigger demo_default_day_off before insert on public.day_off_changes for each row execute function public.demo_default_day_off();

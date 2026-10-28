@@ -1,7 +1,7 @@
 // The presentation video, as approved by Astra (brief of 28/10/2026): 43 s with the support card (Apoia-se, 16:9)
 // and 38 s without it (WhatsApp, 9:16). Each format is laid out on its own, never cropped from the other.
 import { AbsoluteFill, Sequence, useVideoConfig } from "remotion";
-import { Between, Brand, C, Format, PIXEL, Shot, shotMeta, shotSize, Sprite, StepIn, Text, judgeScale, useFonts } from "./parts";
+import { Between, Brand, C, Card, Format, PIXEL, Shot, StepIn, Text, blocks, fit, judgeScale, shotMeta, sized, whole, useFonts, type ShotId } from "./parts";
 
 export const FPS = 30;
 const s = (sec: number) => Math.round(sec * FPS);
@@ -18,85 +18,97 @@ export function Presentation({ format, support }: { format: Format; support: boo
   );
   return (
     <AbsoluteFill style={{ background: C.bg }}>
-      {scene(T.room, T.proof, <Room f={format} think={false} />)}
-      {scene(T.proof, T.goals, <Room f={format} think />)}
+      {scene(T.room, T.proof, <Room f={format} step="agree" />)}
+      {scene(T.proof, T.goals, <Room f={format} step="proof" />)}
       {scene(T.goals, T.court, <Goals f={format} />)}
       {scene(T.court, T.debt, <Court f={format} />)}
       {scene(T.debt, T.end, <Debt f={format} />)}
-      {scene(T.end, T.support, <End f={format} />)}
+      {scene(T.end, T.support, <Room f={format} step="end" />)}
       {support && scene(T.support, T.total, <Support f={format} />)}
     </AbsoluteFill>
   );
 }
 
-const useSize = () => {
-  const { width, height } = useVideoConfig();
-  return { W: width, H: height };
-};
-const room = (f: Format) => (f === "h" ? "room-desktop" : "room-phone");
+function useLayout(f: Format) {
+  const { width: W, height: H } = useVideoConfig();
+  // Side margin, and the text column of the horizontal layout (left of the picture).
+  const m = f === "h" ? 120 : 96;
+  return { W, H, m };
+}
 
-/** Scenes 1–2: the judge's room of the presentation page. Then a proof (folder) steps onto his bench. */
-function Room({ f, think }: { f: Format; think: boolean }) {
-  const { W, H } = useSize();
-  const id = room(f);
+/** Scenes 1, 2 and 6: the judge's room of the presentation page, with the brand. */
+function Room({ f, step }: { f: Format; step: "agree" | "proof" | "end" }) {
+  const { W, H, m } = useLayout(f);
+  const id: ShotId = f === "h" ? "room-desktop" : "room-phone";
   const k = judgeScale(id, 192);
-  const { w, h } = shotSize(id, k);
-  const x = f === "h" ? W - 160 - w : Math.round((W - w) / 2);
-  const y = f === "h" ? Math.round((H - h) / 2) : H - 220 - h;
-  const j = shotMeta(id).judge!;
+  const { w, h } = sized(whole(id), k);
+  const x = f === "h" ? W - m - w : Math.round((W - w) / 2);
+  const y = f === "h" ? Math.round((H - h) / 2) + 40 : 760;
+  const textW = f === "h" ? x - 2 * m : W - 2 * m;
+  const judge = step === "proof" ? { action: "think" as const } : { action: "idle" as const, start: s(1.2) };
   return (
     <AbsoluteFill>
-      <Brand x={f === "h" ? 120 : 96} y={f === "h" ? 100 : 140} />
-      {/* idle: one small glance a second in; think: loops while he reads */}
-      <Shot id={id} scale={k} x={x} y={y} judge={think ? { action: "think" } : { action: "idle", start: s(1.2) }} />
-      {think && (
-        <StepIn start={s(0.8)}>
-          <Sprite name="evidenceFolder" px={144} x={x + j.x * k + 192 + 24} y={y + j.y * k + 96} />
-        </StepIn>
+      <Brand x={m} y={f === "h" ? 96 : 140} />
+      {/* scene 2: the folder is off the bench at first and steps onto it */}
+      <Shot id={id} scale={k} x={x} y={y} judge={judge} folder={{ start: step === "proof" ? s(1) : -99 }} />
+      {step === "agree" && (
+        <Text f={f} x={m} y={f === "h" ? 400 : 420} w={textW}>
+          Seu grupo combina. Todo mundo cumpre.
+        </Text>
       )}
-      <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 420 : 380} w={f === "h" ? W - w - 160 - 240 : W - 192}>
-        {think ? "No Pacto, compromisso vem com prova." : "Seu grupo combina. Todo mundo cumpre."}
-      </Text>
+      {step === "proof" && (
+        <Text f={f} x={m} y={f === "h" ? 400 : 420} w={textW}>
+          No Pacto, compromisso vem com prova.
+        </Text>
+      )}
+      {step === "end" && (
+        <>
+          <Text f={f} x={m} y={f === "h" ? 360 : 400} w={textW}>
+            Crie um desafio ou entre com um convite.
+          </Text>
+          <Text f={f} kind="address" color={C.accent} x={m} y={f === "h" ? 600 : 620} w={textW}>
+            pactus.dev.br
+          </Text>
+        </>
+      )}
     </AbsoluteFill>
   );
 }
 
 const GOALS = ["study", "typing", "reading"] as const;
 const LABEL = { study: "Estudo", typing: "Digitação", reading: "Leitura" };
+const proofId = (g: (typeof GOALS)[number]) => `proof-${g}` as const;
 
 /** Scene 3: the three real proofs one by one, then the day's seal (the judge stamps the three together). */
 function Goals({ f }: { f: Format }) {
-  const { W, H } = useSize();
   const seal = s(6.5);
   return (
     <AbsoluteFill>
-      <Between to={seal}>
-        <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 90 : 140} w={W - 240}>
-          Estudo. Digitação. Leitura.
-        </Text>
-        {f === "h" ? <GoalsRow W={W} H={H} /> : <GoalsOneByOne W={W} H={H} />}
-      </Between>
+      <Between to={seal}>{f === "h" ? <GoalsRow /> : <GoalsOneByOne />}</Between>
       <Between from={seal}>
-        <SealScene f={f} W={W} H={H} />
+        <Seal f={f} />
       </Between>
     </AbsoluteFill>
   );
 }
 
-function GoalsRow({ W, H }: { W: number; H: number }) {
-  // Three cards of equal weight side by side, at the size of the widest that fits.
+function GoalsRow() {
+  const { W, H, m } = useLayout("h");
+  // Three proofs of equal weight side by side, all at the scale of the one that fits least.
   const gap = 48;
-  const colW = Math.floor((W - 240 - 2 * gap) / 3);
-  const top = 230;
+  const top = 220;
+  const colW = Math.floor((W - 2 * m - 2 * gap) / 3);
+  const k = Math.min(...GOALS.map((g) => fit(whole(proofId(g)), colW, H - top - 60)));
   return (
     <>
+      <Text f="h" x={m} y={88} w={W - 2 * m}>
+        Estudo. Digitação. Leitura.
+      </Text>
       {GOALS.map((g, i) => {
-        const id = `today-${g}` as const;
-        const k = Math.min(colW / shotMeta(id).width, (H - top - 80) / shotMeta(id).height);
-        const { w } = shotSize(id, k);
+        const { w } = sized(whole(proofId(g)), k);
         return (
           <StepIn key={g} start={s(0.4 + i * 1.6)}>
-            <Shot id={id} scale={k} x={120 + i * (colW + gap) + (colW - w) / 2} y={top} />
+            <Shot id={proofId(g)} scale={k} x={m + i * (colW + gap) + (colW - w) / 2} y={top} />
           </StepIn>
         );
       })}
@@ -104,12 +116,17 @@ function GoalsRow({ W, H }: { W: number; H: number }) {
   );
 }
 
-function GoalsOneByOne({ W, H }: { W: number; H: number }) {
-  // One card at a time across the width, with the three labels as a small sequence above it.
+function GoalsOneByOne() {
+  const { W, H, m } = useLayout("v");
+  // One proof at a time across the width, with the three labels as a small sequence above it.
   const each = s(2);
+  const top = 560;
   return (
     <>
-      <div style={{ position: "absolute", left: 96, top: 360, display: "flex", gap: 32 }}>
+      <Text f="v" x={m} y={140} w={W - 2 * m}>
+        Estudo. Digitação. Leitura.
+      </Text>
+      <div style={{ position: "absolute", left: m, top: 400, display: "flex", gap: 40 }}>
         {GOALS.map((g, i) => (
           <Between key={g} from={s(0.4) + i * each}>
             <span style={{ fontFamily: PIXEL, fontSize: 48, lineHeight: "56px", color: C.accent, textTransform: "uppercase" }}>{LABEL[g]}</span>
@@ -117,12 +134,12 @@ function GoalsOneByOne({ W, H }: { W: number; H: number }) {
         ))}
       </div>
       {GOALS.map((g, i) => {
-        const id = `today-${g}` as const;
-        const k = Math.min((W - 192) / shotMeta(id).width, (H - 560) / shotMeta(id).height);
+        const k = fit(whole(proofId(g)), W - 2 * m, H - top - 120);
+        const { w } = sized(whole(proofId(g)), k);
         return (
           <Between key={g} from={s(0.4) + i * each} to={i < 2 ? s(0.4) + (i + 1) * each : undefined}>
             <StepIn start={s(0.4) + i * each}>
-              <Shot id={id} scale={k} x={96} y={480} />
+              <Shot id={proofId(g)} scale={k} x={(W - w) / 2} y={top} />
             </StepIn>
           </Between>
         );
@@ -131,14 +148,20 @@ function GoalsOneByOne({ W, H }: { W: number; H: number }) {
   );
 }
 
-function SealScene({ f, W, H }: { f: Format; W: number; H: number }) {
+function Seal({ f }: { f: Format }) {
+  const { W, H, m } = useLayout(f);
   const id = "today-verified";
   const k = judgeScale(id, 192);
-  const { w, h } = shotSize(id, k);
+  const { w, h } = sized(whole(id), k);
+  const pad = Math.round(8 * k);
+  const x = (W - w) / 2;
+  const y = f === "h" ? (H - h) / 2 - 60 : 700;
   return (
     <>
-      <Shot id={id} scale={k} x={(W - w) / 2} y={f === "h" ? (H - h) / 2 - 40 : 760} judge={{ action: "stamp", start: s(0.3) }} />
-      <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? H - 190 : 1480} w={W - (f === "h" ? 240 : 192)} align="center">
+      {/* on the app it sits in a card: the panel keeps its colour around the screenshot */}
+      <Card x={x - pad} y={y - pad} w={w + 2 * pad} h={h + 2 * pad} scale={k} />
+      <Shot id={id} scale={k} x={x} y={y} judge={{ action: "stamp", start: s(0.3) }} />
+      <Text f={f} x={m} y={f === "h" ? H - 220 : 1200} w={W - 2 * m} align="center">
         Até 23:59 · horário de São Paulo
       </Text>
     </>
@@ -147,81 +170,75 @@ function SealScene({ f, W, H }: { f: Format; W: number; H: number }) {
 
 /** Scene 4: another proof goes to the tribunal. The judge presents it; people vote; the gavel only after the result. */
 function Court({ f }: { f: Format }) {
-  const { W, H } = useSize();
+  const { W, H, m } = useLayout(f);
   const states = [
     { id: "tribunal-open", from: 0 },
-    { id: "tribunal-vote1", from: s(2) },
-    { id: "tribunal-vote2", from: s(3.4) },
-    { id: "tribunal-verdict", from: s(4.8) },
+    { id: "tribunal-vote1", from: s(2.4) },
+    { id: "tribunal-verdict", from: s(4.4) },
   ] as const;
-  const k = judgeScale("tribunal-open", f === "h" ? 144 : 192);
-  const { w, h } = shotSize("tribunal-open", k);
-  const x = f === "h" ? W - 160 - w : (W - w) / 2;
-  const y = f === "h" ? Math.max(40, (H - h) / 2) : 520;
+  // The courtroom is tall, so its blocks are laid out apart: the bench (with the judge), the parties with the proof,
+  // and the score with the jury (plus the verdict at the end). The viewer's own vote buttons are left out.
+  const k = judgeScale("tribunal-open", 144);
+  const n = (id: ShotId) => shotMeta(id).parts!.blocks!.length;
+  const parts = (id: ShotId) => {
+    const verdict = id === "tribunal-verdict";
+    return { bench: blocks(id, 0, 0), parties: blocks(id, 2, 2), jury: blocks(id, 3, n(id) - (verdict ? 1 : 2)) };
+  };
+  const p0 = parts("tribunal-verdict");
+  const top = f === "h" ? 270 : 330;
+  const col = sized(p0.bench, k).w;
+  const gap = f === "h" ? Math.floor((W - 2 * m - 3 * col) / 2) : 24;
+  // Vertical: bench and parties side by side would not fit, so the parties and the jury stack under the bench.
+  const kV = f === "v" ? fit({ x: 0, y: 0, w: p0.parties.w, h: p0.parties.h + p0.jury.h }, W - 2 * m, H - top - sized(p0.bench, k).h - 2 * gap - 80) : k;
+  const at = {
+    bench: f === "h" ? { x: m, y: top } : { x: (W - col) / 2, y: top },
+    parties: f === "h" ? { x: m + col + gap, y: top } : { x: (W - sized(p0.parties, kV).w) / 2, y: top + sized(p0.bench, k).h + gap },
+    jury: f === "h" ? { x: m + 2 * (col + gap), y: top } : { x: (W - sized(p0.jury, kV).w) / 2, y: top + sized(p0.bench, k).h + sized(p0.parties, kV).h + 2 * gap },
+  };
   return (
     <AbsoluteFill>
-      {states.map((st, i) => (
-        <Between key={st.id} from={st.from} to={states[i + 1]?.from}>
-          <Shot
-            id={st.id}
-            scale={judgeScale(st.id, f === "h" ? 144 : 192)}
-            x={x}
-            y={y}
-            judge={st.id === "tribunal-verdict" ? { action: "gavel", start: st.from + s(0.2) } : { action: "present", start: s(0.3) }}
-          />
-        </Between>
-      ))}
-      <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 420 : 200} w={f === "h" ? x - 240 : W - 192}>
+      <Text f={f} x={m} y={f === "h" ? 88 : 140} w={W - 2 * m}>
         A IA confere. O grupo decide.
       </Text>
+      {states.map((st, i) => {
+        const p = parts(st.id);
+        const verdict = st.id === "tribunal-verdict";
+        return (
+          <Between key={st.id} from={st.from} to={states[i + 1]?.from}>
+            <Shot id={st.id} scale={k} crop={p.bench} {...at.bench} judge={verdict ? { action: "gavel", start: st.from + s(0.3) } : { action: "present", start: i === 0 ? s(0.3) : -999 }} />
+            <Shot id={st.id} scale={kV} crop={p.parties} {...at.parties} />
+            <Shot id={st.id} scale={kV} crop={p.jury} {...at.jury} />
+          </Between>
+        );
+      })}
     </AbsoluteFill>
   );
 }
 
 /** Scene 5: Bruno's debt, pending; one item is registered as received and only it becomes a receipt. */
 function Debt({ f }: { f: Format }) {
-  const { W, H } = useSize();
+  const { W, H, m } = useLayout(f);
   const paid = s(3.6);
-  const box = f === "h" ? { w: 760, h: H - 160 } : { w: W - 192, h: 1100 };
-  const k = Math.min(box.w / shotMeta("debt-received").width, box.h / shotMeta("debt-received").height);
-  const x = f === "h" ? W - 160 - box.w : 96;
-  const y = f === "h" ? 80 : 640;
+  const area = f === "h" ? { x: W / 2, y: 80, w: W / 2 - m, h: H - 160 } : { x: m, y: 700, w: W - 2 * m, h: H - 700 - 100 };
+  const k = Math.min(fit(whole("debt-received"), area.w, area.h), fit(whole("debt-pending"), area.w, area.h));
+  const textW = f === "h" ? area.x - 2 * m : W - 2 * m;
+  const at = (id: ShotId) => ({ x: area.x + (area.w - sized(whole(id), k).w) / 2, y: f === "h" ? (H - sized(whole(id), k).h) / 2 : area.y });
   return (
     <AbsoluteFill>
       <Between to={paid}>
-        <Shot id="debt-pending" scale={k} x={x} y={y} />
-        <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 360 : 200} w={f === "h" ? x - 240 : W - 192}>
+        <Shot id="debt-pending" scale={k} {...at("debt-pending")} />
+        <Text f={f} x={m} y={f === "h" ? 330 : 140} w={textW}>
           Não cumpriu? Deve o combinado ao grupo.
         </Text>
       </Between>
       <Between from={paid}>
-        <Shot id="debt-received" scale={k} x={x} y={y} />
-        <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 360 : 200} w={f === "h" ? x - 240 : W - 192}>
+        <Shot id="debt-received" scale={k} {...at("debt-received")} />
+        <Text f={f} x={m} y={f === "h" ? 330 : 140} w={textW}>
           Recebeu? Registre no app.
         </Text>
       </Between>
-      <Text f={f} kind="aux" color={C.muted} x={f === "h" ? 120 : 96} y={f === "h" ? 600 : 440} w={f === "h" ? x - 240 : W - 192}>
+      <Text f={f} kind="aux" color={C.muted} x={m} y={f === "h" ? 560 : 440} w={textW}>
         O grupo escolhe o cardápio. O app não cobra dinheiro.
-      </Text>
-    </AbsoluteFill>
-  );
-}
-
-/** Scene 6: back to the judge and the brand; the address stays still and large. */
-function End({ f }: { f: Format }) {
-  const { W, H } = useSize();
-  const id = room(f);
-  const k = judgeScale(id, f === "h" ? 144 : 192);
-  const { w, h } = shotSize(id, k);
-  return (
-    <AbsoluteFill>
-      <Brand x={f === "h" ? 120 : 96} y={f === "h" ? 100 : 140} />
-      <Shot id={id} scale={k} x={f === "h" ? W - 160 - w : (W - w) / 2} y={f === "h" ? (H - h) / 2 : 1000} judge={{ action: "idle", start: s(2) }} />
-      <Text f={f} x={f === "h" ? 120 : 96} y={f === "h" ? 380 : 400} w={f === "h" ? W - w - 400 : W - 192}>
-        Crie um desafio ou entre com um convite.
-      </Text>
-      <Text f={f} kind="address" color={C.accent} x={f === "h" ? 120 : 96} y={f === "h" ? 620 : 700} w={f === "h" ? W - w - 400 : W - 192}>
-        pactus.dev.br
       </Text>
     </AbsoluteFill>
   );
@@ -229,12 +246,12 @@ function End({ f }: { f: Format }) {
 
 /** Apoia-se only: a plain card with the support page's identity. No new reward or character. */
 function Support({ f }: { f: Format }) {
-  const { W } = useSize();
-  const x = f === "h" ? 240 : 96;
+  const { W, m } = useLayout(f);
+  const x = f === "h" ? 240 : m;
   const w = W - 2 * x;
   return (
     <AbsoluteFill>
-      <Brand x={x} y={f === "h" ? 150 : 300} px={96} />
+      <Brand x={x} y={f === "h" ? 150 : 300} />
       <Text f={f} x={x} y={f === "h" ? 360 : 600} w={w}>
         Quer ajudar o Pacto a continuar?
       </Text>

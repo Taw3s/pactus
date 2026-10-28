@@ -81,8 +81,8 @@ async function shot(page, id, from, { to = from, parts = {}, pad = 0 } = {}) {
   for (const [name, sel] of Object.entries(parts)) {
     if (sel === "children") {
       const kids = from.locator(":scope > *");
-      entry.parts.children = [];
-      for (const k of await kids.all()) entry.parts.children.push(await rel(k));
+      entry.parts[name] = [];
+      for (const k of await kids.all()) entry.parts[name].push(await rel(k));
     } else entry.parts[name] = await rel(from.locator(sel).first());
   }
   for (const [suffix, css] of [["-nojudge", entry.judge && hiding(JUDGE)], ["-bare", entry.folder && hiding(`${JUDGE},${FOLDER}`)]]) {
@@ -152,7 +152,8 @@ await until(() => sql("select count(*) from checkin_reviews r join checkins c on
 await ana.goto(`${APP}/hoje`);
 await ana.getByTestId("verified").waitFor();
 for (const goal of ["study", "typing", "reading"]) await shot(ana, `today-${goal}`, ana.locator(`[data-goal=${goal}]`));
-await shot(ana, "today-verified", ana.getByTestId("verified"));
+// With a margin: the tilted stamp goes past the element's box.
+await shot(ana, "today-verified", ana.getByTestId("verified"), { pad: 16 });
 await shot(ana, "today-scoreboard", ana.getByTestId("scoreboard"));
 await ana.screenshot({ path: path.join(OUT, "today-page.png"), fullPage: true });
 for (const goal of ["study", "typing", "reading"]) {
