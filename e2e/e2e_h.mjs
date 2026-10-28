@@ -29,7 +29,7 @@ await step("axe: login and join (logged out)", async () => {
   await scan("join");
 });
 
-await step("privacy policy and terms open without an account, linked from the login, axe clean", async () => {
+await step("privacy policy, terms and the support page open without an account, axe clean", async () => {
   await page.goto(`${APP}/login`);
   await page.getByRole("link", { name: "Privacidade" }).click();
   await page.getByRole("heading", { name: "Política de privacidade" }).waitFor();
@@ -37,6 +37,9 @@ await step("privacy policy and terms open without an account, linked from the lo
   await page.getByRole("link", { name: "termos de uso" }).click();
   await page.getByRole("heading", { name: "Termos de uso" }).waitFor();
   await scan("termos");
+  await page.goto(`${APP}/apoiar`);
+  await page.getByRole("heading", { name: "Apoiar o Pacto" }).waitFor();
+  await scan("apoiar");
 });
 
 await step("axe: every screen of a member with data", async () => {

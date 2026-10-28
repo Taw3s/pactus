@@ -2,6 +2,7 @@ import Link from "next/link";
 import { NavButton } from "@/components/landing/NavButton";
 import { Sprite, type SpriteName } from "@/components/Sprite";
 import { createClient } from "@/lib/supabase/server";
+import { SUPPORT_URL } from "@/lib/support";
 
 export const dynamic = "force-dynamic";
 
@@ -175,6 +176,14 @@ export default async function Home() {
           <Link href="/termos" className="inline-flex min-h-12 items-center underline">
             Termos de uso
           </Link>
+          {SUPPORT_URL && (
+            <>
+              <span aria-hidden> · </span>
+              <Link href="/apoiar" className="inline-flex min-h-12 items-center underline">
+                Apoiar o projeto
+              </Link>
+            </>
+          )}
         </p>
       </footer>
     </div>

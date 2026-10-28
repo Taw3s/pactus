@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // /api/cron is called by Vercel without a session (it checks CRON_SECRET itself).
-const PUBLIC_PATHS = ["/login", "/join", "/auth", "/api/cron", "/privacidade", "/termos"];
+const PUBLIC_PATHS = ["/login", "/join", "/auth", "/api/cron", "/privacidade", "/termos", "/apoiar"];
 
 /** Pages anyone may open. "/" (the presentation) is public on its own: nothing below it is. */
 export function isPublicPath(path: string) {
