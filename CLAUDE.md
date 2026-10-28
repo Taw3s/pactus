@@ -22,7 +22,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - **Nunca push no `main`.** Um branch por mudança, PR pelo `gh api repos/Taw3s/pactus/pulls` (GraphQL é bloqueado). O usuário faz o merge.
 - Commits terminam com as linhas de atribuição pedidas pelo ambiente; **nenhum identificador de modelo** em commit, PR ou código.
 - PRs em português, com seções "O que muda", "Banco" (se houver migration) e "Testes"; terminam com `🤖 Generated with [Claude Code](https://claude.com/claude-code)` e o link da sessão.
-- Depois de abrir o PR: assinar a atividade, comentar **uma vez** sobre o preview da Vercel (veja abaixo) e esperar o "End-to-end" do GitHub ficar verde antes de dizer que pode mergear. Mergear com o E2E rodando já deixou o `main` vermelho uma vez (PR #20).
+- Depois de abrir o PR: assinar a atividade, passar ao usuário o link do preview da Vercel (para testar no celular) e esperar o "End-to-end" do GitHub ficar verde antes de dizer que pode mergear. Mergear com o E2E rodando já deixou o `main` vermelho uma vez (PR #20).
 - **Segredos:** nada de chave no repositório nem na conversa. Use `.env.local` (há `.env.example`). `service_role` só no servidor, nunca `NEXT_PUBLIC_`. O histórico do git foi varrido em 26/10/2026 e está limpo.
 - Estilo de código: siga o arquivo ao redor (comentários curtos que explicam o porquê, linhas longas até ~160). Não rode o Prettier com a configuração padrão (80 colunas): ele reformata o arquivo inteiro.
 
@@ -31,7 +31,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Migrations em `supabase/migrations/NNNN_nome.sql`, rodadas **à mão pelo usuário no SQL Editor**, em ordem. Cada uma confere no início se a anterior foi rodada.
 - Toda migration nova precisa: teste em `supabase/tests/*_test.sql` + linha em `supabase/tests/run.sh`; aviso no PR de que deve ser rodada **antes do merge**.
 - RPCs `security definer` com `set search_path = public`; grants explícitos; RLS em toda tabela.
-- Estado em 27/10/2026: 0001–0016 rodadas em produção. **0017** (pergunta do dia no resumo de estudo) no PR "pergunta do dia": rodar antes do merge, senão o envio da prova de estudo falha (coluna `study_prompt` inexistente). A próxima depois dela é a 0018.
+- Estado em 28/10/2026: 0001–0017 rodadas em produção. A próxima é a 0018.
 - Testes do banco: `npm run test:db` (precisa de binários do Postgres 15+; no container da nuvem roda como usuário `postgres` copiando a pasta para um lugar legível).
 
 ## Testes
@@ -39,7 +39,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Unitários: `npm test` (vitest). Também `npm run lint` e `npm run typecheck`.
 - E2E: `e2e/run.sh` roda as etapas `a`…`l` em sequência contra um Supabase local descartável, com Gemini e push simulados (veja `e2e/README.md`). As etapas compartilham estado: rode sempre o conjunto inteiro, num banco limpo. `e2e/setup.sql` faz o teste de digitação durar 3 s em vez de 60.
 - O CI (`.github/workflows/ci.yml`) roda tudo isso em cada PR: "Lint, types, unit and database tests" e "End-to-end (Playwright + axe)".
-- **Preview da Vercel falha em todo PR** desde o #8, antes do build (produção funciona). Causa desconhecida: precisa do log (`npx vercel inspect <deploy> --logs`) que só o usuário consegue. Não é motivo para bloquear PR.
+- **Preview da Vercel**: abre em cada PR (corrigido em 28/10). Do #8 ao #39 falhava em 3 s, antes do build, porque o `CRON_SECRET` do ambiente Preview tinha acentos (a Vercel só aceita ASCII visível em variáveis usadas como cabeçalho). Variável nova na Vercel: só ASCII, sem acento nem aspas curvas. Se o preview voltar a falhar, peça ao usuário o print do erro do deployment (o log só ele vê).
 - Auditoria responsiva: `e2e/responsive-audit.mjs` (veja `e2e/README.md`), rodada à mão depois de mudanças de layout. Nomes e textos quebram linha (`break-words`, `hyphens-auto`), nunca `truncate`: nomes longos já quebraram o Feed e o tribunal.
 - O ambiente local de E2E montado nas sessões da nuvem fica fora do repositório e se perde entre sessões; sem ele, confie no CI ou monte de novo pelo `e2e/README.md`.
 

@@ -32,7 +32,7 @@ O Pacto tem duas camadas:
 Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 semanas → cobrar pelo site (plano por grupo) → Play Store → App Store. Para desconhecidos usarem:
 
 - [ ] **E-mail de login** com SMTP próprio (Resend) no painel do Supabase. Precisa de domínio verificado. (você)
-- [ ] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor. (Claude)
+- [x] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor (PR #35).
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [ ] **Página de apresentação** e **primeiros passos** de um grupo novo (brief do Astra, implementação do Claude).
@@ -40,7 +40,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [ ] **Quando virar empresa e cobrar:** o Marco Civil (Lei 12.965/2014, art. 15) obriga a guardar os registros de acesso (IP, data e hora) por 6 meses, sob sigilo. Hoje não se aplica (pessoa física, sem fins econômicos).
 - [ ] **Revisão jurídica** antes de cobrar: a política e os termos foram conferidos com o texto da LGPD, do CDC e do Marco Civil (repositório ctresb/leis), mas faltam as resoluções da ANPD para pequenos agentes (CD/ANPD nº 2/2022) e uma leitura de advogado.
 - [ ] Conferir em Configurações se você aparece como dono do grupo atual.
-- [ ] **Preview da Vercel falha em todo PR.** Precisa do log: `npx vercel inspect <deploy> --logs`. Corrigindo, dá para testar cada mudança no celular antes do merge.
+- [x] **Preview da Vercel** (28/10): falhava desde o #8 por acentos no `CRON_SECRET` do ambiente Preview. Corrigido na Vercel; agora dá para testar cada mudança no celular antes do merge.
 - [ ] **Domínio** (`pactus.dev.br` no registro.br): trocar **antes** de chamar mais gente, porque o app instalado e os avisos não passam para o endereço novo.
 - [ ] **Astra:** revisar os sprites novos (troféus de prata e bronze, os 6 itens do cardápio) e as ideias de "elementos jurídicos" do ChatGPT.
 - [ ] Alguém que usa Java e TypeScript no dia a dia ler os textos dessas abas.
