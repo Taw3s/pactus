@@ -43,3 +43,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f membership_test.sql
 "${PSQL[@]}" -f ../migrations/0017_study_prompt.sql
 "${PSQL[@]}" -f study_prompt_test.sql
+"${PSQL[@]}" -f ../migrations/0018_membership_log.sql
+"${PSQL[@]}" -f membership_log_test.sql

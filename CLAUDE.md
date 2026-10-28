@@ -31,7 +31,8 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Migrations em `supabase/migrations/NNNN_nome.sql`, rodadas **à mão pelo usuário no SQL Editor**, em ordem. Cada uma confere no início se a anterior foi rodada.
 - Toda migration nova precisa: teste em `supabase/tests/*_test.sql` + linha em `supabase/tests/run.sh`; aviso no PR de que deve ser rodada **antes do merge**.
 - RPCs `security definer` com `set search_path = public`; grants explícitos; RLS em toda tabela.
-- Estado em 28/10/2026: 0001–0017 rodadas em produção. A próxima é a 0018.
+- Estado em 28/10/2026: 0001–0017 rodadas em produção; a 0018 (`membership_log`) está no PR #42, ainda não rodada. A próxima é a 0019.
+- Consultas avulsas (só leitura, não são migrations): `supabase/queries/`. Retenção semana a semana do grupo: `retention.sql`, que conta quem saiu pelo `membership_log` (0018): cada passagem por um grupo guarda entrada, saída e as semanas com prova, sem ligação com a conta depois da saída; o cron diário apaga um ano depois. Quem saiu antes da 0018 não aparece.
 - Testes do banco: `npm run test:db` (precisa de binários do Postgres 15+; no container da nuvem roda como usuário `postgres` copiando a pasta para um lugar legível).
 
 ## Testes
