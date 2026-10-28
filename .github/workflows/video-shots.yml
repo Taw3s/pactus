@@ -1,12 +1,12 @@
-# Screenshots of a demo group for the presentation video (tools/video). Runs by hand or when the
-# demo scripts change on a video/* branch; the shots come out as the "video-shots" artifact.
+# Screenshots of a demo group for the presentation video (tools/video). Runs by hand or when the app or
+# the demo scripts change on a video/* branch; the shots come out as the "video-shots" artifact.
 name: Video shots
 
 on:
   workflow_dispatch:
   push:
     branches: ["video/**"]
-    paths: ["tools/video/demo/**", ".github/workflows/video-shots.yml"]
+    paths: ["tools/video/demo/**", ".github/workflows/video-shots.yml", "src/**"]
 
 # Pushes the shots to the video-shots branch (an orphan branch with only the latest run), so they can be fetched with git.
 permissions:
