@@ -18,7 +18,7 @@ export default async function SettingsPage() {
     signUrls(supabase, [me.avatar_path]),
     getMembers(supabase),
   ]);
-  // oldest first: the first one inherits the group when the owner leaves (same order as leave_group)
+  // oldest first: the first one inherits the group when the owner leaves (same order as _drop_member)
   const others = members
     .filter((m) => m.user_id !== me.user_id)
     .sort((a, b) => a.joined_on.localeCompare(b.joined_on) || a.created_at.localeCompare(b.created_at))
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
         nextWeek={nextMonday(today)}
         dayOffNextWeek={dayOffOn(changes ?? [], nextMonday(today))}
       />
-      <MembershipSettings isOwner={group?.owner_id === me.user_id} others={others} />
+      <MembershipSettings isOwner={group?.owner_id === me.user_id} groupName={group?.name ?? ""} others={others} />
     </>
   );
 }

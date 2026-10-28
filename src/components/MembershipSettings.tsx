@@ -2,69 +2,108 @@
 
 import { Loader, LogOut, Trash2, UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Props {
   isOwner: boolean;
+  groupName: string;
   /** The other members, oldest first (the first one inherits the group if the owner leaves). */
   others: { id: string; name: string }[];
 }
 
+type Member = { id: string; name: string };
+type Outcome = "ok" | "gone" | "failed";
+
+/** POST to /api/membership. A 4xx means the server refused (target gone, no permission); anything else is uncertain. */
+async function post(body: object): Promise<Outcome> {
+  const res = await fetch("/api/membership", { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(20_000) }).catch(() => null);
+  if (res?.ok) return "ok";
+  return res && res.status >= 400 && res.status < 500 ? "gone" : "failed";
+}
+
 /**
- * Leaving the group, removing a member (owner only) and deleting the account. Each asks first and
- * says what happens to the group's history: it stays (payments, accusations and votes keep counting).
+ * Leaving the group, removing a member (owner only) and deleting the account. Removing and leaving
+ * ask in a dialog that says what happens to the group's history: it stays (payments, accusations
+ * and votes keep counting), unless the last person leaves and the group is deleted.
  */
-export function MembershipSettings({ isOwner, others }: Props) {
+export function MembershipSettings({ isOwner, groupName, others }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
+  // The open dialog: removing someone or leaving.
+  const [asking, setAsking] = useState<{ kind: "remove"; member: Member } | { kind: "leave" } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [gone, setGone] = useState(false);
+  // After a removal the dialog stays on "Removendo…" until the list is refreshed, then closes.
+  const [refreshing, startRefresh] = useTransition();
+  const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    if (closing && !refreshing) {
+      setClosing(false);
+      setSending(false);
+      setAsking(null);
+    }
+  }, [closing, refreshing]);
 
-  async function call(key: string, url: string, init: RequestInit) {
-    setBusy(key);
+  function ask(next: NonNullable<typeof asking>) {
+    setError("");
+    setGone(false);
     setMsg("");
-    const res = await fetch(url, init).catch(() => null);
-    setBusy("");
-    if (!res?.ok) {
-      setMsg("Não deu certo. Tente de novo.");
-      return null;
-    }
-    return (await res.json()) as { status: string };
+    setAsking(next);
   }
 
-  async function remove(m: { id: string; name: string }) {
-    if (!confirm(`Remover ${m.name} do grupo? As provas e as dívidas de ${m.name} saem; os pagamentos que recebeu e os votos continuam valendo.`)) return;
-    const r = await call(`remove:${m.id}`, "/api/membership", { method: "POST", body: JSON.stringify({ action: "remove", userId: m.id }) });
-    if (r) {
-      setMsg(`${m.name} saiu do grupo.`);
-      router.refresh();
+  async function confirmAsked() {
+    if (!asking || sending) return;
+    setSending(true);
+    setError("");
+    if (asking.kind === "remove") {
+      const { member } = asking;
+      const r = await post({ action: "remove", userId: member.id });
+      if (r === "ok") {
+        setMsg(`${member.name} foi removido do grupo.`);
+        setClosing(true);
+        startRefresh(() => router.refresh());
+        return;
+      }
+      setSending(false);
+      if (r === "gone") setGone(true);
+      else setError("Não foi possível confirmar a remoção. Confira sua conexão e tente novamente.");
+    } else {
+      const r = await post({ action: "leave" });
+      // Keeps "Saindo…" until the next page shows up.
+      if (r === "ok") return router.replace("/join?step=code");
+      setSending(false);
+      if (r === "gone") setGone(true);
+      else setError("Não foi possível confirmar sua saída. Confira sua conexão e tente novamente.");
     }
-  }
-
-  async function leave() {
-    const heir = others[0]?.name;
-    const what = !heir
-      ? "Você é a última pessoa do grupo: ele será apagado."
-      : isOwner
-        ? `O grupo passa para ${heir}.`
-        : "Suas provas e dívidas saem do grupo; os pagamentos que você recebeu e seus votos continuam valendo.";
-    if (!confirm(`Sair do grupo? ${what}`)) return;
-    const r = await call("leave", "/api/membership", { method: "POST", body: JSON.stringify({ action: "leave" }) });
-    if (r) router.replace("/join?step=code");
   }
 
   async function deleteAccount() {
     const typed = prompt("Excluir a conta apaga seu acesso, suas provas e suas fotos, sem volta. Para confirmar, digite EXCLUIR.");
     if (typed?.trim().toUpperCase() !== "EXCLUIR") return;
-    const r = await call("delete", "/api/account", { method: "DELETE" });
-    if (r) router.replace("/login");
+    setBusy("delete");
+    setMsg("");
+    const res = await fetch("/api/account", { method: "DELETE" }).catch(() => null);
+    setBusy("");
+    if (res?.ok) router.replace("/login");
+    else setMsg("Não deu certo. Tente de novo.");
   }
 
+  // The oldest other member inherits the group (same order as _drop_member); nobody left: it is deleted.
+  const heir = others[0]?.name;
+  // While the dialog closes, keep showing what it asked (no flash of the other dialog's text).
+  const last = useRef(asking);
+  if (asking) last.current = asking;
+  const shown = asking ?? last.current;
+  const removing = shown?.kind === "remove" ? shown.member : null;
   const spin = <Loader size={16} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />;
   return (
     <section className="card mb-4 space-y-4" aria-labelledby="membros" data-testid="membership">
       {isOwner && others.length > 0 && (
         <div>
-          <h2 id="membros" className="pixel text-xl uppercase leading-6">
+          <h2 id="membros" tabIndex={-1} className="pixel text-xl uppercase leading-6">
             Membros
           </h2>
           <p className="text-sm text-muted">Só quem criou o desafio remove alguém.</p>
@@ -72,8 +111,15 @@ export function MembershipSettings({ isOwner, others }: Props) {
             {others.map((m) => (
               <li key={m.id} className="flex min-h-12 items-center gap-3 py-1" data-member-row={m.name}>
                 <span className="min-w-0 flex-1 break-words">{m.name}</span>
-                <button type="button" className="btn-secondary min-h-11 shrink-0 !px-3 text-sm" disabled={!!busy} onClick={() => remove(m)} aria-label={`Remover ${m.name}`}>
-                  {busy === `remove:${m.id}` ? spin : <UserMinus size={16} aria-hidden />}
+                <button
+                  type="button"
+                  className="btn-secondary min-h-11 shrink-0 !px-3 text-sm"
+                  disabled={!!busy}
+                  onClick={() => ask({ kind: "remove", member: m })}
+                  aria-label={`Remover ${m.name}`}
+                  aria-haspopup="dialog"
+                >
+                  <UserMinus size={16} aria-hidden />
                   Remover
                 </button>
               </li>
@@ -82,12 +128,12 @@ export function MembershipSettings({ isOwner, others }: Props) {
         </div>
       )}
       <div>
-        <h2 id={isOwner && others.length > 0 ? undefined : "membros"} className="pixel text-base uppercase text-muted">
+        <h2 id={isOwner && others.length > 0 ? "sair" : "membros"} tabIndex={-1} className="pixel text-base uppercase text-muted">
           Sair
         </h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" className="btn-secondary min-h-11 text-sm" disabled={!!busy} onClick={leave}>
-            {busy === "leave" ? spin : <LogOut size={16} aria-hidden />}
+          <button type="button" className="btn-secondary min-h-11 text-sm" disabled={!!busy} onClick={() => ask({ kind: "leave" })} aria-haspopup="dialog">
+            <LogOut size={16} aria-hidden />
             Sair do grupo
           </button>
           <button type="button" className="btn-secondary min-h-11 text-sm" disabled={!!busy} onClick={deleteAccount}>
@@ -108,6 +154,55 @@ export function MembershipSettings({ isOwner, others }: Props) {
           Termos de uso
         </a>
       </p>
+
+      <ConfirmDialog
+        open={!!asking}
+        variant="danger"
+        sprite="evidenceFolder"
+        title={removing ? `Remover ${removing.name} do grupo?` : `Sair de ${groupName}?`}
+        confirmLabel={removing ? "Remover do grupo" : "Sair do grupo"}
+        confirmIcon={removing ? <UserMinus size={16} aria-hidden /> : <LogOut size={16} aria-hidden />}
+        cancelLabel={removing ? "Cancelar" : "Continuar no grupo"}
+        busy={sending}
+        busyLabel={removing ? "Removendo…" : "Saindo…"}
+        error={error}
+        notice={
+          gone
+            ? {
+                message: "Esta ação não está mais disponível. Atualize a lista para continuar.",
+                actionLabel: "Atualizar lista",
+                onAction: () => {
+                  setAsking(null);
+                  router.refresh();
+                },
+              }
+            : null
+        }
+        onConfirm={confirmAsked}
+        onCancel={() => setAsking(null)}
+        fallbackFocus={() => document.getElementById("membros") ?? document.getElementById("sair")}
+      >
+        {removing ? (
+          <>
+            <p>
+              {removing.name} perderá o acesso a este grupo. As provas, fotos e dívidas dessa pessoa serão removidas do grupo. Os pagamentos que ela recebeu, as
+              acusações e os votos continuam valendo no histórico.
+            </p>
+            <p className="font-semibold">Remover do grupo não exclui a conta da pessoa.</p>
+          </>
+        ) : (
+          <>
+            <p>
+              Você perderá o acesso a este grupo.{" "}
+              {heir
+                ? "Suas provas, fotos e dívidas serão removidas dele. Os pagamentos que você recebeu, suas acusações e seus votos continuam valendo no histórico."
+                : "Você é a última pessoa. Ao sair, o grupo e seu histórico serão apagados."}
+            </p>
+            {isOwner && heir && <p data-testid="heir">{heir} ficará responsável pelo grupo.</p>}
+            <p className="font-semibold">Sua conta continuará existindo.</p>
+          </>
+        )}
+      </ConfirmDialog>
     </section>
   );
 }

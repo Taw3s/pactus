@@ -59,6 +59,7 @@ Stack: Next.js 15 (App Router, React 19), Tailwind 4, Supabase (Postgres + RLS +
 - Logo e ícones do app: o busto do juiz low poly (sobrancelha erguida, desconfiado) sobre o amarelo `#ffcd38`, gerado por `tools/lowpoly/icons.mjs` em `public/icons`. A identidade é low poly, não pixel art: não desenhe a logo em grade de pixels (a v1 assim foi recusada).
 - Pergunta do dia do estudo: `src/lib/study-prompts.ts` (ids gravados em `checkins.study_prompt`, não renomear nem reaproveitar). A avaliação da resposta pela IA (`checkin_reviews.answer_check`) só informa: nunca muda o veredito nem abre tribunal.
 - Guia do juiz (perguntas fixas): `src/lib/guide.ts` — atualize quando mudar uma regra.
+- Confirmações (rodada 4, peça 3): `src/components/ui/ConfirmDialog.tsx`, `<dialog>` modal com variantes `danger` (remover, sair: `btn-danger`, vermelho sobre vinho) e `neutral` (registrar recebimento: amarelo). Foco começa em Cancelar e volta ao botão que abriu (ou a um alvo de reserva quando a linha some); no celular a ação principal fica em cima, no desktop à direita, e a ordem do DOM segue a visual. Nada de `confirm()` nativo; só excluir a conta ainda usa `prompt()` (fora do escopo da rodada 4). Recebimento não tem desfazer (sem grant de update/delete em `payments`); resposta perdida → o botão consulta se o pagamento existe antes de dizer que falhou.
 
 ## Decisões que não se rediscutem
 
