@@ -181,29 +181,59 @@ export default async function Home() {
   );
 }
 
+/** A wooden shelf on the wall, its objects standing on it (with the hard shadow of the panels). */
+function Shelf({ items, scale = 1, className }: { items: SpriteName[]; scale?: 1 | 2; className: string }) {
+  return (
+    <div className={`absolute flex flex-col items-center ${className}`}>
+      <div className="flex items-end gap-1 px-1">
+        {items.map((n) => (
+          <Sprite key={n} name={n} scale={scale} />
+        ))}
+      </div>
+      <div className="-mt-2 h-3 w-full rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[3px_3px_0_var(--color-hard-shadow)]" />
+    </div>
+  );
+}
+
+const WALL = "bg-[repeating-linear-gradient(90deg,#4a2a12_0_2px,#5e3518_2px_22px,#55301a_22px_24px)]";
+const FLOOR = "bg-[repeating-conic-gradient(#2e3238_0_25%,#33373e_0_50%)] bg-[length:24px_24px]";
+
 /**
- * The judge behind the desk with the proof folder, on the wall-and-shelf of the entry screens.
- * Phone: judge 96 px and folder 48 px, at most 144 px tall. Wide: judge 144, folder 96, the three
- * goal objects at 48. Whole-number scales only; the label carries the meaning if a sprite fails.
+ * The courtroom of the tribunal screen, in miniature: wood-panelled wall, the judge standing behind
+ * the bench (his lower half hidden by it) with the proof folder on top, the three goal objects on
+ * shelves, a rail and a tiled floor. Phone: judge 96 px, folder 48, at most 144 px tall. Wide:
+ * judge 144, folder 96, objects 48. Whole-number scales only; the caption carries the meaning.
  */
 function JudgeScene() {
   return (
     <figure className="mt-8 max-w-[440px] min-[72rem]:mt-0">
-      <div
-        aria-hidden
-        className="relative h-[144px] overflow-hidden rounded-sm border-2 border-bevel-dark bg-[#303747] shadow-[4px_4px_0_var(--color-hard-shadow)] min-[72rem]:h-[288px]"
-      >
-        <div className="absolute inset-x-0 bottom-0 h-3 border-t-2 border-wood bg-wood-dark" />
-        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-end gap-2 min-[72rem]:hidden">
-          <Sprite name="judge-idle1" scale={2} />
-          <Sprite name="evidenceFolder" />
+      <div aria-hidden className="card relative overflow-hidden !p-0">
+        {/* phone */}
+        <div className="min-[72rem]:hidden">
+          <div className={`relative h-[132px] ${WALL}`}>
+            <Shelf items={["notebook", "keyboard"]} className="left-2 top-6 min-[360px]:left-3" />
+            <Shelf items={["openBook"]} className="right-2 top-6 min-[360px]:right-5" />
+            <div className="absolute bottom-0 left-1/2 h-[96px] w-[96px] -translate-x-1/2">
+              <Sprite name="judge-idle1" scale={2} className="absolute -top-3 left-0" />
+              <Sprite name="benchFront" scale={2} className="absolute bottom-0 left-0" />
+              <Sprite name="evidenceFolder" className="absolute -right-4 bottom-[26px]" />
+            </div>
+          </div>
+          <div className="h-3 border-t-2 border-wood bg-wood-dark" />
         </div>
-        <div className="absolute bottom-2 left-1/2 hidden -translate-x-1/2 items-end gap-2 min-[72rem]:flex">
-          <Sprite name="notebook" />
-          <Sprite name="judge-idle1" scale={3} />
-          <Sprite name="evidenceFolder" scale={2} />
-          <Sprite name="keyboard" />
-          <Sprite name="openBook" />
+        {/* wide */}
+        <div className="hidden min-[72rem]:block">
+          <div className={`relative h-[228px] ${WALL}`}>
+            <Shelf items={["notebook", "keyboard"]} className="left-4 top-10" />
+            <Shelf items={["openBook"]} className="right-6 top-10" />
+            <div className="absolute bottom-0 left-1/2 h-[144px] w-[144px] -translate-x-1/2">
+              <Sprite name="judge-idle1" scale={3} className="absolute -top-8 left-0" />
+              <Sprite name="benchFront" scale={3} className="absolute bottom-0 left-0" />
+              <Sprite name="evidenceFolder" scale={2} className="absolute -right-5 bottom-[36px]" />
+            </div>
+          </div>
+          <div className="h-3 border-t-2 border-wood bg-wood-dark" />
+          <div className={`h-12 ${FLOOR}`} />
         </div>
       </div>
       <figcaption className="mt-2 text-sm text-muted">As provas ficam na mesa.</figcaption>
