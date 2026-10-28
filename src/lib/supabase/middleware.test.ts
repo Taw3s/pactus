@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { isPublicPath } from "./middleware";
 
 describe("isPublicPath", () => {
-  it("opens the presentation, the entry screens and the legal pages", () => {
-    for (const p of ["/", "/login", "/join", "/auth/confirm", "/privacidade", "/termos", "/api/cron/remind"]) expect(isPublicPath(p), p).toBe(true);
+  it("opens the presentation, the entry screens, the legal pages and the support page", () => {
+    for (const p of ["/", "/login", "/join", "/auth/confirm", "/privacidade", "/termos", "/apoiar", "/api/cron/remind"]) expect(isPublicPath(p), p).toBe(true);
   });
 
   it("keeps every app screen and API private (making / public opens nothing below it)", () => {

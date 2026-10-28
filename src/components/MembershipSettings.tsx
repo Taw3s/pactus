@@ -4,6 +4,7 @@ import { Loader, LogOut, Trash2, UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SUPPORT_URL } from "@/lib/support";
 
 interface Props {
   isOwner: boolean;
@@ -153,6 +154,14 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
         <a href="/termos" className="inline-flex min-h-11 items-center underline">
           Termos de uso
         </a>
+        {SUPPORT_URL && (
+          <>
+            <span aria-hidden> · </span>
+            <a href="/apoiar" className="inline-flex min-h-11 items-center underline">
+              Apoiar o projeto
+            </a>
+          </>
+        )}
       </p>
 
       <ConfirmDialog
