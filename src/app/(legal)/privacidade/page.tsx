@@ -47,6 +47,11 @@ export default function PrivacyPage() {
         O Pacto <b>não</b> coleta sua localização nem seus contatos, não usa ferramentas de análise de comportamento, não mostra anúncios e não
         vende dados. O único cookie é o da sua sessão de login.
       </p>
+      <p>
+        No próprio aparelho, o navegador guarda marcações de tela que não saem dele nem vão para o servidor, como o andamento dos primeiros passos
+        na tela Hoje (se você copiou o link de convite, se marcou que entendeu o combinado e se recolheu o cartão), separado por conta e por grupo.
+        Limpar os dados do site no navegador apaga essas marcações. O link de convite leva só o código do grupo, nunca o seu e-mail ou a sua conta.
+      </p>
 
       <h2>Quem vê</h2>
       <p>

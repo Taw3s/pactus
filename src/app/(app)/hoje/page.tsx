@@ -1,26 +1,44 @@
 import { ChestsPanel } from "@/components/ChestsPanel";
+import { FirstSteps } from "@/components/FirstSteps";
 import { PageHeader } from "@/components/PageHeader";
 import { GroupSidebar } from "@/components/GroupSidebar";
 import { PendingReviews } from "@/components/PendingReviews";
 import { Scoreboard, type GoalState } from "@/components/Scoreboard";
 import { TodayChecklist } from "@/components/TodayChecklist";
 import { collectible, weekStart } from "@/lib/collectibles";
-import { formatDayPt, spToday, weekdayOf } from "@/lib/dates";
+import { addDays, formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
-import { currentStreak, dayOffOn, STREAK_MILESTONES } from "@/lib/ledger";
+import { isDebtItem } from "@/lib/debt-items";
+import { currentStreak, dayOffOn, itemsOn, STREAK_MILESTONES } from "@/lib/ledger";
 import { photoIsOlder } from "@/lib/photo-date";
 import { typingLabel, DEVICE_LABEL } from "@/lib/typing";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function TodayPage() {
+// "Primeiros passos" shows up for someone new: no proof of the three goals yet, or joined in the last week.
+const FIRST_STEPS_DAYS = 7;
+
+export default async function TodayPage({ searchParams }: { searchParams: Promise<{ primeiros?: string }> }) {
   const { supabase, me } = await requireMember();
+  const reopenFirstSteps = (await searchParams).primeiros === "1";
   const today = spToday();
 
   const monday = weekStart(today);
   // One round trip: the AI verdict comes embedded; the group's dispute results are few.
-  const [{ data: checkins }, { data: changes }, { data: results }, members, { data: chests }, { data: weekRows }, { data: typingRows }, { data: doneRows }] = await Promise.all([
+  const [
+    { data: checkins },
+    { data: changes },
+    { data: results },
+    members,
+    { data: chests },
+    { data: weekRows },
+    { data: typingRows },
+    { data: doneRows },
+    { count: proofCount },
+    { data: group },
+    { data: menuRows },
+  ] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
@@ -29,7 +47,14 @@ export default async function TodayPage() {
     supabase.rpc("my_weekly_progress"),
     supabase.from("typing_tests").select("wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
+    supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", me.user_id).in("goal", GOALS.map((g) => g.id)),
+    supabase.from("groups").select("invite_code").maybeSingle<{ invite_code: string }>(),
+    supabase.from("debt_menus").select("effective_from, items").order("effective_from"),
   ]);
+  const firstProof = (proofCount ?? 0) > 0;
+  const menus = ((menuRows ?? []) as { effective_from: string; items: string[] }[]).map((m) => ({ effective_from: m.effective_from, items: m.items.filter(isDebtItem) }));
+  const menuNext = menus.filter((m) => m.effective_from > today).at(-1);
+  const showFirstSteps = !!group && (reopenFirstSteps || !firstProof || me.joined_on >= addDays(today, -FIRST_STEPS_DAYS));
   const completedDays = new Set((doneRows ?? []).map((r) => r.day as string));
   const streakDays = currentStreak({ joinedOn: me.joined_on, dayOffChanges: changes ?? [], completedDays }, today);
   const streak = {
@@ -93,6 +118,18 @@ export default async function TodayPage() {
       <div className="min-w-0">
         <PendingReviews ids={unreviewed} />
         <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
+        {showFirstSteps && (
+          <FirstSteps
+            userId={me.user_id}
+            groupId={me.group_id}
+            inviteCode={group.invite_code}
+            menuToday={itemsOn(menus, today)}
+            menuNext={menuNext ? { from: menuNext.effective_from, items: menuNext.items } : null}
+            firstProof={firstProof}
+            alone={members.length <= 1}
+            reopen={reopenFirstSteps}
+          />
+        )}
         <Scoreboard isOff={isOff} states={states} streak={streak} verified={verified ? { day: today, userId: me.user_id } : null} />
         {/* With goals pending, sending proofs comes first; once the day is closed, the chest comes up. */}
         {dayComplete && chestsPanel}

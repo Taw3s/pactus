@@ -1,6 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { GroupTabs } from "@/components/GroupTabs";
-import { MonthNav, monthName } from "@/components/MonthNav";
+import { MonthNav } from "@/components/MonthNav";
 import { PageHeader } from "@/components/PageHeader";
 import { Podium } from "@/components/Podium";
 import { lastDayOfMonth, monthKey, spToday } from "@/lib/dates";
@@ -135,7 +135,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
           <h2 id="classificacao" className="pixel mb-2 text-lg uppercase">
             Classificação completa
           </h2>
-          {everyoneZero && <p className="mb-2 text-sm text-muted">Ninguém pontuou em {monthName(month).toLowerCase()} ainda.</p>}
+          {everyoneZero && <p className="mb-2 text-sm text-muted">O ranking começa com as primeiras atividades. Cumpra as metas para começar a pontuar.</p>}
           <ol className="space-y-2" data-testid="ranking">
             {scores.map((s, i) => {
               const member = byId.get(s.userId)!;

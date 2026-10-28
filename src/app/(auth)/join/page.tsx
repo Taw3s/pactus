@@ -10,6 +10,7 @@ import { AuthShell, Notice } from "@/components/AuthShell";
 import { GoogleButton, googleEnabled } from "@/components/GoogleButton";
 import { MenuPicker } from "@/components/MenuPicker";
 import { DEFAULT_MENU, type DebtItem } from "@/lib/debt-items";
+import { INVITE_PARAM, joinStepPath, normalizeInvite } from "@/lib/invite";
 
 function JoinForm() {
   const router = useRouter();
@@ -20,7 +21,10 @@ function JoinForm() {
   const [creating, setCreating] = useState(params.get("criar") === "1");
   const [groupName, setGroupName] = useState("");
   const [menu, setMenu] = useState<DebtItem[]>(DEFAULT_MENU);
-  const [code, setCode] = useState("");
+  // ?convite=CODE (the invite link): the code comes filled in, and is still checked by the server.
+  const invited = normalizeInvite(params.get(INVITE_PARAM));
+  const [code, setCode] = useState(invited);
+  const [inviteState, setInviteState] = useState<"" | "valid" | "invalid">("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +35,22 @@ function JoinForm() {
   // Signed in but not in a group yet. Ask the server who this is: a session left over from a
   // deleted account still looks valid in the browser, so send it back to the login.
   // Otherwise suggest the name from the Google account.
+  // An invite link opened while already signed in (no group yet): skip the sign-up, keep the code.
+  useEffect(() => {
+    if (!invited || codeOnly) return;
+    createClient()
+      .auth.getSession()
+      .then(({ data }) => data.session && router.replace(joinStepPath(invited)));
+  }, [invited, codeOnly, router]);
+
+  // Say early whether the link's code exists (same check as on submit; a network failure says nothing).
+  useEffect(() => {
+    if (!invited) return;
+    createClient()
+      .rpc("check_invite_code", { p_code: invited })
+      .then(({ data, error }) => !error && setInviteState(data ? "valid" : "invalid"));
+  }, [invited]);
+
   useEffect(() => {
     if (!codeOnly) return;
     const supabase = createClient();
@@ -149,15 +169,31 @@ function JoinForm() {
       ) : (
         googleEnabled && (
           <>
-            <GoogleButton />
-            <p className="text-center text-sm text-muted">Com o Google, você digita o código depois. Ou crie a conta com e-mail:</p>
+            <GoogleButton next={creating ? undefined : joinStepPath(normalizeInvite(code) || invited)} />
+            <p className="text-center text-sm text-muted">
+              {!creating && (normalizeInvite(code) || invited) ? "Com o Google, o código vai junto." : "Com o Google, você digita o código depois."} Ou crie a
+              conta com e-mail:
+            </p>
           </>
         )
       )}
       {!creating && (
         <div>
           <label className="label" htmlFor="code">Código de convite</label>
-          <input id="code" className="input uppercase tracking-widest" required autoCapitalize="characters" value={code} onChange={(e) => setCode(e.target.value)} />
+          <input
+            id="code"
+            className="input uppercase tracking-widest"
+            required
+            autoCapitalize="characters"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            aria-describedby={invited ? "invite-state" : undefined}
+          />
+          {invited && code.trim().toUpperCase() === invited && inviteState && (
+            <p id="invite-state" className={`mt-1 text-sm ${inviteState === "valid" ? "text-muted" : "text-fail"}`} role="status">
+              {inviteState === "valid" ? "Código do convite preenchido." : "Este convite não é válido. Confira o link ou peça um novo."}
+            </p>
+          )}
         </div>
       )}
       {creating && codeOnly && (
@@ -206,7 +242,10 @@ function JoinForm() {
       {!codeOnly && (
         <p className="text-center text-sm text-muted">
           Já tem conta?{" "}
-          <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-accent underline">
+          <Link
+            href={!creating && (normalizeInvite(code) || invited) ? `/login?next=${encodeURIComponent(joinStepPath(normalizeInvite(code) || invited))}` : "/login"}
+            className="inline-flex min-h-11 items-center font-semibold text-accent underline"
+          >
             Fazer login
           </Link>
         </p>

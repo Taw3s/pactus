@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { authErrorPt } from "@/lib/auth-errors";
-import { confirmUrl } from "@/lib/site";
+import { confirmUrl, safeNextPath } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
 import { GoogleButton, googleEnabled } from "@/components/GoogleButton";
 
@@ -24,6 +24,8 @@ function LoginForm() {
         : "",
   );
   const [sent, setSent] = useState(false);
+  // ?next=: back to where the person was going (an invite link keeps its code through the login).
+  const next = typeof window === "undefined" ? "/hoje" : safeNextPath(params.get("next"), window.location.origin);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,13 +39,13 @@ function LoginForm() {
         setBusy(false);
         return;
       }
-      router.replace("/hoje");
+      router.replace(next);
       router.refresh();
     } else {
       // shouldCreateUser: false -> magic link never creates accounts; joining needs an invite.
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false, emailRedirectTo: confirmUrl() },
+        options: { shouldCreateUser: false, emailRedirectTo: confirmUrl(next) },
       });
       setBusy(false);
       if (error) setError(authErrorPt(error.message));
@@ -64,7 +66,7 @@ function LoginForm() {
     <form onSubmit={submit} className="space-y-4">
       {googleEnabled && (
         <>
-          <GoogleButton />
+          <GoogleButton next={next} />
           <p className="text-center text-sm text-muted">ou com e-mail</p>
         </>
       )}
