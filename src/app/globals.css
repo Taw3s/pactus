@@ -244,6 +244,24 @@ body {
   }
 }
 
+/* Destructive confirmation (remove, leave): red on dark wine, never the yellow CTA. #ff9696 on #4a272b = 6.2:1. */
+@utility btn-danger {
+  @apply btn bg-fail-bg text-fail;
+  border-color: var(--color-fail);
+  box-shadow: 3px 3px 0 var(--color-hard-shadow);
+  &:active {
+    box-shadow: 1px 1px 0 var(--color-hard-shadow);
+  }
+  &:disabled {
+    background: #2f3238;
+    color: var(--color-muted);
+    border-color: var(--color-divider);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+  }
+}
+
 @utility label {
   @apply mb-1 block text-sm font-medium text-muted;
 }

@@ -3,7 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { PayButton } from "@/components/PayButton";
+import { PayButton, receiptId } from "@/components/PayButton";
 import { Sprite } from "@/components/Sprite";
 import { Badge } from "@/components/ui/Badge";
 import { DEBT_ITEM, itemCount, type DebtItem } from "@/lib/debt-items";
@@ -92,7 +92,7 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
                   // A received item becomes its own receipt; the rest of the day keeps its action.
                   if (receivedBy) {
                     return (
-                      <li key={item} className="receipt my-2" data-receipt={item}>
+                      <li key={item} id={receiptId(debtorId, d.day, item)} tabIndex={-1} className="receipt my-2" data-receipt={item}>
                         <p className="pixel text-lg leading-6">Recebimento registrado</p>
                         <p className="mt-1 flex items-center gap-2 text-sm">
                           <Sprite name={DEBT_ITEM[item].sprite} />
@@ -116,7 +116,7 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
                       {isMe ? (
                         <span className="text-sm text-muted">Em aberto</span>
                       ) : (
-                        <PayButton debtorId={debtorId} debtorName={name} day={d.day} item={item} />
+                        <PayButton debtorId={debtorId} debtorName={name} day={d.day} dayLabel={d.label} item={item} />
                       )}
                     </li>
                   );

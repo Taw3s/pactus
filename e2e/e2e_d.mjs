@@ -1,6 +1,7 @@
 // Stage (d): debts, history, settings. Dates are relative to today (see dates.mjs and seed.sql).
 import { CAIO_JOIN, JOIN, OFF, PREV_MONTH, T, TODAY, WEEKDAYS_PT, ddmm, lastOfPrevMonth, monthKey, monthName, nextMonday, owedDays, weekday } from "./dates.mjs";
-import { APP, FIXTURE, SHOTS, assert, done, launch, loginAs, step } from "./lib.mjs";
+import AxeBuilder from "@axe-core/playwright";
+import { APP, FIXTURE, SHOTS, assert, done, launch, loginAs, sql, step } from "./lib.mjs";
 
 const browser = await launch();
 const as = (email) => loginAs(browser, email);
@@ -40,16 +41,71 @@ await step("last month's unpaid debts are flagged 'atrasada' but still owed", as
 await step("nobody can mark their own debt; others see 'Recebi'", async () => {
   await davi.locator("[data-debtor=Davi] button[aria-expanded]").click();
   await davi.locator("[data-debtor=Davi]").getByText("Em aberto").first().waitFor();
-  assert((await davi.locator("[data-debtor=Davi] button:has-text('Recebi')").count()) === 0, "self pay button");
+  assert((await davi.locator("[data-debtor=Davi]").getByRole("button", { name: /^Recebi / }).count()) === 0, "self pay button");
   await davi.locator("[data-debtor=Bia] button[aria-expanded]").click();
-  assert((await davi.locator("[data-debtor=Bia] button:has-text('Recebi')").count()) === 8, "8 buttons for Bia (4 days × 2 items)");
+  assert((await davi.locator("[data-debtor=Bia]").getByRole("button", { name: /^Recebi / }).count()) === 8, "8 buttons for Bia (4 days × 2 items)");
 });
 
-await step("receiver marks a Coca as paid; balance and history update", async () => {
+const dialog = davi.locator("dialog[open]");
+const focused = (page) => page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.id || document.activeElement?.textContent);
+const biaSummary = () => text(davi.locator("[data-debtor=Bia]").getByTestId("summary"));
+
+await step("'Recebi' asks first: item, person and day, no undo; Escape cancels and focus goes back", async () => {
+  const label = `Recebi 1 Coca de Bia, ${ddmm(T(-5))}`;
+  await davi.getByRole("button", { name: label }).click();
+  await dialog.getByRole("heading", { name: "Registrar recebimento?" }).waitFor();
+  const summary = await text(dialog.getByTestId("pay-summary"));
+  assert(summary.includes("Item: 1 Coca") && summary.includes("De: Bia") && summary.includes("Dia da dívida:"), summary);
+  await dialog.getByText("Não há opção de desfazer no app.").waitFor();
+  assert((await focused(davi)) === "Cancelar", `initial focus on ${await focused(davi)}`);
+  const axe = await new AxeBuilder({ page: davi }).include("dialog[open]").withTags(["wcag2a", "wcag2aa"]).analyze();
+  assert(axe.violations.length === 0, axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(", ")}`).join("; "));
+  await davi.screenshot({ path: `${SHOTS}/d2-registrar-recebimento.png` });
+  await davi.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached" });
+  assert((await focused(davi)) === label, `focus after Escape on ${await focused(davi)}`);
+  assert((await biaSummary()) === "4 Cocas · 4 salgados", "paid anyway");
+});
+
+await step("receiver confirms a Coca: only that item of that day becomes a receipt (focus on it)", async () => {
   await davi.getByRole("button", { name: `Recebi 1 Coca de Bia, ${ddmm(T(-5))}` }).click();
+  await dialog.getByRole("button", { name: "Registrar recebimento" }).click();
   await davi.locator("[data-debtor=Bia]").getByText("3 Cocas · 4 salgados").waitFor();
-  // The row stays open after the refresh and shows who received it.
+  await dialog.waitFor({ state: "detached" });
+  // The row stays open after the refresh and shows who received it; the salgado of that day stays open.
   await davi.locator("[data-debtor=Bia]").getByText("Recebido por Davi").waitFor();
+  await davi.getByRole("button", { name: `Recebi 1 salgado de Bia, ${ddmm(T(-5))}` }).waitFor();
+  assert(String(await focused(davi)).startsWith("receipt-"), `focus after paying on ${await focused(davi)}`);
+});
+
+await step("a lost answer is not a failure: the payment is looked up, not inserted twice", async () => {
+  // The insert reaches the database, but the browser never sees the answer.
+  await davi.route("**/rest/v1/payments*", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fetch();
+    await route.abort("failed");
+  });
+  await davi.getByRole("button", { name: `Recebi 1 salgado de Bia, ${ddmm(T(-5))}` }).click();
+  await dialog.getByRole("button", { name: "Registrar recebimento" }).click();
+  await davi.locator("[data-debtor=Bia]").getByText("3 Cocas · 3 salgados").waitFor();
+  await dialog.waitFor({ state: "detached" });
+  await davi.unroute("**/rest/v1/payments*");
+  const n = sql(`select count(*) from payments p join members m on m.user_id = p.debtor_id where m.display_name = 'Bia' and p.day = '${T(-5)}' and p.item = 'snack'`);
+  assert(n === "1", `${n} payments`);
+});
+
+await step("an item someone else already registered says so instead of failing", async () => {
+  await davi.getByRole("button", { name: `Recebi 1 Coca de Bia, ${ddmm(T(-4))}` }).click();
+  await dialog.getByRole("heading", { name: "Registrar recebimento?" }).waitFor();
+  sql(`alter table payments disable trigger payments_before_insert;
+    insert into payments (group_id, debtor_id, day, item, received_by, received_name)
+    select m.group_id, m.user_id, '${T(-4)}', 'coke', a.user_id, a.display_name from members m, members a where m.display_name = 'Bia' and a.display_name = 'Ana' and a.group_id = m.group_id;
+    alter table payments enable trigger payments_before_insert;`);
+  await dialog.getByRole("button", { name: "Registrar recebimento" }).click();
+  await dialog.getByText("Este item já tem recebimento registrado.").waitFor();
+  await dialog.getByRole("button", { name: "Voltar para dívidas" }).click();
+  await dialog.waitFor({ state: "detached" });
+  await davi.locator("[data-debtor=Bia]").getByText("2 Cocas · 3 salgados").waitFor();
 });
 
 const ana = await as("ana@pacto.test");

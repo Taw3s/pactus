@@ -1,6 +1,6 @@
 # Pacto — ideias, decisões e pendências
 
-Documento vivo: anote aqui o que for surgindo. Atualizado em 27/10/2026.
+Documento vivo: anote aqui o que for surgindo. Atualizado em 28/10/2026.
 
 ## Visão
 
@@ -25,6 +25,8 @@ O Pacto tem duas camadas:
 - [x] **Palavras "se mexendo" no teste de digitação** (feedback do grupo, 26/10): a partir da 40ª palavra a tela apagava a mais antiga e todas as quebras de linha mudavam. Corrigido no PR seguinte ao #26.
 - [x] **Não dava para voltar e corrigir uma palavra** (feedback do grupo): agora Backspace numa palavra vazia volta para a anterior, se ela estiver errada (como no Monkeytype). No celular depende do teclado mandar o evento de apagar; conferir no Android e no iPhone.
 - [x] **Leitura "pendente" que não deixava enviar** (Daniel, 26/10): o envio tinha funcionado, mas a tela não atualizou; o segundo envio dava "já enviada". Agora o app atualiza a tela em vez de mostrar erro.
+- [ ] **Excluir a conta ainda usa `prompt()` nativo** (digitar EXCLUIR). A rodada 4 trocou só remover, sair e receber pelo diálogo novo; levar a exclusão para o `ConfirmDialog` exige brief do Astra.
+- [ ] **E2E do botão do Google pode falhar por corrida** (`e2e_k`): conta o botão logo após o `goto`, antes da hidratação. Passou no CI até aqui; se falhar, trocar `count()` por `waitFor()`.
 - [ ] Ouvir o grupo sobre o que mais está "horrível" no teste de digitação depois dessas correções (pedir prints ou vídeo).
 
 ## Pendências de lançamento
