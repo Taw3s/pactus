@@ -73,9 +73,11 @@ export default function PrivacyPage() {
           <b>Vercel:</b> hospedagem do app.
         </li>
         <li>
-          <b>Google (API Gemini):</b> o juiz IA envia a foto, os números e, no estudo, a pergunta do dia com a sua resposta para a IA do Google conferir se batem. O Google trata
-          esses dados pelos termos da API Gemini; dependendo do plano usado, pode usá-los para melhorar os próprios serviços. O juiz IA não decide
-          nada sozinho: a decisão é sempre do grupo.
+          <b>Google (API Gemini):</b> o juiz IA envia a foto, os números e, no estudo, a pergunta do dia com a sua resposta para a IA do Google conferir se batem. Usamos o plano
+          gratuito da API Gemini, e os termos desse plano permitem ao Google usar o que enviamos (e as respostas da IA) para melhorar e
+          desenvolver os próprios produtos, inclusive com revisão por pessoas, depois de separar os dados da conta do Pacto no Google. Por
+          isso, evite mostrar nas fotos o seu rosto, documentos ou qualquer coisa que você não queira que outras pessoas vejam. O juiz IA não
+          decide nada sozinho: a decisão é sempre do grupo.
         </li>
         <li>
           <b>Serviços de aviso do navegador</b> (Google, Apple ou Mozilla, conforme o seu aparelho): entregam os avisos que você ativou.
