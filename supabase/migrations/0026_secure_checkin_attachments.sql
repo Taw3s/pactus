@@ -6,7 +6,21 @@ do $$ begin
   end if;
 end $$;
 
-alter table public.checkins add column project_url text;
+-- Some production databases already have this optional field from an earlier manual setup.
+-- Reuse it when present; reject unexpected types instead of silently accepting a bad schema.
+do $$
+declare
+  v_type text;
+begin
+  select format_type(a.atttypid, a.atttypmod) into v_type
+  from pg_attribute a
+  where a.attrelid = 'public.checkins'::regclass and a.attname = 'project_url' and not a.attisdropped;
+  if v_type is null then
+    alter table public.checkins add column project_url text;
+  elsif v_type <> 'text' then
+    raise exception 'public.checkins.project_url must be text, found %', v_type;
+  end if;
+end $$;
 alter table public.checkins
   add constraint project_url_format check (
     project_url is null or (
