@@ -164,7 +164,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         </div>
       </div>
       <p className="tabular mx-4 mt-2 text-center text-sm text-muted">
-        Maioria: {result.majority} de {result.eligible} jurados.
+        Decide quem chegar a {result.majority} dos {result.eligible} votos.
         {open && ` Se ninguém chegar lá até ${when(result.closes_at)}, vence quem tiver mais votos; empate mantém a prova.`}
       </p>
 
