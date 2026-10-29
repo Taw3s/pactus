@@ -105,10 +105,16 @@ await step("a member deletes the account (typing EXCLUIR): the user, the photos 
     alter table payments enable trigger payments_before_insert;`);
   assert(sql(`select count(*) from payments where received_name = '${name}'`) !== "0", "no receipt to check");
   const p = await loginAs(browser, deleter);
-  p.removeAllListeners("dialog");
-  p.on("dialog", (d) => d.accept("excluir"));
   await p.goto(`${APP}/config`);
   await p.getByRole("button", { name: "Excluir minha conta" }).click();
+  const dialog = p.locator("dialog[open]");
+  await dialog.getByRole("heading", { name: "Excluir minha conta?" }).waitFor();
+  const confirm = dialog.getByRole("button", { name: "Excluir minha conta" });
+  assert(await confirm.isDisabled(), "action enabled before typing EXCLUIR");
+  assert((await p.evaluate(() => document.activeElement?.textContent?.trim())) === "Cancelar", "initial focus not on Cancelar");
+  // Outer spaces and case don't matter, as with the old prompt.
+  await dialog.getByLabel("Digite EXCLUIR para confirmar").fill("  excluir ");
+  await confirm.click();
   await p.waitForURL("**/login**");
   assert(sql(`select count(*) from auth.users where id = '${id}'`) === "0", "the account still exists");
   assert(files(id) === 0, "photos left behind");
@@ -155,11 +161,18 @@ await step("the last person leaving is told the group and its history go; then i
 
 await step("a wrong confirmation deletes nothing", async () => {
   const p = await loginAs(browser, ownerEmail);
-  p.removeAllListeners("dialog");
-  p.on("dialog", (d) => d.accept("sim"));
   await p.goto(`${APP}/config`);
   await p.getByRole("button", { name: "Excluir minha conta" }).click();
+  const dialog = p.locator("dialog[open]");
+  const field = dialog.getByLabel("Digite EXCLUIR para confirmar");
+  await field.fill("sim");
+  assert(await dialog.getByRole("button", { name: "Excluir minha conta" }).isDisabled(), "action enabled with a wrong word");
+  // Enter in the field never deletes by itself, even with the right word.
+  await field.fill("EXCLUIR");
+  await field.press("Enter");
   await p.waitForTimeout(800);
+  await dialog.getByRole("button", { name: "Cancelar" }).click();
+  await dialog.waitFor({ state: "detached" });
   assert(p.url().includes("/config"), "left the page");
   assert(sql(`select count(*) from auth.users where email = '${ownerEmail}'`) === "1", "deleted anyway");
   await p.context().close();

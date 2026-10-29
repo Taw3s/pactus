@@ -26,6 +26,8 @@ interface Props {
   cancelLabel?: string;
   busy: boolean;
   busyLabel: string;
+  /** Keeps the action off until the caller's own check passes (e.g. a typed confirmation). */
+  confirmDisabled?: boolean;
   error?: string;
   notice?: DialogNotice | null;
   onConfirm: () => void;
@@ -41,7 +43,7 @@ interface Props {
  * button that opened it. DOM order follows the visual order in each layout (no CSS reordering).
  */
 export function ConfirmDialog(props: Props) {
-  const { open, variant, title, sprite, children, confirmLabel, confirmIcon, cancelLabel = "Cancelar", busy, busyLabel, error, notice, onConfirm, onCancel } = props;
+  const { open, variant, title, sprite, children, confirmLabel, confirmIcon, cancelLabel = "Cancelar", busy, busyLabel, confirmDisabled, error, notice, onConfirm, onCancel } = props;
   const dialog = useRef<HTMLDialogElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -94,7 +96,7 @@ export function ConfirmDialog(props: Props) {
   const confirmClass = variant === "danger" ? "btn-danger" : "btn-primary";
   const spin = <Loader size={16} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />;
   const confirmButton = (
-    <button key="confirm" type="button" className={`${confirmClass} w-full sm:w-auto`} disabled={busy} onClick={onConfirm}>
+    <button key="confirm" type="button" className={`${confirmClass} w-full sm:w-auto`} disabled={busy || confirmDisabled} onClick={onConfirm}>
       {busy ? spin : confirmIcon}
       {busy ? busyLabel : confirmLabel}
     </button>
