@@ -1,0 +1,18 @@
+psql:setup.sql:21: NOTICE:  trigger "demo_default_day_off" for relation "public.day_off_changes" does not exist, skipping
+✔ room-desktop 440×292 (judge) (folder)
+✔ room-phone 350×148 (judge) (folder)
+✔ today-study 350×122
+✔ today-typing 350×142
+✔ today-reading 350×122
+✔ today-verified 346×130 (judge)
+✔ today-scoreboard 350×514 (judge)
+✔ proof-study 374×533 (folder)
+✔ proof-typing 374×625 (folder)
+✔ proof-reading 374×533 (folder)
+✔ tribunal-open 350×1080 (judge)
+✔ tribunal-vote1 350×1080 (judge)
+✔ tribunal-verdict 350×964 (judge)
+✔ debt-pending 350×293
+✔ debt-dialog 358×440
+✔ debt-received 350×411
+demo/out: done

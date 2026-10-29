@@ -1,0 +1,357 @@
+{
+  "room-desktop": {
+    "width": 440,
+    "height": 292,
+    "dpr": 4,
+    "parts": {},
+    "judge": {
+      "x": 148,
+      "y": 54,
+      "size": 144,
+      "frame": null
+    },
+    "folder": {
+      "x": 216,
+      "y": 98,
+      "size": 96
+    }
+  },
+  "room-phone": {
+    "width": 350,
+    "height": 148,
+    "dpr": 4,
+    "parts": {},
+    "judge": {
+      "x": 127,
+      "y": 26,
+      "size": 96,
+      "frame": null
+    },
+    "folder": {
+      "x": 191,
+      "y": 60,
+      "size": 48
+    }
+  },
+  "today-study": {
+    "width": 350,
+    "height": 122,
+    "dpr": 4,
+    "parts": {}
+  },
+  "today-typing": {
+    "width": 350,
+    "height": 142,
+    "dpr": 4,
+    "parts": {}
+  },
+  "today-reading": {
+    "width": 350,
+    "height": 122,
+    "dpr": 4,
+    "parts": {}
+  },
+  "today-verified": {
+    "width": 346,
+    "height": 130,
+    "dpr": 4,
+    "parts": {},
+    "judge": {
+      "x": 16,
+      "y": 17,
+      "size": 96,
+      "frame": "stamp8"
+    }
+  },
+  "today-scoreboard": {
+    "width": 350,
+    "height": 514,
+    "dpr": 4,
+    "parts": {},
+    "judge": {
+      "x": 18,
+      "y": 19,
+      "size": 96,
+      "frame": "stamp8"
+    }
+  },
+  "proof-study": {
+    "width": 374,
+    "height": 532.5,
+    "dpr": 4,
+    "parts": {
+      "header": {
+        "x": 12,
+        "y": 12,
+        "w": 350,
+        "h": 76
+      },
+      "informed": {
+        "x": 12,
+        "y": 145,
+        "w": 350,
+        "h": 96
+      },
+      "evidence": {
+        "x": 12,
+        "y": 257,
+        "w": 350,
+        "h": 263.5
+      }
+    },
+    "folder": {
+      "x": 26,
+      "y": 26,
+      "size": 48
+    }
+  },
+  "proof-typing": {
+    "width": 374,
+    "height": 625,
+    "dpr": 4,
+    "parts": {
+      "header": {
+        "x": 12,
+        "y": 12,
+        "w": 350,
+        "h": 76
+      },
+      "informed": {
+        "x": 12,
+        "y": 145,
+        "w": 350,
+        "h": 132
+      },
+      "evidence": {
+        "x": 12,
+        "y": 293,
+        "w": 350,
+        "h": 320
+      }
+    },
+    "folder": {
+      "x": 26,
+      "y": 26,
+      "size": 48
+    }
+  },
+  "proof-reading": {
+    "width": 374,
+    "height": 532.5,
+    "dpr": 4,
+    "parts": {
+      "header": {
+        "x": 12,
+        "y": 12,
+        "w": 350,
+        "h": 76
+      },
+      "informed": {
+        "x": 12,
+        "y": 145,
+        "w": 350,
+        "h": 96
+      },
+      "evidence": {
+        "x": 12,
+        "y": 257,
+        "w": 350,
+        "h": 263.5
+      }
+    },
+    "folder": {
+      "x": 26,
+      "y": 26,
+      "size": 48
+    }
+  },
+  "tribunal-open": {
+    "width": 350,
+    "height": 1080,
+    "dpr": 4,
+    "parts": {
+      "blocks": [
+        {
+          "x": 2,
+          "y": 2,
+          "w": 346,
+          "h": 322
+        },
+        {
+          "x": 2,
+          "y": 324,
+          "w": 346,
+          "h": 8
+        },
+        {
+          "x": 2,
+          "y": 332,
+          "w": 346,
+          "h": 274
+        },
+        {
+          "x": 18,
+          "y": 622,
+          "w": 314,
+          "h": 68
+        },
+        {
+          "x": 18,
+          "y": 698,
+          "w": 314,
+          "h": 80
+        },
+        {
+          "x": 2,
+          "y": 794,
+          "w": 346,
+          "h": 118
+        },
+        {
+          "x": 2,
+          "y": 912,
+          "w": 346,
+          "h": 166
+        }
+      ]
+    },
+    "judge": {
+      "x": 127,
+      "y": 134,
+      "size": 96,
+      "frame": "idle1"
+    }
+  },
+  "tribunal-vote1": {
+    "width": 350,
+    "height": 1080,
+    "dpr": 4,
+    "parts": {
+      "blocks": [
+        {
+          "x": 2,
+          "y": 2,
+          "w": 346,
+          "h": 322
+        },
+        {
+          "x": 2,
+          "y": 324,
+          "w": 346,
+          "h": 8
+        },
+        {
+          "x": 2,
+          "y": 332,
+          "w": 346,
+          "h": 274
+        },
+        {
+          "x": 18,
+          "y": 622,
+          "w": 314,
+          "h": 68
+        },
+        {
+          "x": 18,
+          "y": 698,
+          "w": 314,
+          "h": 80
+        },
+        {
+          "x": 2,
+          "y": 794,
+          "w": 346,
+          "h": 118
+        },
+        {
+          "x": 2,
+          "y": 912,
+          "w": 346,
+          "h": 166
+        }
+      ]
+    },
+    "judge": {
+      "x": 127,
+      "y": 134,
+      "size": 96,
+      "frame": "idle1"
+    }
+  },
+  "tribunal-verdict": {
+    "width": 350,
+    "height": 964,
+    "dpr": 4,
+    "parts": {
+      "blocks": [
+        {
+          "x": 2,
+          "y": 2,
+          "w": 346,
+          "h": 322
+        },
+        {
+          "x": 2,
+          "y": 324,
+          "w": 346,
+          "h": 8
+        },
+        {
+          "x": 2,
+          "y": 332,
+          "w": 346,
+          "h": 274
+        },
+        {
+          "x": 18,
+          "y": 622,
+          "w": 314,
+          "h": 68
+        },
+        {
+          "x": 18,
+          "y": 698,
+          "w": 314,
+          "h": 20
+        },
+        {
+          "x": 2,
+          "y": 734,
+          "w": 346,
+          "h": 118
+        },
+        {
+          "x": 2,
+          "y": 852,
+          "w": 346,
+          "h": 110
+        }
+      ]
+    },
+    "judge": {
+      "x": 127,
+      "y": 134,
+      "size": 96,
+      "frame": "gavel8"
+    }
+  },
+  "debt-pending": {
+    "width": 350,
+    "height": 293,
+    "dpr": 4,
+    "parts": {}
+  },
+  "debt-dialog": {
+    "width": 358,
+    "height": 440,
+    "dpr": 4,
+    "parts": {}
+  },
+  "debt-received": {
+    "width": 350,
+    "height": 411,
+    "dpr": 4,
+    "parts": {}
+  }
+}
