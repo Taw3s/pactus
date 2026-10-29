@@ -55,7 +55,7 @@ create table if not exists public.checkin_attachments (
 alter table public.checkin_attachments enable row level security;
 revoke all on public.checkin_attachments from public, anon, authenticated;
 grant select on public.checkin_attachments to authenticated;
-grant select, insert, delete on public.checkin_attachments to service_role;
+grant select, insert on public.checkin_attachments to service_role;
 do $$ begin
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'checkin_attachments' and policyname = 'checkin attachments: read same group') then
     create policy "checkin attachments: read same group" on public.checkin_attachments
@@ -88,14 +88,32 @@ begin
 end;
 $$;
 revoke all on function public.checkin_attachments_before_insert() from public, anon, authenticated;
-drop trigger if exists checkin_attachments_before_insert on public.checkin_attachments;
-create trigger checkin_attachments_before_insert
-before insert on public.checkin_attachments
-for each row execute function public.checkin_attachments_before_insert();
+do $$ begin
+  if not exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.checkin_attachments'::regclass
+      and tgname = 'checkin_attachments_before_insert'
+      and not tgisinternal
+  ) then
+    create trigger checkin_attachments_before_insert
+    before insert on public.checkin_attachments
+    for each row execute function public.checkin_attachments_before_insert();
+  end if;
+end $$;
 
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('attachments', 'attachments', false, 10485760, array['application/pdf', 'application/zip'])
-on conflict (id) do update set name = excluded.name, public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+do $$
+declare
+  v_bucket storage.buckets%rowtype;
+begin
+  select * into v_bucket from storage.buckets where id = 'attachments';
+  if not found then
+    insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+    values ('attachments', 'attachments', false, 10485760, array['application/pdf', 'application/zip']);
+  elsif v_bucket.public or v_bucket.file_size_limit is distinct from 10485760
+    or v_bucket.allowed_mime_types is distinct from array['application/pdf', 'application/zip'] then
+    raise exception 'The existing attachments bucket has unexpected settings; review it before applying this migration';
+  end if;
+end $$;
 
 do $$ begin
   if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'attachments: read same group') then
