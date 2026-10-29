@@ -124,7 +124,7 @@ await step("acquittal path: 3 'inocente' keeps the check-in (ABSOLVIDO)", async 
   // Fab checks in; Caio disputes; Ana, Bia, Davi vote innocent.
   const fab = await as("fab@pacto.test");
   const card = fab.locator("[data-goal=reading]");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await card.getByTestId("pages").fill("5");
   await card.getByRole("button", { name: "Enviar prova" }).click();
   await fab.locator("[data-goal=reading][data-state=done]").waitFor();

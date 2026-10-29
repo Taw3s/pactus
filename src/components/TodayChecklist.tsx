@@ -1,675 +1,117 @@
-"use client";
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×Nté:-jZ.¶›­–)Ş³R'W6R6Æ–VçB#°Ğ Ğ¢ò¢W6Æ–çBÖF—6&ÆRæW‡BöæW‡BöæòÖ–ÖrÖVÆVÖVçBÒÒÆö6Â&Wf–Ww2æB6–væVBU$Ç2¢ğĞ¦–×÷'B²6ÖW&Â6†V6²Â6†Wg&öå&–v‡BÂ6Æö6²Â¶W–&ö&BÂÆöFW"ÂÇW2Â&÷FFT67rÂ‚Òg&öÒ&ÇV6–FR×&V7B#°Ğ¦–×÷'BÆ–æ²g&öÒ&æW‡BöÆ–æ²#°Ğ¦–×÷'BG–æÖ–2g&öÒ&æW‡BöG–æÖ–2#°Ğ¦–×÷'B²W6U&÷WFW"Òg&öÒ&æW‡Böæf–vF–öâ#°Ğ¦–×÷'B²W6TVffV7BÂW6U&VbÂW6U7FFRÒg&öÒ'&V7B#°Ğ¦–×÷'B²”&FvRÂG&–'VæÄ&FvRÒg&öÒ$ö6ö×öæVçG2õ7FGW4&FvW2#°Ğ¦–×÷'B²&FvRÒg&öÒ$ö6ö×öæVçG2÷V’ô&FvR#°Ğ¦–×÷'BG—R²fW&F–7BÒg&öÒ$öÆ–"ö’×&Wf–Wr#°Ğ¦–×÷'B²tôÅõ5$•DRÒg&öÒ$öÆ–"övöÂÖ–6öç2#°Ğ¦–×÷'B²7&—FRÒg&öÒ$ö6ö×öæVçG2õ7&—FR#°Ğ¦–×÷'B²G—–æt6&BÂG—RG—–æu66÷&RÒg&öÒ$ö6ö×öæVçG2õG—–æt6&B#°Ğ¦–×÷'BG—R²G—–æu&W7VÇBÒg&öÒ$ö6ö×öæVçG2õG—–æuFW7B#°Ğ¦–×÷'B²DUd”4UôÄ$TÂÒg&öÒ$öÆ–"÷G—–ær#°Ğ¦–×÷'B²6ö×&W75&ööe†÷F÷2ÂÖVF–F‚ÂF‡VÖ%F‚Òg&öÒ$öÆ–"ö–ÖvR#°Ğ¦–×÷'B²†÷FôvTÆ&VÂÂ†÷FõF¶VäBÒg&öÒ$öÆ–"÷†÷FòÖFFR#°Ğ¦–×÷'B²7FöF’Òg&öÒ$öÆ–"öFFW2#°Ğ¦–×÷'B²&ö×DödF’Òg&öÒ$öÆ–"÷7GVG’×&ö×G2#°Ğ¦–×÷'B²7&VFT6Æ–VçBÒg&öÒ$öÆ–"÷7W&6Rö6Æ–VçB#°Ğ¦–×÷'B²æ÷&ÖÆ—¦Tv—D‡V%&WõW&ÂÂfÆ–FFTGF6†ÖVçBÒg&öÒ$öÆ–"öGF6†ÖVçG2#°Ğ¦–×÷'B²6†V6¶–äçVÖ&W'2ÂvöÄÖWFÂtôÅ2ÂÔ…ôU…E$õ4U54”ôå2ÂÔ…õ„õDõ2ÂÔ”åôU…E$ôÔ”åUDU2ÂÔ”åõ5ETE•ôÔ”åUDU2ÂÔ”åõ5TÔÔ%’Â$ô¤T5BÂG—RF—7WFU7FGW2ÂG—RvöÂÒg&öÒ$öÆ–"÷G—W2#°Ğ Ğ¢ò¢¢F†R&ööbF†—2vR§W7B6VçB‚&W‡G&"f÷"âW‡G&6W76–öâ“¢—G2&÷rÆ—2F†R6†VWBæ–ÖF–öâöæ6Râ¢ğĞ¦ÆWB§W7E6VçC¢7G&–ærÂçVÆÂÒçVÆÃ°Ğ Ğ¢òò6ö×ÆWFVBF—2Fòæ÷BæVVBFòF÷væÆöBF†R–çFW&7F—fRG—–ær&ö&BàĞ¦6öç7BG—–æuFW7BÒG–æÖ–2‚‚’Óâ–×÷'B‚$ö6ö×öæVçG2õG—–æuFW7B"’çF†Vâ‚†Ò’ÓâÒåG—–æuFW7B’Â°Ğ¢ÆöF–æs¢‚’ÓâÇ&öÆSÒ'7FGW2"6Æ74æÖSÒ&Ö–âÖ‚Ó"FW‡B×6ÒFW‡BÖ×WFVB#ä6'&VvæFòFW7F^(
+cÂ÷âÀĞ§Ò“°Ğ Ğ¦W‡÷'B–çFW&f6RFöæTvöÂ°Ğ¢–C¢7G&–æs°Ğ¢vöÃ¢vöÃ°Ğ¢F—7WFS¢F—7WFU7FGW2ÂçVÆÃ°Ğ¢&Wf–Ws¢fW&F–7BÂçVÆÃ°Ğ¢7VÖÖ'“¢7G&–ærÂçVÆÃ°Ğ¢Ö–çWFW3¢çVÖ&W"ÂçVÆÃ°Ğ¢vW3¢çVÖ&W"ÂçVÆÃ°Ğ¢F—FÆS¢7G&–ærÂçVÆÃ°Ğ¢†÷FõW&Ã¢7G&–ærÂçVÆÃ°Ğ¢ò¢¢$f÷FòFR2F–2G,:2"v†VâF†R†÷Fò&VFFW2F†R&ööbw2F’â¢ğĞ¢†÷FôvS¢7G&–ærÂçVÆÃ°Ğ§ĞĞ Ğ¦–çFW&f6R&÷2°Ğ¢w&÷W–C¢7G&–æs°Ğ¢W6W$–C¢7G&–æs°Ğ¢ò¢¢F†RÆFW7B&ööböbV6‚vöÂFöF’†&WF¶R&WÆ6W2F†R&ööb—B&WF¶W2’â¢ğĞ¢FöæS¢FöæTvöÅµÓ°Ğ¢ò¢¢W‡G&7GVG’6W76–öç26VçBFöF’â¢ğĞ¢W‡G&3¢FöæTvöÅµÓ°Ğ¢ò¢¢FöF’w2G—–ærFW7G3¢†÷rÖç’vW&RW6VBæBF†R&W7B&W7VÇBâ¢ğĞ¢G—–æs¢²W6VC¢çVÖ&W#²&W7C¢7G&–ærÂçVÆÃ²&W7E66÷&S¢G—–æu66÷&RÂçVÆÂÓ°Ğ§ĞĞ Ğ§G—Rf÷&ÔÖöFRÒ&f—'7B"Â'&WF¶R"Â&W‡G&#°Ğ Ğ¦W‡÷'BgVæ7F–öâFöF”6†V6¶Æ—7B‡²w&÷W–BÂW6W$–BÂFöæRÂW‡G&2ÂG—–ærÓ¢&÷2’°Ğ¢6öç7BFöæT'’ÒæWrÖ†FöæRæÖ‚†B’Óâ¶BævöÂÂEÒ’“°Ğ¢6öç7B&ö¦V7BÒFöæT'’ævWB‚'&ö¦V7B"“°Ğ¢6öç7Bç”FöæRÒtôÅ2ç6öÖR‚†r’ÓâFöæT'’æ†2†ræ–B’“°Ğ¢&WGW&â€Ğ¢ÃàĞ¢Ç6V7F–öâ&–ÖÆ&VÆÆVF'“Ò&ÖWF2"6Æ74æÖSÒ&Ö"Ó‚#àĞ¢Æƒ"–CÒ&ÖWF2"6Æ74æÖSÒ'—†VÂÖ"Ó2FW‡BÓ'†ÂWW&66RÆVF–ærÓr#àĞ¢ÖWF0Ğ¢Âöƒ#àĞ¢²ò¢7F&ÆR÷&FW"‡7GVG’(i"G—–ær(i"&VF–ær“¢6&G2æWfW"Ö÷fRv†–ÆR6öÖVöæR—2G—–ærâ¢÷ĞĞ¢ÆF—b6Æ74æÖSÒ'76R×’Ó2#àĞ¢´tôÅ2æÖ‚†r’Óâ°Ğ¢6öç7BBÒFöæT'’ævWB†ræ–B“°Ğ¢–b†ræ–BÓÓÒ'G—–ær"’&WGW&âÅG—–ætvöÂ¶W“×¶ræ–GÒFöæS×¶GÒw&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒG—–æs×·G—–æwÒóã°Ğ¢–b‚B’&WGW&âÄvöÄf÷&Ò¶W“×¶ræ–GÒvöÃ×¶ræ–GÒw&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒóã°Ğ¢òò6öæFVÖæVBFöF“¢F†R&ööb6â&R&WF¶VâVçF–Â#3£S’‡F†RFF&6RVæf÷&6W2F†RF’’àĞ¢–b†BæF—7WFRÓÓÒ'W†VÆB"’°Ğ¢&WGW&â€Ğ¢ÆF—b¶W“×¶ræ–GÒ6Æ74æÖSÒ'76R×’Ó"#àĞ¢ÄFöæU&÷r—FVÓ×¶GÒóàĞ¢ÄvöÄf÷&ÒvöÃ×¶ræ–GÒw&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒÖöFSÒ'&WF¶R"óàĞ¢ÂöF—càĞ¢“°Ğ¢ĞĞ¢–b†ræ–BÓÓÒ'7GVG’"’°Ğ¢&WGW&â€Ğ¢ÆF—b¶W“×¶ræ–GÒ6Æ74æÖSÒ'76R×’Ó"#àĞ¢ÄFöæU&÷r—FVÓ×¶GÒóàĞ¢ÄW‡G&6W76–öç2W‡G&3×¶W‡G&7Òw&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒóàĞ¢ÂöF—càĞ¢“°Ğ¢ĞĞ¢&WGW&âÄFöæU&÷r¶W“×¶ræ–GÒ—FVÓ×¶GÒóã°Ğ¢Ò—ĞĞ¢ÂöF—càĞ¢¶ç”FöæRbbÇ6Æ74æÖSÒ&×BÓ2FW‡B×6ÒFW‡BÖ×WFVB#å&÷f2Vçf–F2ì:6òöFVÒ6W"VF—FF2Â<;26öçFW7FF2VÆòw'WòãÂ÷çĞĞ¢Â÷6V7F–öãàĞ Ğ¢Ç6V7F–öâ&–ÖÆ&VÆÆVF'“Ò'&ö¦WFò#àĞ¢Æƒ"–CÒ'&ö¦WFò"6Æ74æÖSÒ'—†VÂFW‡BÓ'†ÂWW&66RÆVF–ærÓr#àĞ¢&ö¦WFò÷6–öæÀĞ¢Âöƒ#àĞ¢Ç6Æ74æÖSÒ&Ö"Ó2FW‡B×6ÒFW‡BÖ×WFVB#äì:6ò6öçF&22ÖWF2âfÆR÷V6÷2öçF÷2æò&æ¶–ærÂæòÜ:†–Öò÷"F–ãÂ÷àĞ¢·&ö¦V7BòÄFöæU&÷r—FVÓ×·&ö¦V7GÒóâ¢ÄvöÄf÷&ÒvöÃ×µ$ô¤T5Bæ–GÒw&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒóçĞĞ¢Â÷6V7F–öãàĞ¢ÂóàĞ¢“°Ğ§ĞĞ Ğ¦gVæ7F–öâW‡G&6W76–öç2‡²W‡G&2Âw&÷W–BÂW6W$–BÓ¢²W‡G&3¢FöæTvöÅµÓ²w&÷W–C¢7G&–æs²W6W$–C¢7G&–ærÒ’°Ğ¢6öç7B¶÷VâÂ6WD÷VåÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7BÆVgBÒÔ…ôU…E$õ4U54”ôå2ÒW‡G&2æÆVæwFƒ°Ğ¢&WGW&â€Ğ¢ÆF—bFF×FW7F–CÒ&W‡G&×6W76–öç2"6Æ74æÖSÒ'76R×’Ó"#àĞ¢¶W‡G&2æÖ‚†R’Óâ€Ğ¢ÄFöæU&÷r¶W“×¶Ræ–GÒ—FVÓ×¶WÒÆ&VÃÒ%6W7<:6òW‡G&"óàĞ¢’—ĞĞ¢¶÷Vâò€Ğ¢ÄvöÄf÷&ÒvöÃÒ'7GVG’"w&÷W–C×¶w&÷W–GÒW6W$–C×·W6W$–GÒÖöFSÒ&W‡G&"öäFöæS×²‚’Óâ6WD÷Vâ†fÇ6R—ÒóàĞ¢’¢€Ğ¢ÆVgBâbb€Ğ¢Æ'WGFöâ6Æ74æÖSÒ&'Fâ×6V6öæF'’rÖgVÆÂ"öä6Æ–6³×²‚’Óâ6WD÷Vâ‡G'VR—ÓàĞ¢ÅÇW26—¦S×³‡Ò&–Ö†–FFVâóâ6W7<:6òW‡G&FRW7GVFğĞ¢Âö'WGFöãàĞ¢Ğ¢—ĞĞ¢ÂöF—càĞ¢“°Ğ§ĞĞ Ğ¢ò¢ Ğ¢¢G—–æs¢F†RFW7B–ç6–FRF†R—2F†R&ööbâF†Rf—'7Bf–æ—6†VBFW7B6VæG2F†RvöÂ‡v—F‚Ğ¢¢–7GW&RöbF†R&W7VÇB6&Bf÷"Æ—7G2æBF†RG&–'VæÂ“²F†R÷F†W"GFV×G26âöæÇ’&—6RF†PĞ¢¢F’w2&W7BÂv†–6‚—2v†B66÷&W2àĞ¢¢ğĞ¦gVæ7F–öâG—–ætvöÂ‡²FöæRÂw&÷W–BÂW6W$–BÂG—–ærÓ¢²FöæSó¢FöæTvöÃ²w&÷W–C¢7G&–æs²W6W$–C¢7G&–æs²G—–æs¢&÷5²'G—–ær%ÒÒ’°Ğ¢6öç7B&÷WFW"ÒW6U&÷WFW"‚“°Ğ¢6öç7B¶v–âÂ6WDv–åÒÒW6U7FFR†fÇ6R“°Ğ¢6öç7B¶W'&÷"Â6WDW'&÷%ÒÒW6U7FFR‚""“°Ğ¢6öç7B¶Ö÷fVBÂ6WDÖ÷fVEÒÒW6U7FFR‚""“°Ğ¢6öç7BÆVgBÒÖF‚æÖ‚ƒÂ2ÒG—–ærçW6VB“°Ğ¢6öç7B&WF¶RÒFöæSòæF—7WFRÓÓÒ'W†VÆB#°Ğ¢6öç7BæVVG5&ööbÒFöæRÇÂ&WF¶S°Ğ Ğ¢7–æ2gVæ7F–öâ6VæE&ööb‡#¢G—–æu&W7VÇB’°Ğ¢6WDW'&÷"‚""“°Ğ¢6WDÖ÷fVB‡"æÖ÷fVBóò""“°Ğ¢G'’°Ğ¢6öç7B6&BÒv—B&W7VÇD6&B‡"“°Ğ¢6öç7B7W&6RÒ7&VFT6Æ–VçB‚“°Ğ¢6öç7BF‚ÒÖVF–F‚†w&÷W–BÂW6W$–BÂ'G—–ær"“°Ğ¢6öç7BÖVF–Ò7W&6Rç7F÷&vRæg&öÒ‚&ÖVF–"“°Ğ¢6öç7B·WÒÒv—B&öÖ—6RæÆÂ…°Ğ¢ÖVF–çWÆöB‡F‚Â6&BÂ²6öçFVçEG—S¢&–ÖvRö§Vr"ÂW6W'C¢fÇ6RÒ’ÀĞ¢ÖVF–çWÆöB‡F‡VÖ%F‚‡F‚’Â6&BÂ²6öçFVçEG—S¢&–ÖvRö§Vr"ÂW6W'C¢fÇ6RÒ’æ6F6‚‚‚’ÓâçVÆÂ’ÀĞ¢Ò“°Ğ¢–b‡WæW'&÷"’F‡&÷ræWrW'&÷"‚“°Ğ¢6öç7B²W'&÷"ÒÒv—B7W&6Ræg&öÒ‚&6†V6¶–ç2"’æ–ç6W'B‡²vöÃ¢'G—–ær"Â†÷Fõ÷Fƒ¢F‚ÂG—–æu÷FW7Eö–C¢"çFW7D–BÒ“°Ğ¢–b†W'&÷"’F‡&÷ræWrW'&÷"‚“°Ğ¢fWF6‚‚"ö’÷&öw&W72"Â²ÖWF†öC¢%õ5B"Â¶VWÆ—fS¢G'VRÒ’æ6F6‚‚‚’Óâ·Ò“°Ğ¢Ò6F6‚°Ğ¢6WDW'&÷"‚$ò&W7VÇFFòfö’6ÇfòÂÖ2ÖWFì:6òfö’Vçf–Fâf:v÷WG&òFW7FR&FVçF"FRæ÷fòâ"“°Ğ¢ĞĞ¢&÷WFW"ç&Vg&W6‚‚“°Ğ¢ĞĞ Ğ¢–b†æVVG5&ööb’°Ğ¢&WGW&â€Ğ¢ÆF—b6Æ74æÖSÒ'76R×’Ó"#àĞ¢·&WF¶RbbFöæRbbÄFöæU&÷r—FVÓ×¶FöæWÒóçĞĞ¢Ç6V7F–öâ6Æ74æÖS×¶6&BG·&WF¶Rò"&÷&FW"×v&â"¢"'ÖÒFFÖvöÃÒ'G—–ær"FF×7FFS×·&WF¶Rò'&WF¶R"¢'VæF–ær'Ò&–ÖÆ&VÆÆVF'“Ò'G—–ær×F—FÆR#àĞ¢ÆF—b6Æ74æÖSÒ&Ö"Ó2fÆW‚—FV×2Ö6VçFW"vÓ2#àĞ¢·&WF¶RòÅ&÷FFT67r6—¦S×³#GÒ&–Ö†–FFVâ6Æ74æÖSÒ'6‡&–æ²ÓFW‡B×v&â"óâ¢Å7&—FRæÖS×´tôÅõ5$•DRçG—–æwÒF–ÒóçĞĞ¢ÆF—b6Æ74æÖSÒ&Ö–â×rÓfÆW‚Ó#àĞ¢Æƒ2–CÒ'G—–ær×F—FÆR"6Æ74æÖSÒ'—†VÂFW‡B×†ÂWW&66RÆVF–ærÓb#àĞ¢·&WF¶Rò%&Vf¦W"F–v—F:|:6ò"¢$F–v—F:|:6ò'ĞĞ¢Âöƒ3àĞ¢Ç6Æ74æÖSÒ'FW‡B×6ÒFW‡BÖ×WFVB#ç·&WF¶Rò$òw'Wò6öæFVæ÷R&÷fâf:vVÒFW7FRæ÷fòL:’#3£S’â"¢%FW7FRFRÖ–çWFòV’æò'ÓÂ÷àĞ¢ÂöF—càĞ¢ÂöF—càĞ¢ÅG—–æuFW7BGFV×G4ÆVgC×¶ÆVgGÒöå&W7VÇC×·6VæE&öögÒóàĞ¢¶W'&÷"bb€Ğ¢Ç&öÆSÒ&ÆW'B"6Æ74æÖSÒ&×BÓ"FW‡B×6ÒFW‡BÖf–Â#àĞ¢¶W'&÷'ĞĞ¢Â÷àĞ¢—ĞĞ¢Â÷6V7F–öãàĞ¢ÂöF—càĞ¢“°Ğ¢ĞĞ Ğ¢&WGW&â€Ğ¢ÆF—b6Æ74æÖSÒ'76R×’Ó"#àĞ¢ÄFöæU&÷r—FVÓ×·²ââæFöæRÂG—–æt&W7C¢G—–æræ&W7BÂG—–æu66÷&S¢G—–æræ&W7E66÷&R×ÒóàĞ¢¶Ö÷fVBbbv–âbb€Ğ¢Ç6Æ74æÖSÒ'‚ÓFW‡B×6ÒFW‡BÖ×WFVB"&öÆSÒ'7FGW2"FF×FW7F–CÒ'G—–ærÖÖ÷fVB#àĞ¢¶Ö÷fVGĞĞ¢Â÷àĞ¢—ĞĞ¢¶v–âò€Ğ¢Ç6V7F–öâ6Æ74æÖSÒ&6&B"FFÖvöÃÒ'G—–ær"FF×7FFSÒ&v–â"&–ÖÆ&VÃÒ%FVçF"FRæ÷fò#àĞ¢ÅG—–æuFW7@Ğ¢GFV×G4ÆVgC×¶ÆVgGĞĞ¢öå&W7VÇC×²‡"’Óâ°Ğ¢òò&6²FòF†R7VÖÖ'’&÷rÂæ÷rv—F‚F†RæWr&W7B†–b—B—2&WGFW"’àĞ¢6WDÖ÷fVB‡"æÖ÷fVBóò""“°Ğ¢6WDv–â†fÇ6R“°Ğ¢&÷WFW"ç&Vg&W6‚‚“°Ğ¢×ĞĞ¢óàĞ¢Â÷6V7F–öãàĞ¢’¢€Ğ¢ÆVgBâbb€Ğ¢Æ'WGFöâ6Æ74æÖSÒ&'Fâ×6V6öæF'’rÖgVÆÂ"öä6Æ–6³×²‚’Óâ‡6WDv–â‡G'VR’Â6WDÖ÷fVB‚""’—ÓàĞ¢Ä¶W–&ö&B6—¦S×³‡Ò&–Ö†–FFVâóâFVçF"FRæ÷fò‡¶ÆVgGÒ¶ÆVgBÓÓÒò'&W7FçFR"¢'&W7FçFW2'ÒĞ¢Âö'WGFöãàĞ¢Ğ¢—ĞĞ¢ÂöF—càĞ¢“°Ğ§ĞĞ Ğ¢ò¢¢–7GW&RöbF†R&W7VÇB†Æ—7G2æBF†RG&–'VæÂ6†÷r&öög22†÷F÷2’â¢ğĞ¦7–æ2gVæ7F–öâ&W7VÇD6&B‡#¢G—–æu&W7VÇB“¢&öÖ—6SÄ&Æö#â°Ğ¢6öç7B2ÒFö7VÖVçBæ7&VFTVÆVÖVçB‚&6çf2"“°Ğ¢2çv–GF‚Ò2æ†V–v‡BÒCƒ°Ğ¢6öç7BrÒ2ævWD6öçFW‡B‚#&B"’°Ğ¢ræf–ÆÅ7G–ÆRÒ"3#c#“&R#°Ğ¢ræf–ÆÅ&V7BƒÂÂCƒÂCƒ“°Ğ¢rç7G&ö¶U7G–ÆRÒ"6ff6C3‚#°Ğ¢ræÆ–æUv–GF‚Òƒ°Ğ¢rç7G&ö¶U&V7Bƒ"Â"ÂCSbÂCSb“°Ğ¢rçFW‡DÆ–vâÒ&6VçFW"#°Ğ¢ræf–ÆÅ7G–ÆRÒ"6&F#v‚#°Ğ¢ræföçBÒ&&öÆB3‚6ç2×6W&–b#°Ğ¢ræf–ÆÅFW‡B‚%DU5DRDRD”t•D8|84ò"Â#CÂ“°Ğ¢ræf–ÆÅ7G–ÆRÒ"6ff6C3‚#°Ğ¢ræföçBÒ&&öÆB#‚6ç2×6W&–b#°Ğ¢ræf–ÆÅFW‡B…7G&–ær„ÖF‚ç&÷VæB‡"çwÒ’’Â#CÂ#c“°Ğ¢ræföçBÒ&&öÆBC‚6ç2×6W&–b#°Ğ¢ræf–ÆÅFW‡B‚%uÒ"Â#CÂ3R“°Ğ¢ræf–ÆÅ7G–ÆRÒ"6cVcSb#°Ğ¢ræföçBÒ##‡‚6ç2×6W&–b#°Ğ¢ræf–ÆÅFW‡B†G´ÖF‚ç&÷VæB‡"æ67W&7’¢—ÒRFR&V6—<:6ò+rG´DUd”4UôÄ$TÅ·"æFWf–6U×ÒG·"æÖ–çWFW2ÓÓÒRò"+rRÖ–â"¢"'ÖÂ#CÂ3ƒ“°Ğ¢ræf–ÆÅ7G–ÆRÒ"6&F#v‚#°Ğ¢ræföçBÒ##'‚6ç2×6W&–b#°Ğ¢ræf–ÆÅFW‡B†æWrFFR‚’çFôÆö6ÆU7G&–ær‚'BÔ%""Â²F–ÖU¦öæS¢$ÖW&–6õ6õõVÆò"ÂFFU7G–ÆS¢'6†÷'B"ÂF–ÖU7G–ÆS¢'6†÷'B"Ò’Â#CÂC#R“°Ğ¢&WGW&âæWr&öÖ—6R‚‡&W6öÇfRÂ&V¦V7B’Óâ2çFô&Æö"‚†"’Óâ†"ò&W6öÇfR†"’¢&V¦V7B†æWrW'&÷"‚&6&B"’’’Â&–ÖvRö§Vr"ÂãƒR’“°Ğ§ĞĞ Ğ¦gVæ7F–öâFöæU&÷r‡²—FVÒÂÆ&VÂÓ¢²—FVÓ¢FöæTvöÂb²G—–æt&W7Có¢7G&–ærÂçVÆÃ²G—–æu66÷&Só¢G—–æu66÷&RÂçVÆÂÓ²Æ&VÃó¢7G&–ærÒ’°Ğ¢6öç7BrÒvöÄÖWF†—FVÒævöÂ“°Ğ¢6öç7BfÇVRÒ—FVÒçG—–æt&W7Bóò6†V6¶–äçVÖ&W'2†—FVÒ“°Ğ¢6öç7BæçVÆÆVBÒ—FVÒæF—7WFRÓÓÒ'W†VÆB#°Ğ¢6öç7B¶–æBÒÆ&VÂò&W‡G&"¢—FVÒævöÃ°Ğ¢6öç7B·6WGFÆUÒÒW6U7FFR‚‚’Óâ§W7E6VçBÓÓÒ¶–æB“°Ğ¢W6TVffV7B‚‚’Óâ°Ğ¢–b‡6WGFÆR’§W7E6VçBÒçVÆÃ°Ğ¢ÒÂ·6WGFÆUÒ“°Ğ¢&WGW&â€Ğ¢ÄÆ–æ°Ğ¢‡&Vc×¶ö6†V6¶–âòG¶—FVÒæ–GÖĞĞ¢6Æ74æÖSÒ&6&BFö2×F"fÆW‚Ö–âÖ‚Õ³ƒ‡…Ò—FV×2Ö6VçFW"vÓ2Ó2G&ç6—F–öâÖ6öÆ÷'2GW&F–öâÓS†÷fW#¦&r×&—6VB Ğ¢FFÖvöÃ×¶—FVÒævöÇĞĞ¢FF×7FFS×¶æçVÆÆVBò&æçVÆÆVB"¢&FöæR'ĞĞ¢àĞ¢Å7&—FRæÖS×´tôÅõ5$•DU¶—FVÒævöÅ×ÒF–Ó×¶æçVÆÆVGÒóàĞ¢Ç7â6Æ74æÖSÒ&Ö–â×rÓfÆW‚Ó#àĞ¢Ç7â6Æ74æÖSÒ'—†VÂ&Æö6²FW‡BÖÆrWW&66RÆVF–ærÓR#ç¶Æ&VÂóòræÆ&VÇÓÂ÷7ãàĞ¢·fÇVRbbÇ7â6Æ74æÖSÒ'F'VÆ"×BÓãR&Æö6²'&V²×v÷&G2FW‡B×6ÒFW‡BÖ×WFVB#ç·fÇVWÓÂ÷7ãçĞĞ¢Ç7â6Æ74æÖSÒ&×BÓfÆW‚fÆW‚×w&vÓ#àĞ¢¶—FVÒæF—7WFRò€Ğ¢ÅG&–'VæÄ&FvR7FGW3×¶—FVÒæF—7WFWÒóàĞ¢’¢€Ğ¢ÃàĞ¢Ç7â6Æ74æÖSÒ'W"ÖÆ&VÂ#àĞ¢¹Ó«h‘éì¶»§q«^tÙ[›İYÚ]]È[œİÙ\ˆ™]™\ˆ\œš]™YÜˆ\ÈYÙH\ÃBˆËÈÛ\ˆ[ˆH›ÛÙŠNˆÚİÈH›ÛÙˆ[œİXYÙˆ[ˆ\œ›Ü‹ƒBˆYˆ
+\œ›ÜË˜ÛÙHOOHŒŒÍLHˆ	‰ˆÛØ[OOHœ›Ú™Xİˆ	‰ˆY^˜JHÃBˆÙ]\ŞJ˜[ÙJNÃBˆ›İ]\‹œ™Yœ™\Ú
 
-/* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
-import { Camera, Check, ChevronRight, Clock, Keyboard, Loader, Plus, RotateCcw, X } from "lucide-react";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { AiBadge, TribunalBadge } from "@/components/StatusBadges";
-import { Badge } from "@/components/ui/Badge";
-import type { Verdict } from "@/lib/ai-review";
-import { GOAL_SPRITE } from "@/lib/goal-icons";
-import { Sprite } from "@/components/Sprite";
-import { TypingCard, type TypingScore } from "@/components/TypingCard";
-import type { TypingResult } from "@/components/TypingTest";
-import { DEVICE_LABEL } from "@/lib/typing";
-import { compressProofPhotos, mediaPath, thumbPath } from "@/lib/image";
-import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
-import { spToday } from "@/lib/dates";
-import { promptOfDay } from "@/lib/study-prompts";
-import { createClient } from "@/lib/supabase/client";
-import { normalizeGitHubRepoUrl, validateAttachment } from "@/lib/attachments";
-import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
+NÃBˆÛ‘Û™OËŠ
+NÃBˆ™]\›ÃBˆCBˆËÈH›ÛÙˆX^H™HØ]™Y]™[ˆİYÚ]È[œİÙ\ˆ™]™\ˆ\œš]™Y
+HÛ™HİÚ]ÚY™]ÛÜšÜÈÜƒBˆËÈYH\ZY\™\]Y\İ
+NˆHİÈ]\È[š\]YHÈ\ÈÙ[™ÛÈÛÚÈ›Üˆ]š\œİƒBˆ]™XÛİ™\™YH˜[ÙNÃBˆYˆ
+\œ›Üˆ	‰ˆVÈŒŒÍLH‹”H—Kš[˜ÛY\Ê\œ›Ü‹˜ÛÙJJHÃBˆÛÛœİÈ]NˆØ]™YHH]ØZ]İ\X˜\ÙK™œ›ÛJ˜ÚXÚÚ[œÈŠKœÙ[Xİ
+šYŠK™\Jœİ×Ü]‹]
+K›X^X™TÚ[™ÛJ
+NÃBˆYˆ
+Ø]™Y
+HÃBˆØ]™YÚXÚÚ[’YHØ]™YšYÃBˆ™XÛİ™\™YHYNÃBˆCBˆCBˆYˆ
+\œ›Üˆ	‰ˆ\™XÛİ™\™Y
+HÃBˆ›İÈ™]È\œ›ÜŠBˆ\œ›Ü‹˜ÛÙHOOHŒŒÍLHƒBˆÈÛØ[OOHœ›Ú™XİƒBˆÈ•›Øğêˆ°èH™YÚ\İ›İH[H›Ú™]ÈÚ™KˆƒBˆˆ‘\ÜØHY]H°èH›ÚH[šXYHÚ™KˆƒBˆˆ\œ›Ü‹›Y\ÜØYÙKš[˜ÛY\ÊœİÈ›İ\ØYYŠCBˆÈH›İÈ°èÛÈ\›Z[›İHHİXš\‹ˆ[HH›İ›ËˆƒBˆˆ\œ›Ü‹›Y\ÜØYÙKš[˜ÛY\ÊÛÈX[H^˜HÙ\ÜÚ[ÛœÈŠCBˆÈ[Z]HH	ÓPVÑVWÔÑTÔÒSÓ”ßHÙ\ÜğíY\È^˜\ÈÜˆXK˜Bˆˆ\œ›Ü‹›Y\ÜØYÙKš[˜ÛY\ÊœİYH›ÛÙˆš\œİŠCBˆÈH›İ˜HH\İYÈHÚ™H™XÚ\ØH\İ\ˆ˜[[™È\˜HÛÛX\ˆÙ\ÜğíY\ËˆƒBˆˆËÈHÛÙH[ÈH›ÜYÛÛ›™Xİ[Ûˆ
+œ™YHŠHœ›ÛHHÙ\™\ˆ™Y\Ø[[ˆHœšY[™	ÜÈØÜ™Y[œÚİƒBˆ°èÛÈ›ÚHÜÜğë]™[[šX\ˆ
+ğìÙYÛÈ	Ù\œ›Ü‹˜ÛÙHœ™YHŸJKˆÙ]\ÈYÜÈÛÛ[X[H\]ZNˆ[HH›İ›Ë˜Bˆ
+NÃBˆCBˆYˆ
+]XÚY[	‰ˆØ]™YÚXÚÚ[’Y
+HÃBˆÛÛœİ›Ü›HH™]È›Ü›Q]J
+NÃBˆ›Ü›KœÙ]
+™š[H‹]XÚY[
+NÃBˆÛÛœİ™\ÜÛœÙHH]ØZ]™]Ú
+Ø\KØÚXÚÚ[œËÉÜØ]™YÚXÚÚ[’YKØ]XÚY[ØÈY]Ùˆ”ÔÕ‹›ÙNˆ›Ü›HJNÃBˆYˆ
+\™\ÜÛœÙK›ÚÈ	‰ˆ™\ÜÛœÙKœİ]\ÈOOHJH›İÈ™]È\œ›ÜŠH›İ˜H›ÚHØ[˜KX\ÈÈ[™^È°èÛÈİXš]Kˆ[H[šX\ˆ›İ˜[Y[H[H›İ˜HØ[˜KˆŠNÃBˆCBˆËÈHRHYÙH\ÈØ[YH[™[™Ô™]šY]ÜÏˆÛ˜ÙHHYÙHÚİÜÈH™]È›ÛÙ‹ƒBˆËÈHÙ\™\ˆX^HYÙHHÜ›İ\
+\È\œÛÛˆÛÜÙYH^HÈÙYZÛHÚ[[™ÙHÛ™JKƒBˆ™]Ú
+‹Ø\KÜ›ÙÜ™\ÜÈ‹ÈY]Ùˆ”ÔÕ‹ÙY\[]™NˆYHJK˜Ø]Ú
 
-/** The proof this page just sent ("extra" for an extra session): its row plays the sheet animation once. */
-let justSent: string | null = null;
 
-// Completed days do not need to download the interactive typing board.
-const TypingTest = dynamic(() => import("@/components/TypingTest").then((m) => m.TypingTest), {
-  loading: () => <p role="status" className="min-h-12 text-sm text-muted">Carregando testeâ€¦</p>,
-});
+HOˆßJNÃBˆ\İÙ[H^˜HÈ™^˜HˆˆÛØ[ÃBˆÛ‘Û™OËŠ
+NÃBˆ›İ]\‹œ™Yœ™\Ú
 
-export interface DoneGoal {
-  id: string;
-  goal: Goal;
-  dispute: DisputeStatus | null;
-  review: Verdict | null;
-  summary: string | null;
-  minutes: number | null;
-  pages: number | null;
-  title: string | null;
-  photoUrl: string | null;
-  /** "Foto de 3 dias atrÃ¡s" when the photo predates the proof's day. */
-  photoAge: string | null;
-}
+NÃBˆHØ]Ú
+JHÃBˆÙ]\œ›ÜŠH[œİ[˜Ù[Ùˆ\œ›ÜˆÈK›Y\ÜØYÙHˆ‘\œ›È[™\Ü\˜YËˆŠNÃBˆÙ]\ŞJ˜[ÙJNÃBˆCBˆCBƒBˆËÈHİÈHÛ™H]\È™Y›Ü™HÙ^NˆÛ™Y›Ü™HÙ[™[™ËÚİÛˆÈHÜ›İ\Y\‹ƒBˆÛÛœİÛ\İXÚÙYHÚİË›X\
 
-interface Props {
-  groupId: string;
-  userId: string;
-  /** The latest proof of each goal today (a retake replaces the proof it retakes). */
-  done: DoneGoal[];
-  /** Extra study sessions sent today. */
-  extras: DoneGoal[];
-  /** Today's typing tests: how many were used and the best result. */
-  typing: { used: number; best: string | null; bestScore: TypingScore | null };
-}
+ÊHOˆËZÙ[]ËÒTÓÔİš[™Ê
+JK™š[\Š
+
+Nˆ\Èİš[™ÈOˆHY
+KœÛÜ
 
-type FormMode = "first" | "retake" | "extra";
+VÌNÃBˆÛÛœİİ[S›İHHİĞYÙSX™[
+Û\İXÚÙYÜÙ^J
+JNÃBƒBˆÛÛœİšY[YH
+˜[YNˆİš[™ÊHOˆ	ÙÛØ[KIÛ[Ù_KIÛ˜[Y_XÃBƒBˆ™]\›ˆ
+BˆÙXİ[ÛƒBˆÛ\ÜÓ˜[YO^ØØ\™	Û[ÙHOOHœ™]ZÙHˆÈˆX›Ü™\‹]Ø\›ˆˆˆˆŸXCBˆ]KYÛØ[^ÙÛØ[CBˆ]K\İ]O^Û[ÙHOOH™š\œİˆÈœ[™[™Èˆˆ[Ù_CBˆ\šXK[X™[YO^ÙšY[Y
+]HŠ_CBˆÛÚ[™ÙO^Ê
+HOˆÙ]İXÚY
+YJ_CBˆƒBˆ]ˆÛ\ÜÓ˜[YOH›X‹LÈ›^][\ËXÙ[\ˆØ\LÈƒBˆÛ[ÙHOOHœ™]ZÙHˆÈ›İ]PØİÈÚ^™O^ÌH\šXKZY[ˆÛ\ÜÓ˜[YOHœÚš[šËL^]Ø\›ˆˆÏˆˆÜš]H˜[YO^ÑÓĞSÔÔ’UVÙÛØ[_H[HÏŸCBˆ]ˆÛ\ÜÓ˜[YOH›Z[‹]ËL›^LHƒBˆÈY^ÙšY[Y
+]HŠ_HÛ\ÜÓ˜[YOHœ^[^^\\˜Ø\ÙHXY[™ËMˆƒBˆÛ[ÙHOOHœ™]ZÙHˆÈ™Y˜^™\ˆ	ÙË›X™[ÓİÙ\Ø\ÙJ
+_Xˆ^˜HÈ”Ù\ÜğèÛÈ^˜HˆˆË›X™[CBˆÚÏƒBˆÛ\ÜÓ˜[YOH^\ÛH^[]]YƒBˆÛ[ÙHOOHœ™]ZÙHƒBˆÈ“ÈÜ\ÈÛÛ™[›İHH›İ˜KˆX[™H[XH›İ˜H]0êHŒÎNHHHY]H›ÛHH˜[\‹ˆƒBˆˆ^˜CBˆÈpë[š[[È	ÓRS—ÑVWÓRS•UTßHZ[‹ˆÛÛXHZ[]ÜÈ›È˜[šÚ[™Ë˜BˆˆËš[CBˆÜƒBˆÙ]ƒBˆÙ]ƒBƒBˆÙÛØ[OOHœ›Ú™Xİˆ	‰ˆ
+Bˆ]ˆÛ\ÜÓ˜[YOH›X‹LÈÜXÙK^KLˆƒBˆX™[Û\ÜÓ˜[YOH›X™[ˆ[›Ü^ÙšY[Y
+›˜[YHŠ_OƒBˆ›ÛYHÈ›Ú™]ÃBˆÛX™[ƒBˆ[œ]BˆY^ÙšY[Y
+›˜[YHŠ_CBˆÛ\ÜÓ˜[YOHš[œ]ƒBˆXÙZÛ\H‘^ˆØ[İ[YÜ˜H[H]ÛˆƒBˆX^[™İ^ÎCBˆ˜[YO^İ]_CBˆÛÚ[™ÙO^ÊJHOˆÙ]]JK\™Ù]˜[YJ_CBˆ]K]\İYH]HƒBˆÏƒBˆX™[Û\ÜÓ˜[YOH›X™[ˆ[›Ü^ÙšY[Y
+™Ú]XˆŠ_O”™\ÜÚ]0ìÜš[ÈÚ]XÛX™[ƒBˆ[œ]Y^ÙšY[Y
+™Ú]XˆŠ_H\OH\›ˆÛ\ÜÓ˜[YOHš[œ]ˆXÙZÛ\HšÎ‹ËÙÚ]X‹˜ÛÛKİ\İX\š[ËÜ™\ÜÚ]Üš[Èˆ˜[YO^Ü›Ú™Xİ\›HÛÚ[™ÙO^ÊJHOˆÙ]›Ú™Xİ\›
+K\™Ù]˜[YJ_H]K]\İYHœ›Ú™Xİ]\›ˆÏƒBˆÛ\ÜÓ˜[YOH^^È^[]]Y”›Ú™]ÜÈğèÛÈÜÚ[Û˜Z\ÎÈ\˜H™YÚ\İ˜\ˆ[K[™›Ü›YHÙ]H™\ÜÚ]0ìÜš[È›ÈÚ]X‹ÜƒBˆÙ]ƒBˆ
+_CBƒBˆÊÛØ[OOHœİYHˆÛØ[OOHœ›Ú™XİŠH	‰ˆ
+Bˆ]ˆÛ\ÜÓ˜[YOH›]LÈ›^Z[‹ZLM][\ËXÙ[\ˆØ\LÈ›İ[™Y\ÛH›Ü™\‹Lˆ›Ü™\‹Y\ÚY›Ü™\‹XÛÛ›Û™ËX™ÈLÈ^\ÛH^[]]Yİ™\^Y™ÈƒBˆX™[Û\ÜÓ˜[YOH™›^Z[‹ZLMZ[‹]ËL›^LHİ\œÛÜ‹\Ú[\ˆ][\ËXÙ[\ˆØ\LÈƒBˆ\ÈÚ^™O^ÌNH\šXKZY[ˆÏƒBˆÜ[ˆÛ\ÜÓ˜[YOH›Z[‹]ËL›^LHØ]XÚY[È]XÚY[›˜[YHˆÛØ[OOHœİYHˆÈ[™^\ˆˆÈÛÛpî™È
+ÜÚ[Û˜[]0êHLPŠHˆˆ[™^\ˆ’TÈ›Ú™]È
+ÜÚ[Û˜[]0êHLPŠHŸOÜÜ[ƒBˆ[œ]\OH™š[HˆXØÙ\^ÙÛØ[OOHœİYHˆÈ‹œ‹\XØ][Û‹Üˆˆˆ‹š\\XØ][Û‹Şš\\XØ][Û‹Ş^š\XÛÛ\™\ÜÙYŸHÛ\ÜÓ˜[YOHœÜ‹[Û›Hˆ]K]\İYH˜]XÚY[Z[œ]ˆÛÚ[™ÙO^ÊJHOˆÈ›ÚYXÚĞ]XÚY[
+K\™Ù]™š[\ÏË–ÌJNÈK\™Ù]˜[YHHˆÈ_HÏƒBˆÛX™[ƒBˆØ]XÚY[	‰ˆ]Ûˆ\OH˜]ÛˆˆÛ\ÜÓ˜[YOH›Z[‹ZLLHÚš[šËL[™\›[™HˆÛÛXÚÏ^Ê
+HOˆÙ]]XÚY[
+[
+_O”™[[İ™\Ø]ÛŸCBˆÙ]ƒBˆ
+_CBƒBˆËÊˆ›ÈØ\\™X]šX]NˆÛ™\ÈÙ™™\ˆ›İØ[Y\˜H[™Ø[\KˆÙ]™\˜[İÜÈ]Û˜ÙH\™Hš[™Kˆ
+‹ßCBˆÜÚİË›[™İOOHÈ
+BˆX™[Û\ÜÓ˜[YOH™›^Z[‹ZLİ\œÛÜ‹\Ú[\ˆ›^XÛÛ][\ËXÙ[\ˆ\İYKXÙ[\ˆİ™\™›İËZY[ˆ›İ[™Y\ÛH›Ü™\‹Lˆ›Ü™\‹Y\ÚY›Ü™\‹XÛÛ›Û™ËX™È^\ÛH^[]]Y˜[œÚ][Û‹XÛÛÜœÈ\˜][Û‹LMLİ™\^Y™ÈƒBˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LˆN›Û[YY][HƒBˆØ[Y\˜HÚ^™O^ÌŒH\šXKZY[ˆÏƒBˆ\˜\ˆİH\ØÛÛ\ˆ›İÈH›İ˜CBˆÜÜ[ƒBˆÜ[ˆÛ\ÜÓ˜[YOHœ‹NLH^^È]0êHÓPVÔÕÔßH›İÜŞÙÛØ[OOHœ™XY[™ÈˆÈˆ
+^ˆ0èYÚ[˜H[šXÚX[Hš[˜[
+HˆˆˆŸOÜÜ[ƒBˆ[œ]\OH™š[HˆXØÙ\Hš[XYÙKÊˆˆ][\HÛ\ÜÓ˜[YOHœÜ‹[Û›Hˆ]K]\İYHœ›ÛÙ‹\İËZ[œ]ˆÛÚ[™ÙO^ÊJHOˆ
+XÚÊK\™Ù]™š[\ÊK
+K\™Ù]˜[YHHˆŠJ_HÏƒBˆÛX™[ƒBˆ
+Hˆ
+Bˆ[Û\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\Lˆˆ]K]\İYHœİË\™]šY]ÜÈƒBˆÜÚİË›X\
 
-export function TodayChecklist({ groupId, userId, done, extras, typing }: Props) {
-  const doneBy = new Map(done.map((d) => [d.goal, d]));
-  const project = doneBy.get("project");
-  const anyDone = GOALS.some((g) => doneBy.has(g.id));
-  return (
-    <>
-      <section aria-labelledby="metas" className="mb-8">
-        <h2 id="metas" className="pixel mb-3 text-2xl uppercase leading-7">
-          Metas
-        </h2>
-        {/* Stable order (study â†’ typing â†’ reading): cards never move while someone is typing. */}
-        <div className="space-y-3">
-          {GOALS.map((g) => {
-            const d = doneBy.get(g.id);
-            if (g.id === "typing") return <TypingGoal key={g.id} done={d} groupId={groupId} userId={userId} typing={typing} />;
-            if (!d) return <GoalForm key={g.id} goal={g.id} groupId={groupId} userId={userId} />;
-            // Condemned today: the proof can be retaken until 23:59 (the database enforces the day).
-            if (d.dispute === "upheld") {
-              return (
-                <div key={g.id} className="space-y-2">
-                  <DoneRow item={d} />
-                  <GoalForm goal={g.id} groupId={groupId} userId={userId} mode="retake" />
-                </div>
-              );
-            }
-            if (g.id === "study") {
-              return (
-                <div key={g.id} className="space-y-2">
-                  <DoneRow item={d} />
-                  <ExtraSessions extras={extras} groupId={groupId} userId={userId} />
-                </div>
-              );
-            }
-            return <DoneRow key={g.id} item={d} />;
-          })}
-        </div>
-        {anyDone && <p className="mt-3 text-sm text-muted">Provas enviadas nÃ£o podem ser editadas, sÃ³ contestadas pelo grupo.</p>}
-      </section>
-
-      <section aria-labelledby="projeto">
-        <h2 id="projeto" className="pixel text-2xl uppercase leading-7">
-          Projeto opcional
-        </h2>
-        <p className="mb-3 text-sm text-muted">NÃ£o conta para as 3 metas. Vale poucos pontos no ranking, no mÃ¡ximo 1 por dia.</p>
-        {project ? <DoneRow item={project} /> : <GoalForm goal={PROJECT.id} groupId={groupId} userId={userId} />}
-      </section>
-    </>
-  );
-}
-
-function ExtraSessions({ extras, groupId, userId }: { extras: DoneGoal[]; groupId: string; userId: string }) {
-  const [open, setOpen] = useState(false);
-  const left = MAX_EXTRA_SESSIONS - extras.length;
-  return (
-    <div data-testid="extra-sessions" className="space-y-2">
-      {extras.map((e) => (
-        <DoneRow key={e.id} item={e} label="SessÃ£o extra" />
-      ))}
-      {open ? (
-        <GoalForm goal="study" groupId={groupId} userId={userId} mode="extra" onDone={() => setOpen(false)} />
-      ) : (
-        left > 0 && (
-          <button className="btn-secondary w-full" onClick={() => setOpen(true)}>
-            <Plus size={18} aria-hidden /> SessÃ£o extra de estudo
-          </button>
-        )
-      )}
-    </div>
-  );
-}
-
-/**
- * Typing: the test inside the app is the proof. The first finished test sends the goal (with a
- * picture of the result card for lists and the tribunal); the other attempts can only raise the
- * day's best, which is what scores.
- */
-function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupId: string; userId: string; typing: Props["typing"] }) {
-  const router = useRouter();
-  const [again, setAgain] = useState(false);
-  const [error, setError] = useState("");
-  const [moved, setMoved] = useState("");
-  const left = Math.max(0, 3 - typing.used);
-  const retake = done?.dispute === "upheld";
-  const needsProof = !done || retake;
-
-  async function sendProof(r: TypingResult) {
-    setError("");
-    setMoved(r.moved ?? "");
-    try {
-      const card = await resultCard(r);
-      const supabase = createClient();
-      const path = mediaPath(groupId, userId, "typing");
-      const media = supabase.storage.from("media");
-      const [up] = await Promise.all([
-        media.upload(path, card, { contentType: "image/jpeg", upsert: false }),
-        media.upload(thumbPath(path), card, { contentType: "image/jpeg", upsert: false }).catch(() => null),
-      ]);
-      if (up.error) throw new Error();
-      const { error } = await supabase.from("checkins").insert({ goal: "typing", photo_path: path, typing_test_id: r.testId });
-      if (error) throw new Error();
-      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
-    } catch {
-      setError("O resultado foi salvo, mas a meta nÃ£o foi enviada. FaÃ§a outro teste para tentar de novo.");
-    }
-    router.refresh();
-  }
-
-  if (needsProof) {
-    return (
-      <div className="space-y-2">
-        {retake && done && <DoneRow item={done} />}
-        <section className={`card ${retake ? "!border-warn" : ""}`} data-goal="typing" data-state={retake ? "retake" : "pending"} aria-labelledby="typing-title">
-          <div className="mb-3 flex items-center gap-3">
-            {retake ? <RotateCcw size={24} aria-hidden className="shrink-0 text-warn" /> : <Sprite name={GOAL_SPRITE.typing} dim />}
-            <div className="min-w-0 flex-1">
-              <h3 id="typing-title" className="pixel text-xl uppercase leading-6">
-                {retake ? "Refazer digitaÃ§Ã£o" : "DigitaÃ§Ã£o"}
-              </h3>
-              <p className="text-sm text-muted">{retake ? "O grupo condenou a prova. FaÃ§a um teste novo atÃ© 23:59." : "Teste de 1 minuto aqui no app"}</p>
-            </div>
-          </div>
-          <TypingTest attemptsLeft={left} onResult={sendProof} />
-          {error && (
-            <p role="alert" className="mt-2 text-sm text-fail">
-              {error}
-            </p>
-          )}
-        </section>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <DoneRow item={{ ...done!, typingBest: typing.best, typingScore: typing.bestScore }} />
-      {moved && !again && (
-        <p className="px-1 text-sm text-muted" role="status" data-testid="typing-moved">
-          {moved}
-        </p>
-      )}
-      {again ? (
-        <section className="card" data-goal="typing" data-state="again" aria-label="Tentar de novo">
-          <TypingTest
-            attemptsLeft={left}
-            onResult={(r) => {
-              // Back to the summary row, now with the new best (if it is better).
-              setMoved(r.moved ?? "");
-              setAgain(false);
-              router.refresh();
-            }}
-          />
-        </section>
-      ) : (
-        left > 0 && (
-          <button className="btn-secondary w-full" onClick={() => (setAgain(true), setMoved(""))}>
-            <Keyboard size={18} aria-hidden /> Tentar de novo ({left} {left === 1 ? "restante" : "restantes"})
-          </button>
-        )
-      )}
-    </div>
-  );
-}
-
-/** A picture of the result (lists and the tribunal show proofs as photos). */
-async function resultCard(r: TypingResult): Promise<Blob> {
-  const c = document.createElement("canvas");
-  c.width = c.height = 480;
-  const g = c.getContext("2d")!;
-  g.fillStyle = "#26292e";
-  g.fillRect(0, 0, 480, 480);
-  g.strokeStyle = "#ffcd38";
-  g.lineWidth = 8;
-  g.strokeRect(12, 12, 456, 456);
-  g.textAlign = "center";
-  g.fillStyle = "#bdb7a8";
-  g.font = "bold 30px sans-serif";
-  g.fillText("TESTE DE DIGITAÃ‡ÃƒO", 240, 110);
-  g.fillStyle = "#ffcd38";
-  g.font = "bold 120px sans-serif";
-  g.fillText(String(Math.round(r.wpm)), 240, 260);
-  g.font = "bold 40px sans-serif";
-  g.fillText("WPM", 240, 315);
-  g.fillStyle = "#f5f1e6";
-  g.font = "28px sans-serif";
-  g.fillText(`${Math.round(r.accuracy * 100)}% de precisÃ£o Â· ${DEVICE_LABEL[r.device]}${r.minutes === 5 ? " Â· 5 min" : ""}`, 240, 380);
-  g.fillStyle = "#bdb7a8";
-  g.font = "22px sans-serif";
-  g.fillText(new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }), 240, 425);
-  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error("card"))), "image/jpeg", 0.85));
-}
-
-function DoneRow({ item, label }: { item: DoneGoal & { typingBest?: string | null; typingScore?: TypingScore | null }; label?: string }) {
-  const g = goalMeta(item.goal);
-  const value = item.typingBest ?? checkinNumbers(item);
-  const annulled = item.dispute === "upheld";
-  const kind = label ? "extra" : item.goal;
-  const [settle] = useState(() => justSent === kind);
-  useEffect(() => {
-    if (settle) justSent = null;
-  }, [settle]);
-  return (
-    <Link
-      href={`/checkin/${item.id}`}
-      className="card doc-tab flex min-h-[88px] items-center gap-3 p-3 transition-colors duration-150 hover:bg-raised"
-      data-goal={item.goal}
-      data-state={annulled ? "annulled" : "done"}
-    >
-      <Sprite name={GOAL_SPRITE[item.goal]} dim={annulled} />
-      <span className="min-w-0 flex-1">
-        <span className="pixel block text-lg uppercase leading-5">{label ?? g.label}</span>
-        {value && <span className="tabular mt-0.5 block break-words text-sm text-muted">{value}</span>}
-        <span className="mt-1 flex flex-wrap gap-1">
-          {item.dispute ? (
-            <TribunalBadge status={item.dispute} />
-          ) : (
-            <>
-              <span className="paper-label">
-                <Check size={14} aria-hidden />
-                Prova enviada
-              </span>
-              {item.review && <AiBadge state={item.review} />}
-              {item.photoAge && (
-                <Badge tone="pending" icon={Clock}>
-                  {item.photoAge}
-                </Badge>
-              )}
-            </>
-          )}
-        </span>
-      </span>
-      <span className={`shrink-0 ${settle ? "animate-[sheet-in_180ms_steps(3)_both] motion-reduce:animate-none" : ""}`}>
-        {item.typingScore ? (
-          <TypingCard t={item.typingScore} size="thumb" />
-        ) : item.photoUrl ? (
-          <img src={item.photoUrl} alt="" className="block h-14 w-14 rounded-sm border-2 border-bevel-dark object-cover" />
-        ) : (
-          <span className="block h-14 w-14 rounded-sm bg-raised" />
-        )}
-      </span>
-      <ChevronRight size={20} aria-hidden className="shrink-0 text-muted" />
-    </Link>
-  );
-}
-
-function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goal; groupId: string; userId: string; mode?: FormMode; onDone?: () => void }) {
-  const router = useRouter();
-  const g = goalMeta(goal);
-  const extra = mode === "extra";
-  const minMinutes = extra ? MIN_EXTRA_MINUTES : MIN_STUDY_MINUTES;
-  // The study summary answers the question of the day (same one all day, retakes included).
-  const question = goal === "study" && !extra ? promptOfDay(userId, spToday()) : null;
-  // Up to MAX_PHOTOS photos; the first one is the main photo (lists and thumbnails).
-  const [shots, setShots] = useState<{ file: File; url: string; takenAt?: Date | null }[]>([]);
-  const [summary, setSummary] = useState("");
-  const [minutes, setMinutes] = useState("");
-  const [pages, setPages] = useState("");
-  const [title, setTitle] = useState("");
-  const [projectUrl, setProjectUrl] = useState("");
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [touched, setTouched] = useState(false);
-
-  const minutesOk = goal !== "study" || Number(minutes) >= minMinutes;
-  const pagesOk = goal !== "reading" || Number(pages) >= 1;
-  const titleOk = goal !== "project" || title.trim().length >= 3;
-  const normalizedProjectUrl = goal === "project" ? normalizeGitHubRepoUrl(projectUrl) : null;
-  const projectUrlOk = goal !== "project" || !!normalizedProjectUrl;
-  const summaryOk = goal !== "study" || extra || summary.trim().length >= MIN_SUMMARY;
-  const ready = shots.length > 0 && minutesOk && pagesOk && titleOk && projectUrlOk && summaryOk;
-
-  // What is still missing, in words, next to the disabled button.
-  const missing = [
-    !titleOk && "dÃª um nome ao projeto",
-    !projectUrlOk && "informe o link do repositÃ³rio no GitHub",
-    shots.length === 0 && "adicione a foto",
-    goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
-    goal === "reading" && !pagesOk && "informe as pÃ¡ginas lidas",
-    goal === "study" && !summaryOk && "responda Ã  pergunta do dia",
-  ].filter(Boolean) as string[];
-  const missingText =
-    missing.length === 0 ? "" : `Para enviar: ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")} e ${missing.at(-1)}`}.`;
-
-  // Free every local preview when the form goes away.
-  const urls = useRef(new Set<string>());
-  useEffect(() => {
-    const all = urls.current;
-    return () => all.forEach((u) => URL.revokeObjectURL(u));
-  }, []);
-
-  function pick(list: FileList | null) {
-    const picked = Array.from(list ?? []).filter((f) => f.type.startsWith("image/"));
-    if (!picked.length) return;
-    setShots((cur) => {
-      const room = MAX_PHOTOS - cur.length;
-      if (picked.length > room) setError(`AtÃ© ${MAX_PHOTOS} fotos por prova: usamos as ${room} primeiras.`);
-      else setError("");
-      return [
-        ...cur,
-        ...picked.slice(0, Math.max(0, room)).map((file) => {
-          const url = URL.createObjectURL(file);
-          urls.current.add(url);
-          // Read when the photo was taken (EXIF or file date) in the background.
-          photoTakenAt(file).then((takenAt) => setShots((now) => now.map((s) => (s.url === url ? { ...s, takenAt } : s))));
-          return { file, url };
-        }),
-      ];
-    });
-  }
-
-  function remove(n: number) {
-    setShots((cur) => {
-      URL.revokeObjectURL(cur[n].url);
-      urls.current.delete(cur[n].url);
-      return cur.filter((_, i) => i !== n);
-    });
-    setError("");
-  }
-
-  async function pickAttachment(file: File | undefined) {
-    if (!file) return;
-    const kind = goal === "study" ? "study_pdf" : goal === "project" ? "project_zip" : null;
-    if (!kind) return;
-    const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-    const validation = validateAttachment(kind, file.name, file.size, header);
-    if (!validation.ok) {
-      setError(validation.reason === "size" ? "O anexo deve ter atÃ© 10 MB." : validation.reason === "signature" ? "O arquivo nÃ£o corresponde ao formato esperado." : "Escolha um arquivo PDF ou ZIP vÃ¡lido.");
-      setAttachment(null);
-      return;
-    }
-    setError("");
-    setAttachment(file);
-  }
-
-  async function submit() {
-    if (!shots.length || !ready) return;
-    setBusy(true);
-    setError("");
-    try {
-      const supabase = createClient();
-      const media = supabase.storage.from("media");
-      const paths = shots.map(() => mediaPath(groupId, userId, goal));
-      const { photos: blobs, thumb } = await compressProofPhotos(shots.map((s) => s.file));
-      // The thumbnail only speeds up lists; if it fails, lists fall back to the full photo.
-      const [ups] = await Promise.all([
-        Promise.all(paths.map((p, n) => media.upload(p, blobs[n], { contentType: "image/jpeg", upsert: false }))),
-        media.upload(thumbPath(paths[0]), thumb, { contentType: "image/jpeg", upsert: false }).catch(() => null),
-      ]);
-      if (ups.some((u) => u.error)) throw new Error(`${shots.length > 1 ? "Uma das fotos" : "A foto"} nÃ£o subiu. Seus dados continuam aqui: tente de novo.`);
-      const [path, ...extraPhotos] = paths;
-      let savedCheckinId: string | null = null;
-      const dates = (await Promise.all(shots.map((s) => (s.takenAt !== undefined ? s.takenAt : photoTakenAt(s.file))))).filter((d): d is Date => !!d);
-      const oldest = dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : null;
-      // The database sets the day (SÃ£o Paulo) and the owner; the client only sends the content.
-      const { data: inserted, error } = await supabase
-        .from("checkins")
-        .insert({
-          goal,
-          photo_path: path,
-          summary: goal === "study" && !extra ? summary.trim() : null,
-          ...(question ? { study_prompt: question.id } : {}),
-          minutes: goal === "study" ? Number(minutes) : null,
-          pages: goal === "reading" ? Number(pages) : null,
-          title: goal === "project" ? title.trim() : null,
-          ...(goal === "project" ? { project_url: normalizedProjectUrl } : {}),
-          ...(extra ? { extra: true } : {}),
-          ...(extraPhotos.length ? { extra_photos: extraPhotos } : {}),
-          ...(oldest ? { photo_taken_at: oldest.toISOString() } : {}),
-        }).select("id").single();
-      if (!error) savedCheckinId = inserted?.id ?? null;
-      // Already sent (the first send went through but its answer never arrived, or this page is
-      // older than the proof): show the proof instead of an error.
-      if (error?.code === "23505" && goal !== "project" && !extra) {
-        setBusy(false);
-        router.refresh();
-        onDone?.();
-        return;
-      }
-      // The proof may be saved even though its answer never arrived (the phone switched networks or
-      // left the app mid-request): the photo path is unique to this send, so look for it first.
-      let recovered = false;
-      if (error && !["23505", "P0001"].includes(error.code)) {
-        const { data: saved } = await supabase.from("checkins").select("id").eq("photo_path", path).maybeSingle();
-        if (saved) {
-          savedCheckinId = saved.id;
-          recovered = true;
-        }
-      }
-      if (error && !recovered) {
-        throw new Error(
-          error.code === "23505"
-            ? goal === "project"
-              ? "VocÃª jÃ¡ registrou um projeto hoje."
-              : "Essa meta jÃ¡ foi enviada hoje."
-            : error.message.includes("photo not uploaded")
-              ? "A foto nÃ£o terminou de subir. Tente de novo."
-              : error.message.includes("too many extra sessions")
-                ? `Limite de ${MAX_EXTRA_SESSIONS} sessÃµes extras por dia.`
-                : error.message.includes("study proof first")
-                  ? "A prova de estudo de hoje precisa estar valendo para somar sessÃµes."
-                  : // The code tells a dropped connection ("rede") from a server refusal in a friend's screenshot.
-                    `NÃ£o foi possÃ­vel enviar (cÃ³digo ${error.code || "rede"}). Seus dados continuam aqui: tente de novo.`,
-        );
-      }
-      if (attachment && savedCheckinId) {
-        const form = new FormData();
-        form.set("file", attachment);
-        const response = await fetch(`/api/checkins/${savedCheckinId}/attachments`, { method: "POST", body: form });
-        if (!response.ok && response.status !== 409) throw new Error("A prova foi salva, mas o anexo nÃ£o subiu. Tente enviar novamente pela prova salva.");
-      }
-      // The AI judge is called by <PendingReviews> once the page shows the new proof.
-      // The server may nudge the group (this person closed the day / weekly challenge done).
-      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
-      justSent = extra ? "extra" : goal;
-      onDone?.();
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro inesperado.");
-      setBusy(false);
-    }
-  }
-
-  // A photo the phone dates before today: told before sending, shown to the group after.
-  const oldestPicked = shots.map((s) => s.takenAt?.toISOString()).filter((d): d is string => !!d).sort()[0];
-  const staleNote = photoAgeLabel(oldestPicked, spToday());
-
-  const fieldId = (name: string) => `${goal}-${mode}-${name}`;
-
-  return (
-    <section
-      className={`card ${mode === "retake" ? "!border-warn" : ""}`}
-      data-goal={goal}
-      data-state={mode === "first" ? "pending" : mode}
-      aria-labelledby={fieldId("title")}
-      onChange={() => setTouched(true)}
-    >
-      <div className="mb-3 flex items-center gap-3">
-        {mode === "retake" ? <RotateCcw size={24} aria-hidden className="shrink-0 text-warn" /> : <Sprite name={GOAL_SPRITE[goal]} dim />}
-        <div className="min-w-0 flex-1">
-          <h3 id={fieldId("title")} className="pixel text-xl uppercase leading-6">
-            {mode === "retake" ? `Refazer ${g.label.toLowerCase()}` : extra ? "SessÃ£o extra" : g.label}
-          </h3>
-          <p className="text-sm text-muted">
-            {mode === "retake"
-              ? "O grupo condenou a prova. Mande uma nova atÃ© 23:59 e a meta volta a valer."
-              : extra
-                ? `MÃ­nimo ${MIN_EXTRA_MINUTES} min. Soma minutos no ranking.`
-                : g.hint}
-          </p>
-        </div>
-      </div>
-
-      {goal === "project" && (
-        <div className="mb-3 space-y-2">
-          <label className="label" htmlFor={fieldId("name")}>
-            Nome do projeto
-          </label>
-          <input
-            id={fieldId("name")}
-            className="input"
-            placeholder="Ex.: calculadora em Python"
-            maxLength={80}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            data-testid="title"
-          />
-          <label className="label" htmlFor={fieldId("github")}>RepositÃ³rio GitHub</label>
-          <input id={fieldId("github")} type="url" className="input" placeholder="https://github.com/usuario/repositorio" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} data-testid="project-url" />
-          <p className="text-xs text-muted">Projetos sÃ£o opcionais; para registrar um, informe seu repositÃ³rio no GitHub.</p>
-        </div>
-      )}
-
-      {(goal === "study" || goal === "project") && (
-        <div className="mt-3 flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
-          <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3">
-          <Plus size={18} aria-hidden />
-          <span className="min-w-0 flex-1">{attachment ? attachment.name : goal === "study" ? "Anexar PDF do conteÃºdo (opcional, atÃ© 10 MB)" : "Anexar ZIP do projeto (opcional, atÃ© 10 MB)"}</span>
-          <input type="file" accept={goal === "study" ? ".pdf,application/pdf" : ".zip,application/zip,application/x-zip-compressed"} className="sr-only" onChange={(e) => { void pickAttachment(e.target.files?.[0]); e.target.value = ""; }} />
-          </label>
-          {attachment && <button type="button" className="min-h-11 shrink-0 underline" onClick={() => setAttachment(null)}>Remover</button>}
-        </div>
-      )}
-
-      {/* No `capture` attribute: phones offer both camera and gallery. Several photos at once are fine. */}
-      {shots.length === 0 ? (
-        <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
-          <span className="flex items-center gap-2 pt-8 font-medium">
-            <Camera size={20} aria-hidden />
-            Tirar ou escolher foto da prova
-          </span>
-          <span className="pb-8 pt-1 text-xs">AtÃ© {MAX_PHOTOS} fotos{goal === "reading" ? " (ex.: pÃ¡gina inicial e final)" : ""}</span>
-          <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
-        </label>
-      ) : (
-        <ul className="grid grid-cols-2 gap-2" data-testid="photo-previews">
-          {shots.map((s, n) => (
-            <li key={s.url} className="relative">
-              <img src={s.url} alt={`PrÃ©via da foto ${n + 1}`} className="aspect-square w-full rounded-sm border-2 border-bevel-dark bg-bg object-cover" />
-              <button
-                type="button"
-                onClick={() => remove(n)}
-                aria-label={`Tirar a foto ${n + 1}`}
-                className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-sm border-2 border-bevel-dark bg-bg/90 text-fg"
-              >
-                <X size={18} aria-hidden />
-              </button>
-            </li>
-          ))}
-          {shots.length < MAX_PHOTOS && (
-            <li>
-              <label className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted hover:text-fg">
-                <Plus size={20} aria-hidden />
-                Mais uma foto
-                <span className="tabular text-xs">
-                  {shots.length} de {MAX_PHOTOS}
-                </span>
-                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
-              </label>
-            </li>
-          )}
-        </ul>
-      )}
-      {staleNote && (
-        <p className="mt-2 flex items-start gap-1.5 text-sm text-warn" data-testid="photo-age-note">
-          <Clock size={16} aria-hidden className="mt-0.5 shrink-0" />
-          {staleNote}. Pode enviar, mas o grupo vai ver essa data.
-        </p>
-      )}
-
-      {goal === "study" && (
-        <div className="mt-3 space-y-3">
-          <NumberField id={fieldId("minutes")} label={extra ? "Minutos nesta sessÃ£o" : "Minutos estudados"} min={minMinutes} max={1440} value={minutes} onChange={setMinutes} ok={minutesOk} testId="minutes" />
-          {question && (
-          <div data-testid="study-question" data-prompt={question.id}>
-            <label className="label" htmlFor={fieldId("summary")}>
-              Pergunta do dia
-            </label>
-            <p id={fieldId("question")} className="mb-2 break-words font-medium">
-              {question.text}
-            </p>
-            <textarea
-              id={fieldId("summary")}
-              className="input min-h-24 resize-y"
-              maxLength={2000}
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              aria-describedby={`${fieldId("question")} ${fieldId("summary-help")}`}
-            />
-            <p id={fieldId("summary-help")} className={`tabular mt-1 text-sm ${summaryOk || !touched ? "text-muted" : "text-warn"}`}>
-              {summary.trim().length} de {MIN_SUMMARY} caracteres mÃ­nimos
-            </p>
-          </div>
-          )}
-        </div>
-      )}
-      {goal === "reading" && (
-        <div className="mt-3">
-          <NumberField id={fieldId("pages")} label="PÃ¡ginas lidas" min={1} max={2000} value={pages} onChange={setPages} ok={pagesOk} testId="pages" />
-        </div>
-      )}
-
-      {error && (
-        <p role="alert" className="mt-3 text-sm text-fail">
-          {error}
-        </p>
-      )}
-      {missingText && (
-        <p id={fieldId("missing")} className="mt-4 text-sm text-muted" aria-live="polite">
-          {missingText}
-        </p>
-      )}
-      <button
-        className={`${goal === "project" ? "btn-secondary" : "btn-primary"} mt-3 w-full`}
-        disabled={!ready || busy}
-        onClick={submit}
-        aria-describedby={missingText ? fieldId("missing") : undefined}
-      >
-        {busy && <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
-        {busy ? "Enviandoâ€¦" : goal === "project" ? "Registrar projeto" : extra ? "Somar sessÃ£o" : mode === "retake" ? "Enviar nova prova" : "Enviar prova"}
-      </button>
-    </section>
-  );
-}
-
-function NumberField(props: {
-  id: string;
-  label: string;
-  min: number;
-  max: number;
-  value: string;
-  onChange: (v: string) => void;
-  ok: boolean;
-  testId: string;
-}) {
-  const invalid = !props.ok && !!props.value;
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <label htmlFor={props.id} className={`min-w-0 flex-1 break-words text-base leading-5 ${invalid ? "text-warn" : "text-fg"}`}>
-        {props.label}
-        <span className="block text-sm text-muted">MÃ­nimo {props.min}</span>
-      </label>
-      <input
-        id={props.id}
-        type="number"
-        inputMode="numeric"
-        min={props.min}
-        max={props.max}
-        aria-invalid={invalid}
-        className="input tabular w-24 shrink-0 text-right"
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-        data-testid={props.testId}
-      />
-    </div>
-  );
-}
+ËŠHOˆ
+BˆHÙ^O^ÜË\›HÛ\ÜÓ˜[YOHœ™[]]™HƒBˆ[YÈÜ˜Ï^ÜË\›H[^Ø°ê]šXHH›İÈ	Ûˆ
+È_XHÛ\ÜÓ˜[YOH˜\ÜXİ\Ü]X\™HËY[›İ[™Y\ÛH›Ü™\‹Lˆ›Ü™\‹X™]™[Y\šÈ™ËX™ÈØš™XİXÛİ™\ˆˆÏƒBˆ]ÛƒBˆ\OH˜]ÛˆƒBˆÛÛXÚÏ^Ê
+HOˆ™[[İ™JŠ_CBˆ\šXK[X™[^Ø\˜\ˆH›İÈ	Ûˆ
+È_XCBˆÛ\ÜÓ˜[YOH˜XœÛÛ]HšYÚLHÜLH›^LLHËLLH][\ËXÙ[\ˆ\İYKXÙ[\ˆ›İ[™Y\ÛH›Ü™\‹Lˆ›Ü™\‹X™]™[Y\šÈ™ËX™ËÎL^Y™ÈƒBˆƒBˆÚ^™O^ÌNH\šXKZY[ˆÏƒBˆØ]ÛƒBˆÛOƒBˆ
+J_CBˆÜÚİË›[™İPVÔÕÔÈ	‰ˆ
+BˆOƒBˆX™[Û\ÜÓ˜[YOH™›^\ÜXİ\Ü]X\™HËY[İ\œÛÜ‹\Ú[\ˆ›^XÛÛ][\ËXÙ[\ˆ\İYKXÙ[\ˆØ\LH›İ[™Y\ÛH›Ü™\‹Lˆ›Ü™\‹Y\ÚY›Ü™\‹XÛÛ›Û™ËX™È^\ÛH^[]]Yİ™\^Y™ÈƒBˆ\ÈÚ^™O^ÌŒH\šXKZY[ˆÏƒBˆXZ\È[XH›İÃBˆÜ[ˆÛ\ÜÓ˜[YOHX[\ˆ^^ÈƒBˆÜÚİË›[™İHHÓPVÔÕÔßCBˆÜÜ[ƒBˆ[œ]\OH™š[HˆXØÙ\Hš[XYÙKÊˆˆ][\HÛ\ÜÓ˜[YOHœÜ‹[Û›Hˆ]K]\İYHœ›ÛÙ‹\İËZ[œ]ˆÛÚ[™ÙO^ÊJHOˆ
+XÚÊK\™Ù]™š[\ÊK
+K\™Ù]˜[YHHˆŠJ_HÏƒBˆÛX™[ƒBˆÛOƒBˆ
+_CBˆİ[ƒBˆ
+_CBˆÜİ[S›İH	‰ˆ
+BˆÛ\ÜÓ˜[YOH›]Lˆ›^][\Ë\İ\Ø\LKH^\ÛH^]Ø\›ˆˆ]K]\İYHœİËXYÙK[›İHƒBˆÛØÚÈÚ^™O^ÌMŸH\šXKZY[ˆÛ\ÜÓ˜[YOH›]LHÚš[šËLˆÏƒBˆÜİ[S›İ_KˆÙH[šX\‹X\ÈÈÜ\È˜ZH™\ˆ\ÜØH]KƒBˆÜƒBˆ
+_CBƒBˆÙÛØ[OOHœİYHˆ	‰ˆ
+Bˆ]ˆÛ\ÜÓ˜[YOH›]LÈÜXÙK^KLÈƒBˆ[X™\‘šY[Y^ÙšY[Y
+›Z[]\ÈŠ_HX™[^Ù^˜HÈ“Z[]ÜÈ™\İHÙ\ÜğèÛÈˆˆ“Z[]ÜÈ\İYYÜÈŸHZ[^ÛZ[“Z[]\ßHX^^ÌMH˜[YO^ÛZ[]\ßHÛÚ[™ÙO^ÜÙ]Z[]\ßHÚÏ^ÛZ[]\ÓÚßH\İYH›Z[]\ÈˆÏƒBˆÜ]Y\İ[Ûˆ	‰ˆ
+Bˆ]ˆ]K]\İYHœİYK\]Y\İ[Ûˆˆ]K\›Û\^Ü]Y\İ[Û‹šYOƒBˆX™[Û\ÜÓ˜[YOH›X™[ˆ[›Ü^ÙšY[Y
+œİ[[X\HŠ_OƒBˆ\™İ[HÈXCBˆÛX™[ƒBˆY^ÙšY[Y
+œ]Y\İ[ÛˆŠ_HÛ\ÜÓ˜[YOH›X‹Lˆœ™XZË]ÛÜ™È›Û[YY][HƒBˆÜ]Y\İ[Û‹^CBˆÜƒBˆ^\™XCBˆY^ÙšY[Y
+œİ[[X\HŠ_CBˆÛ\ÜÓ˜[YOHš[œ]Z[‹ZL™\Ú^™K^HƒBˆX^[™İ^ÌŒCBˆ˜[YO^Üİ[[X\_CBˆÛÚ[™ÙO^ÊJHOˆÙ]İ[[X\JK\™Ù]˜[YJ_CBˆ\šXKY\ØÜšX™YO^Ø	ÙšY[Y
+œ]Y\İ[ÛˆŠ_H	ÙšY[Y
+œİ[[X\KZ[Š_XCBˆÏƒBˆY^ÙšY[Y
+œİ[[X\KZ[Š_HÛ\ÜÓ˜[YO^ØX[\ˆ]LH^\ÛH	Üİ[[X\SÚÈ]İXÚYÈ^[]]Yˆˆ^]Ø\›ˆŸXOƒBˆÜİ[[X\Kš[J
+K›[™İHHÓRS—ÔÕSSPT–_HØ\˜Xİ\™\Èpë[š[[ÜÃBˆÜƒBˆÙ]ƒBˆ
+_CBˆÙ]ƒBˆ
+_CBˆÙÛØ[OOHœ™XY[™Èˆ	‰ˆ
+Bˆ]ˆÛ\ÜÓ˜[YOH›]LÈƒBˆ[X™\‘šY[Y^ÙšY[Y
+œYÙ\ÈŠ_HX™[H”0èYÚ[˜\ÈY\ÈˆZ[^Ì_HX^^ÌŒH˜[YO^ÜYÙ\ßHÛÚ[™ÙO^ÜÙ]YÙ\ßHÚÏ^ÜYÙ\ÓÚßH\İYHœYÙ\ÈˆÏƒBˆÙ]ƒBˆ
+_CBƒBˆÙ\œ›Üˆ	‰ˆ
+Bˆ›ÛOH˜[\ˆÛ\ÜÓ˜[YOH›]LÈ^\ÛH^Y˜Z[ƒBˆÙ\œ›ÜŸCBˆÜƒBˆ
+_CBˆÛZ\ÜÚ[™Õ^	‰ˆ
+BˆY^ÙšY[Y
+›Z\ÜÚ[™ÈŠ_HÛ\ÜÓ˜[YOH›]M^\ÛH^[]]Yˆ\šXK[]™OHœÛ]HƒBˆÛZ\ÜÚ[™Õ^CBˆÜƒBˆ
+_CBˆ]ÛƒBˆÛ\ÜÓ˜[YO^Ø	ÙÛØ[OOHœ›Ú™XİˆÈ˜‹\ÙXÛÛ™\Hˆˆ˜‹\š[X\HŸH]LÈËY[CBˆ\ØX›Y^È\™XYH\Ş_CBˆÛÛXÚÏ^ÜİX›Z]CBˆ\šXKY\ØÜšX™YO^ÛZ\ÜÚ[™Õ^ÈšY[Y
+›Z\ÜÚ[™ÈŠHˆ[™Yš[™YCBˆƒBˆØ\ŞH	‰ˆØY\ˆÚ^™O^ÌNH\šXKZY[ˆÛ\ÜÓ˜[YOH˜[š[X]KVÜÜ[—Î\×Üİ\Ê
+WÚ[™š[š]WH[İ[Û‹\™YXÙN˜[š[X]K[›Û™HˆÏŸCBˆØ\ŞHÈ‘[šX[™ø )ˆˆˆÛØ[OOHœ›Ú™XİˆÈ”™YÚ\İ˜\ˆ›Ú™]Èˆˆ^˜HÈ”ÛÛX\ˆÙ\ÜğèÛÈˆˆ[ÙHOOHœ™]ZÙHˆÈ‘[šX\ˆ›İ˜H›İ˜Hˆˆ‘[šX\ˆ›İ˜HŸCBˆØ]ÛƒBˆÜÙXİ[ÛƒBˆ
+NÃBŸCBƒB™[˜İ[Ûˆ[X™\‘šY[
+›ÜÎˆÃBˆYˆİš[™ÎÃBˆX™[ˆİš[™ÎÃBˆZ[ˆ[X™\ÃBˆX^ˆ[X™\ÃBˆ˜[YNˆİš[™ÎÃBˆÛÚ[™ÙNˆ
+ˆİš[™ÊHOˆ›ÚYÃBˆÚÎˆ›ÛÛX[ÃBˆ\İYˆİš[™ÎÃBŸJHÃBˆÛÛœİ[˜[YH\›ÜË›ÚÈ	‰ˆH\›ÜË˜[YNÃBˆ™]\›ˆ
+Bˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\İYKX™]ÙY[ˆØ\LÈƒBˆX™[[›Ü^Ü›ÜËšYHÛ\ÜÓ˜[YO^ØZ[‹]ËL›^LHœ™XZË]ÛÜ™È^X˜\ÙHXY[™ËMH	Ú[˜[YÈ^]Ø\›ˆˆˆ^Y™ÈŸXOƒBˆÜ›ÜË›X™[CBˆÜ[ˆÛ\ÜÓ˜[YOH˜›ØÚÈ^\ÛH^[]]Y“pë[š[[ÈÜ›ÜË›Z[ŸOÜÜ[ƒBˆÛX™[ƒBˆ[œ]BˆY^Ü›ÜËšYCBˆ\OH›[X™\ˆƒBˆ[œ][ÙOH›[Y\šXÈƒBˆZ[^Ü›ÜË›Z[ŸCBˆX^^Ü›ÜË›X^CBˆ\šXKZ[˜[Y^Ú[˜[YCBˆÛ\ÜÓ˜[YOHš[œ]X[\ˆËLÚš[šËL^\šYÚƒBˆ˜[YO^Ü›ÜË˜[Y_CBˆÛÚ[™ÙO^ÊJHOˆ›ÜË›ÛÚ[™ÙJK\™Ù]˜[YKœ™\XÙJ×ÙËˆŠKœÛXÙJ
+J_CBˆ]K]\İY^Ü›ÜË\İYCBˆÏƒBˆÙ]ƒBˆ
+NÃBŸCB

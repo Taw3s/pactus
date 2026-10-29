@@ -87,10 +87,10 @@ await step("Hoje: pending goals come before the chests", async () => {
 await step("a proof takes up to 4 photos: gallery on the proof page and all of them go to the AI judge", async () => {
   const p = await loginAs(browser, "davi@pacto.test");
   const card = p.locator("[data-goal=reading][data-state=pending]");
-  await card.locator("input[type=file]").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
+  await card.getByTestId("proof-photo-input").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
   assert((await card.getByTestId("photo-previews").locator("img").count()) === 3, "3 previews");
   await card.getByRole("button", { name: "Tirar a foto 3" }).click();
-  await card.locator("input[type=file]").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
+  await card.getByTestId("proof-photo-input").setInputFiles([FIXTURE, FIXTURE, FIXTURE]);
   assert((await card.getByTestId("photo-previews").locator("img").count()) === 4, "capped at 4");
   await card.getByText("Até 4 fotos por prova").waitFor();
   await card.getByTestId("pages").fill("12");

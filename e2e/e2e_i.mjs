@@ -72,7 +72,7 @@ await step("push: Davi turns notices on (fake push service), Caio closes the day
   await caio.locator("[data-goal=typing][data-state=done]").waitFor();
   for (const goal of ["reading"]) {
     const card = caio.locator(`[data-goal=${goal}]`);
-    await card.locator("input[type=file]").setInputFiles(FIXTURE);
+    await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
     if (goal === "reading") await card.getByTestId("pages").fill("9");
     await card.getByRole("button", { name: "Enviar prova" }).click();
     await caio.locator(`[data-goal=${goal}][data-state=done]`).waitFor();

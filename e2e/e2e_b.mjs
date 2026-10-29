@@ -26,7 +26,7 @@ await step("study needs photo + a 40-char answer to the question of the day befo
   const card = p.locator("[data-goal=study]");
   const btn = card.getByRole("button", { name: "Enviar prova" });
   assert(await btn.isDisabled(), "disabled without photo");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await card.locator("textarea").fill("curto demais");
   assert(await btn.isDisabled(), "disabled with short summary");
   await card.getByText("12 de 40").waitFor();
@@ -68,7 +68,7 @@ await step("typing + reading complete the day", async () => {
   for (const goal of ["reading"]) {
     const card = p.locator(`[data-goal=${goal}]`);
     assert((await card.locator("textarea").count()) === 0, "no summary field");
-    await card.locator("input[type=file]").setInputFiles(FIXTURE);
+    await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
     if (goal === "reading") {
       assert(await card.getByRole("button", { name: "Enviar prova" }).isDisabled(), "reading needs pages");
       await card.getByTestId("pages").fill("23");
@@ -94,7 +94,7 @@ await step("typing + reading complete the day", async () => {
 await step("after reload: proofs shown, no way to edit", async () => {
   await p.reload();
   assert((await p.locator("[data-state=done]").count()) === 3, "3 done");
-  assert((await p.locator("input[type=file]").count()) === 1, "only the optional project upload remains");
+  assert((await p.getByTestId("attachment-input").count()) === 1, "only the optional project upload remains");
   await p.locator("[data-goal=study]").getByText("95 min").waitFor();
   await p.locator("[data-goal=reading]").getByText("23 páginas").waitFor();
   assert((await p.locator("[data-goal=study] img:not(.sprite)").evaluate((img) => img.naturalWidth)) > 0, "signed image loads");

@@ -13,7 +13,7 @@ async function checkin(p, goal, fill) {
     return p.locator("[data-goal=typing][data-state=done]").waitFor();
   }
   const card = p.locator(`[data-goal=${goal}]`);
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await fill?.(card);
   await card.getByRole("button", { name: goal === "project" ? "Registrar projeto" : "Enviar prova" }).click();
   await p.locator(`[data-goal=${goal}][data-state=done]`).waitFor();
@@ -66,7 +66,10 @@ await step("mismatch: visible timer far below the declared minutes", async () =>
 
 const davi = await as("davi@pacto.test");
 await step("mismatch opens a tribunal with the AI as accuser, never annuls by itself", async () => {
-  await checkin(davi, "project", async (card) => card.getByTestId("title").fill("Foto do meu gato"));
+  await checkin(davi, "project", async (card) => {
+    await card.getByTestId("title").fill("Foto do meu gato");
+    await card.getByTestId("project-url").fill("https://github.com/Taw3s/pactus");
+  });
   await wait(1500);
   await davi.goto(`${APP}/feed`);
   await davi.locator('[data-member="Caio"]').getByText("Tribunal · aberto").waitFor();
