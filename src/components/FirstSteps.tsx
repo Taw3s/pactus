@@ -158,7 +158,7 @@ export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, f
       body: (
         <>
           {alone && <p className="font-semibold">Por enquanto, só você está aqui. Compartilhe o convite para começar com os amigos.</p>}
-          <p>Compartilhe o link do desafio. Quem entrar começa a contar a partir do dia em que entrou.</p>
+          <p>Compartilhe o link do desafio. Quem entrar começa a dever a partir do dia seguinte.</p>
           <label className="label !mb-0" htmlFor="invite-link">
             Link do convite
           </label>

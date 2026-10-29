@@ -106,6 +106,7 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 ## Decisões em aberto
 
+- **Dia da entrada não gera dívida (0025, 29/10):** antes, quem entrava à noite começava devendo às 23:59. Agora a dívida começa no dia seguinte; o dia da entrada, se cumprido, conta na sequência.
 - **Vínculo da limpeza (0024):** a API passou a exigir que o grupo consultado ainda seja o grupo da alteração; reentrada/mudança durante a chamada não pode apagar fotos do grupo anterior. Testado com sessão válida e armazenamento real no laboratório. Não aplicado em produção.
 
 - **Auditoria local (27/10):** protegidos os limites de IA/digitação, remoção de fotos, origem de requisições e RPC de cardápio. Migrações da auditoria agora 0019–0024, depois da pergunta do dia (0017) e do histórico de passagens (0018); nada publicado. Os testes reproduziram remoção pelo proprietário que já saiu e excesso de sessões extras simultâneas; corrigidos em 0023. Permanecem decisões de desenho: revogação de links de mídia/JWT já emitidos e validação de resultados de digitação autodeclarados. Os erros atuais do site/IA ainda dependem de confirmação nos logs de produção; não atribuir a uma indisponibilidade global sem evidência.

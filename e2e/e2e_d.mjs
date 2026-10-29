@@ -146,6 +146,7 @@ await step("history of another member + month navigation", async () => {
   const firstOwed = owedDays(CAIO_JOIN, lastOfPrevMonth)[0];
   assert((await dayStatus(ana, caioPath, firstOwed)) === "missed", `caio ${firstOwed}`);
   assert((await dayStatus(ana, caioPath, `${PREV_MONTH}-19`)) === "before", "caio 19th, before joining");
+  if (weekday(CAIO_JOIN) !== OFF) assert((await dayStatus(ana, caioPath, CAIO_JOIN)) === "before", "caio's join day never owes");
 });
 
 // A weekday among the past obligation days, never Sunday (some locales sort it differently) and not today's.

@@ -44,6 +44,16 @@ describe("ledger", () => {
     expect(dayStatus(m, "2026-10-22", today)).toBe("before");
   });
 
+  it("the join day never owes, but counts when done", () => {
+    const today = "2026-10-21";
+    expect(dayStatus(base(), "2026-10-19", today)).toBe("before");
+    expect(dayStatus(base(), "2026-10-19", "2026-10-19")).toBe("pending");
+    expect(missedDays(base(), today)).toEqual(["2026-10-20"]);
+    const m = base({ completedDays: new Set(["2026-10-19", "2026-10-20"]) });
+    expect(currentStreak(m, today)).toBe(2);
+    expect(currentStreak(base({ completedDays: new Set(["2026-10-20"]) }), today)).toBe(1);
+  });
+
   it("today is pending, never missed, until it ends", () => {
     expect(dayStatus(base(), "2026-10-21", "2026-10-21")).toBe("pending");
     expect(missedDays(base(), "2026-10-19")).toEqual([]);
@@ -79,8 +89,8 @@ describe("ledger", () => {
   });
 
   it("produces one coke + one snack per missed day, with payments and overdue", () => {
-    const m = base({ joinedOn: "2026-10-29", completedDays: new Set(["2026-10-30"]) });
-    // 29 missed, 30 done, 31 missed, Nov 1 Sunday off, Nov 2 today
+    const m = base({ joinedOn: "2026-10-28", completedDays: new Set(["2026-10-30"]) });
+    // 28 joined (never owes), 29 missed, 30 done, 31 missed, Nov 1 Sunday off, Nov 2 today
     const lines = debtLines(
       m,
       [{ day: "2026-10-29", item: "coke", received_by: "u2", paid_at: "2026-10-29T20:00:00Z" }],
@@ -94,7 +104,7 @@ describe("ledger", () => {
 
   it("debt in the current month is not overdue", () => {
     const lines = debtLines(base(), [], "2026-10-21");
-    expect(lines.map((l) => l.day)).toEqual(["2026-10-19", "2026-10-19", "2026-10-20", "2026-10-20"]);
+    expect(lines.map((l) => l.day)).toEqual(["2026-10-20", "2026-10-20"]);
     expect(lines.some((l) => l.overdue)).toBe(false);
   });
 });
@@ -113,7 +123,7 @@ describe("debt menu", () => {
   });
 
   it("charges each missed day with its own menu", () => {
-    const lines = debtLines(base(), [], "2026-10-21", menus);
+    const lines = debtLines(base({ joinedOn: "2026-10-18" }), [], "2026-10-21", menus); // joined on a Sunday off
     expect(lines.map((l) => `${l.day} ${l.item}`)).toEqual(["2026-10-19 coffee", "2026-10-20 pizza", "2026-10-20 pix"]);
     expect(debtSummary(lines)).toEqual({ counts: [["coffee", 1], ["pizza", 1], ["pix", 1]], total: 3, overdue: 0 });
   });

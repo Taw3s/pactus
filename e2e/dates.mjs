@@ -38,5 +38,5 @@ export const PREV_MONTH = monthKey(addDays(`${monthKey(TODAY)}-01`, -1));
 /** Caio joined on the 20th of the previous month: his debts from then are "atrasadas" (≥ 6 of them in any month). */
 export const CAIO_JOIN = `${PREV_MONTH}-20`;
 export const lastOfPrevMonth = addDays(`${monthKey(TODAY)}-01`, -1);
-/** Days that owe 1 Coca + 1 salgado: joined..yesterday, minus the day off. */
-export const owedDays = (from, to = T(-1)) => eachDay(from, to).filter((d) => weekday(d) !== OFF);
+/** Days that owe 1 Coca + 1 salgado: the day after joining..yesterday, minus the day off (the join day never owes). */
+export const owedDays = (joined, to = T(-1)) => eachDay(addDays(joined, 1), to).filter((d) => weekday(d) !== OFF);
