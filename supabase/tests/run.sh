@@ -62,4 +62,6 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 # Production already has this text field outside the checked-in migration history.
 "${PSQL[@]}" -c "alter table public.checkins add column project_url text"
 "${PSQL[@]}" -f ../migrations/0026_secure_checkin_attachments.sql
+# Reapplying must be safe if an earlier SQL Editor run stopped after a partial change.
+"${PSQL[@]}" -f ../migrations/0026_secure_checkin_attachments.sql
 "${PSQL[@]}" -f attachments_test.sql

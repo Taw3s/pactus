@@ -21,18 +21,25 @@ begin
     raise exception 'public.checkins.project_url must be text, found %', v_type;
   end if;
 end $$;
-alter table public.checkins
-  add constraint project_url_format check (
-    project_url is null or (
-      project_url ~ '^https://github\.com/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}$'
-      and split_part(project_url, '/', 5) not in ('.', '..')
-    )
-  ) not valid,
-  add constraint project_url_only_for_projects check (goal::text = 'project' or project_url is null) not valid,
-  add constraint project_requires_github_url check (goal::text <> 'project' or project_url is not null) not valid;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.checkins'::regclass and conname = 'project_url_format') then
+    alter table public.checkins add constraint project_url_format check (
+      project_url is null or (
+        project_url ~ '^https://github\.com/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}$'
+        and split_part(project_url, '/', 5) not in ('.', '..')
+      )
+    ) not valid;
+  end if;
+  if not exists (select 1 from pg_constraint where conrelid = 'public.checkins'::regclass and conname = 'project_url_only_for_projects') then
+    alter table public.checkins add constraint project_url_only_for_projects check (goal::text = 'project' or project_url is null) not valid;
+  end if;
+  if not exists (select 1 from pg_constraint where conrelid = 'public.checkins'::regclass and conname = 'project_requires_github_url') then
+    alter table public.checkins add constraint project_requires_github_url check (goal::text <> 'project' or project_url is not null) not valid;
+  end if;
+end $$;
 grant insert (project_url) on public.checkins to authenticated;
 
-create table public.checkin_attachments (
+create table if not exists public.checkin_attachments (
   id uuid primary key default gen_random_uuid(),
   checkin_id uuid not null references public.checkins(id) on delete cascade,
   group_id uuid not null,
@@ -49,10 +56,14 @@ alter table public.checkin_attachments enable row level security;
 revoke all on public.checkin_attachments from public, anon, authenticated;
 grant select on public.checkin_attachments to authenticated;
 grant select, insert, delete on public.checkin_attachments to service_role;
-create policy "checkin attachments: read same group" on public.checkin_attachments
-  for select to authenticated using (group_id = public.my_group_id());
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'checkin_attachments' and policyname = 'checkin attachments: read same group') then
+    create policy "checkin attachments: read same group" on public.checkin_attachments
+      for select to authenticated using (group_id = public.my_group_id());
+  end if;
+end $$;
 
-create function public.checkin_attachments_before_insert()
+create or replace function public.checkin_attachments_before_insert()
 returns trigger language plpgsql security definer set search_path = public, storage as $$
 declare
   v_owner uuid;
@@ -77,14 +88,20 @@ begin
 end;
 $$;
 revoke all on function public.checkin_attachments_before_insert() from public, anon, authenticated;
+drop trigger if exists checkin_attachments_before_insert on public.checkin_attachments;
 create trigger checkin_attachments_before_insert
 before insert on public.checkin_attachments
 for each row execute function public.checkin_attachments_before_insert();
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('attachments', 'attachments', false, 10485760, array['application/pdf', 'application/zip']);
+values ('attachments', 'attachments', false, 10485760, array['application/pdf', 'application/zip'])
+on conflict (id) do update set name = excluded.name, public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
-create policy "attachments: read same group" on storage.objects
-  for select to authenticated
-  using (bucket_id = 'attachments' and (storage.foldername(name))[1] = public.my_group_id()::text);
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'attachments: read same group') then
+    create policy "attachments: read same group" on storage.objects
+      for select to authenticated
+      using (bucket_id = 'attachments' and (storage.foldername(name))[1] = public.my_group_id()::text);
+  end if;
+end $$;
 -- No authenticated insert/update/delete policies: the server validates files and owns mutations.
