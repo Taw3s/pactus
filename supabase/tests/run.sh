@@ -57,3 +57,5 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0024_bound_membership_cleanup.sql
 "${PSQL[@]}" -f membership_binding_test.sql
 "${PSQL[@]}" -f membership_log_patch_test.sql
+"${PSQL[@]}" -f ../migrations/0025_join_day_never_owes.sql
+"${PSQL[@]}" -f join_day_test.sql

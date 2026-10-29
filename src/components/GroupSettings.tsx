@@ -75,7 +75,7 @@ export function GroupSettings({ groupName, inviteCode, isOwner, menuToday, menuN
               ? "Link copiado. Agora envie para seus amigos."
               : copied === "failed"
                 ? "Não foi possível copiar. Copie o código manualmente."
-                : "Quem entrar com ele começa a contar a partir do dia em que entrou."}
+                : "Quem entrar com ele começa a dever a partir do dia seguinte."}
         </p>
       </div>
 

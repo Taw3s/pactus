@@ -25,7 +25,7 @@ export const GUIDE: GuideEntry[] = [
     id: "divida",
     q: "Quando eu fico devendo?",
     a: [
-      "Cada dia sem as três metas, fora da sua folga e a partir do dia em que você entrou, vale os itens do cardápio do grupo (1 Coca + 1 salgado, se ninguém trocou). O cardápio aparece na aba Dívidas.",
+      "Cada dia sem as três metas, fora da sua folga e a partir do dia seguinte ao que você entrou, vale os itens do cardápio do grupo (1 Coca + 1 salgado, se ninguém trocou). O cardápio aparece na aba Dívidas.",
       "Quem criou o desafio pode trocar o cardápio em Configurações, com 1 ou 2 itens. A troca vale a partir da segunda seguinte e não muda dias que já passaram.",
       "Quem recebe marca como pago na aba Dívidas. Ninguém marca a própria dívida.",
     ],

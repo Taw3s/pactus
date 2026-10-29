@@ -56,7 +56,9 @@ export function dayStatus(input: MemberLedgerInput, day: ISODate, today: ISODate
   if (day < input.joinedOn || day > today) return "before";
   if (weekdayOf(day) === dayOffOn(input.dayOffChanges, day)) return "off";
   if (input.completedDays.has(day)) return "done";
-  return day === today ? "pending" : "missed";
+  if (day === today) return "pending";
+  // The join day never owes (0025): whoever joins at 22h is not in debt at 23:59. Done, it still counts.
+  return day === input.joinedOn ? "before" : "missed";
 }
 
 export function missedDays(input: MemberLedgerInput, today: ISODate): ISODate[] {
