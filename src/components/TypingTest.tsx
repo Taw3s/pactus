@@ -58,9 +58,11 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   const test = useRef<{ id: string; seconds: number; started: number; device: "pc" | "mobile"; minutes: Minutes; text: TypingText | null; start: number } | null>(null);
   const [typingLang, setTypingLang] = useState<TypingLang>("pt");
   const [focused, setFocused] = useState(false);
+  const [sounds, setSounds] = useState(true);
   const run = useRef({ committed: [] as string[], current: "", words: [] as string[] });
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const audio = useRef<AudioContext | null>(null);
 
   useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
 
@@ -71,6 +73,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       if (saved.mode === "text" || saved.mode === "words") setMode(saved.mode);
       if (saved.lang === "pt" || saved.lang === "en") setLang(saved.lang);
       if (saved.minutes === 1 || saved.minutes === 5) setMinutes(saved.minutes);
+      if (typeof saved.sounds === "boolean") setSounds(saved.sounds);
       const pt = saved.texts?.pt;
       const en = saved.texts?.en;
       setTexts({
@@ -97,7 +100,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setMinutes(len);
     setTexts(ts);
     try {
-      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, minutes: len, texts: ts }));
+      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, minutes: len, texts: ts, sounds }));
     } catch {}
   }
 
@@ -109,6 +112,12 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   async function start() {
     setError("");
     setPhase("starting");
+    if (sounds && typeof window !== "undefined" && "AudioContext" in window) {
+      try {
+        audio.current ??= new AudioContext();
+        await audio.current.resume();
+      } catch { /* audio is optional */ }
+    }
     const device = deviceKind();
     let text: TypingText | null = null;
     if (mode === "text") {
@@ -198,8 +207,30 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       setCurrent("");
       return;
     }
+    if (sounds && value.length > run.current.current.length) {
+      const target = run.current.words[run.current.committed.length] ?? "";
+      const previous = run.current.current.length;
+      for (let i = previous; i < value.length; i++) playKeyTone(value[i] === target[i]);
+    }
     run.current.current = value;
     setCurrent(value);
+  }
+
+  function playKeyTone(correct: boolean) {
+    try {
+      const ctx = audio.current;
+      if (!ctx || ctx.state !== "running") return;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = correct ? 660 : 190;
+      gain.gain.setValueAtTime(0.018, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.05);
+    } catch { /* audio is optional */ }
   }
 
   /**
@@ -248,6 +279,14 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               testid="typing-lang"
             />
           </div>
+          <label className="flex min-h-11 items-center justify-between gap-3 text-sm text-muted">
+            Sons suaves ao digitar
+            <input type="checkbox" checked={sounds} onChange={(e) => {
+              const enabled = e.target.checked;
+              setSounds(enabled);
+              try { const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}"); localStorage.setItem(PREF, JSON.stringify({ ...saved, sounds: enabled })); } catch {}
+            }} />
+          </label>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Duração</span>
             <Segmented
