@@ -40,6 +40,7 @@ Num Chromium já instalado: `export CHROMIUM_PATH=/caminho/do/chrome` antes de `
 
 ## Regras do brief (não mudar sem o Astra)
 
+- Rodada 5: uma prova por vez nos dois formatos (cabeçalho e "Informado" de um lado, evidência do outro), com a informação essencial em 36 px ou mais no horizontal e 42 px ou mais no vertical; a pasta da sala é sempre um sprite de 96 px por cima da captura sem objetos.
 - Cortes secos entre cenas; dentro delas, movimentos curtos em passos (entrada de card: 6 quadros, 24 px em 3 posições).
 - Sprites só em 96, 144 ou 192 px, em posição inteira, `image-rendering: pixelated`; sem zoom, rotação ou blur.
 - O juiz depende só do quadro do vídeo (nada de temporizador), para toda exportação sair igual.
