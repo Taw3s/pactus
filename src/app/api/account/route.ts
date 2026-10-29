@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trustedMutationOrigin } from "@/lib/request-origin";
 import { removeGroupMedia, removeUserMedia } from "@/lib/membership";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
  * Deletes the signed-in account (LGPD; the stores require it in the app): leaves the group the
  * same way as "Sair do grupo" (the group's history stays), deletes the photos, then the user.
  */
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  if (!trustedMutationOrigin(request)) return NextResponse.json({ error: "forbidden origin" }, { status: 403 });
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;
@@ -23,8 +25,10 @@ export async function DELETE() {
     await admin.from("payments").update({ received_name: null }).eq("received_by", me);
     const { data: status, error } = await admin.rpc("_drop_member", { p_user: me, p_group: member.group_id });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (status === "closed") await removeGroupMedia(admin, member.group_id);
-    else await removeUserMedia(admin, member.group_id, me);
+    // A photo left behind is queued (0021) and retried by the daily cron: go on and delete the account.
+    await (status === "closed" ? removeGroupMedia(admin, member.group_id) : removeUserMedia(admin, member.group_id, me)).catch((e) =>
+      console.error("media cleanup failed; queued for retry", e instanceof Error ? e.message : e),
+    );
   }
   const { error } = await admin.auth.admin.deleteUser(me);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

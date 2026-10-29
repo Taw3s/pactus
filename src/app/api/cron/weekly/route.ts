@@ -13,8 +13,9 @@ export const maxDuration = 60;
  * days, the group's total and where the weekly challenge stands. At most one per person a day.
  */
 export async function GET(request: NextRequest) {
+  // Closed without the secret: an unset CRON_SECRET must not leave the route open to anyone.
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const admin = createAdminClient();

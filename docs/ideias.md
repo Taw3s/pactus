@@ -52,7 +52,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [ ] **Domínio** `pactus.dev.br` comprado em 28/10; endereço principal **`https://www.pactus.dev.br`** (o sem `www` redireciona). Falta: o e-mail (acima) e avisar quem usa `pactus-rho.vercel.app` que instale de novo no domínio novo (login, primeiros passos e avisos push não passam). Opcional: aviso no domínio antigo.
 - [ ] **Apoia-se** (doação pura, sem vantagens no app): página `/apoiar` no ar (#49). Falta criar a campanha e pôr o link em `NEXT_PUBLIC_SUPPORT_URL` (Production) + Redeploy. Página com nomes de apoiadores só com 3 ou mais.
 - [ ] **Vídeo de apresentação** (#50): v1 de 43 s e 38 s aguardando revisão do Astra (tribunal com 2 votos, provas pequenas no 16:9, selo num painel, sem a pergunta do dia). Sem áudio; narração opcional, de preferência com a voz do Davi. Divulgar só depois que `pactus.dev.br` abrir.
-- [ ] **PR #40 (patch de segurança, de outra sessão):** numera migrations de 0018 a 0023, mas a 0018 do `main` (`membership_log`) já rodou em produção. Revisar e renumerar antes de qualquer merge; não rodar as migrations dele como estão.
+- [ ] **Patch de segurança** (refeito do #40 em `security/patch-v2`, 29/10): migrations renumeradas para 0019–0024, depois da 0018 (`membership_log`) que já rodou. Revisar, rodar 0019–0024 em ordem e só então mergear; o #40 original pode ser fechado.
 - [x] **Juiz IA no plano grátis do Gemini** (decidido em 28/10, #48): a política diz que o Google pode usar fotos e respostas, com revisão humana. Ativar o faturamento antes de abrir para desconhecidos (custo estimado abaixo de US$ 1/mês por 10 pessoas; o banco já limita a 30 chamadas por pessoa por dia).
 - [ ] **Astra:** revisar os sprites novos (troféus de prata e bronze, os 6 itens do cardápio) e as ideias de "elementos jurídicos" do ChatGPT.
 - [ ] Alguém que usa Java e TypeScript no dia a dia ler os textos dessas abas.
@@ -105,6 +105,10 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 - O gargalo vai ser conteúdo, não código.
 
 ## Decisões em aberto
+
+- **Vínculo da limpeza (0024):** a API passou a exigir que o grupo consultado ainda seja o grupo da alteração; reentrada/mudança durante a chamada não pode apagar fotos do grupo anterior. Testado com sessão válida e armazenamento real no laboratório. Não aplicado em produção.
+
+- **Auditoria local (27/10):** protegidos os limites de IA/digitação, remoção de fotos, origem de requisições e RPC de cardápio. Migrações da auditoria agora 0019–0024, depois da pergunta do dia (0017) e do histórico de passagens (0018); nada publicado. Os testes reproduziram remoção pelo proprietário que já saiu e excesso de sessões extras simultâneas; corrigidos em 0023. Permanecem decisões de desenho: revogação de links de mídia/JWT já emitidos e validação de resultados de digitação autodeclarados. Os erros atuais do site/IA ainda dependem de confirmação nos logs de produção; não atribuir a uma indisponibilidade global sem evidência.
 
 - **Código aberto?** Bom como portfólio, sem esperar que traga usuários. Licença MIT (portfólio) ou AGPL (se um dia quiser ganhar dinheiro). O histórico do git já foi varrido e não tem segredos.
 - **Pontos do teste de 5 minutos:** hoje vale o melhor teste do dia de qualquer duração, então o de 5 minutos quase nunca conta. Mudar isso muda a regra.

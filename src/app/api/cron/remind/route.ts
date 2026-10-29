@@ -4,6 +4,7 @@ import { plural } from "@/lib/text";
 import { groupToday, notifyOnce } from "@/lib/push";
 import { trimOldPhotos } from "@/lib/media-retention";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { retryPendingMediaCleanup } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,8 +16,9 @@ export const maxDuration = 60;
  * ended over a year ago (membership_log, 0018): the free plan allows two crons, both taken.
  */
 export async function GET(request: NextRequest) {
+  // Closed without the secret: an unset CRON_SECRET must not leave the route open to anyone.
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const admin = createAdminClient();
@@ -38,5 +40,9 @@ export async function GET(request: NextRequest) {
   });
   const { count: forgotten, error } = await admin.from("membership_log").delete({ count: "exact" }).lt("left_on", addDays(today, -365));
   if (error) console.error("membership log purge failed", error);
-  return NextResponse.json({ reminded, trimmed, forgotten: forgotten ?? 0 });
+  const mediaCleaned = await retryPendingMediaCleanup(admin).catch(() => {
+    console.error("media cleanup retry failed");
+    return 0;
+  });
+  return NextResponse.json({ reminded, trimmed, forgotten: forgotten ?? 0, mediaCleaned });
 }

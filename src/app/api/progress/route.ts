@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trustedMutationOrigin } from "@/lib/request-origin";
 import { WEEKLY_GOAL_DAYS, weekStart } from "@/lib/collectibles";
 import { spToday } from "@/lib/dates";
 import { groupToday, missingPhrase, notifyOnce } from "@/lib/push";
@@ -12,7 +13,8 @@ export const dynamic = "force-dynamic";
  * still missing goals get a social nudge; when the whole group completes the weekly challenge,
  * everyone is told to open the rare chest. Each notice goes out once per person and day.
  */
-export async function POST() {
+export async function POST(request: Request) {
+  if (!trustedMutationOrigin(request)) return NextResponse.json({ error: "forbidden origin" }, { status: 403 });
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const me = data?.claims?.sub;

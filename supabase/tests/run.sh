@@ -45,3 +45,15 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f study_prompt_test.sql
 "${PSQL[@]}" -f ../migrations/0018_membership_log.sql
 "${PSQL[@]}" -f membership_log_test.sql
+"${PSQL[@]}" -f ../migrations/0019_concurrent_attempt_limits.sql
+"${PSQL[@]}" -f ../migrations/0020_debt_menu_rpc_privacy.sql
+"${PSQL[@]}" -f ../migrations/0021_retry_media_cleanup.sql
+"${PSQL[@]}" -f security_hardening_test.sql
+"${PSQL[@]}" -f typing_integrity_legacy_fixture.sql
+"${PSQL[@]}" -f ../migrations/0022_typing_progress_integrity.sql
+"${PSQL[@]}" -f typing_integrity_test.sql
+"${PSQL[@]}" -f ../migrations/0023_atomic_membership_and_proofs.sql
+"${PSQL[@]}" -f transaction_safety_test.sql
+"${PSQL[@]}" -f ../migrations/0024_bound_membership_cleanup.sql
+"${PSQL[@]}" -f membership_binding_test.sql
+"${PSQL[@]}" -f membership_log_patch_test.sql

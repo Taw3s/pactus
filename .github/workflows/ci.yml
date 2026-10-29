@@ -47,6 +47,7 @@ jobs:
       GEMINI_API_URL: http://127.0.0.1:54400
       # Lets the app deliver to the fake push service on 127.0.0.1 (never set in production).
       PUSH_TEST_SERVICE: "1"
+      CRON_SECRET: local-e2e-cron-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -91,6 +92,25 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3000/login && exit 0; sleep 1; done
           cat next.log; exit 1
 
+      - name: Bound membership cleanup integration on the local stack
+        run: npm run test:security:binding
+
+      - name: Controlled security checks on the local stack
+        working-directory: e2e
+        run: npm run test:security
+
+      - name: Concurrent membership and proof checks on the local stack
+        working-directory: e2e
+        run: npm run test:security:transactions
+
+      - name: Extended adversarial checks on the local stack
+        working-directory: e2e
+        run: npm run test:security:extended
+
+      - name: Deep typing and media checks on the local stack
+        working-directory: e2e
+        run: npm run test:security:depth
+
       - name: End-to-end suite
         working-directory: e2e
         run: bash run.sh
@@ -103,6 +123,9 @@ jobs:
           path: |
             e2e/shots/
             e2e/gemini_mock.log
+            e2e/security-extended-results.json
+            e2e/security-depth-results.json
+            e2e/security-transactions-results.json
             next.log
           if-no-files-found: ignore
           retention-days: 14
