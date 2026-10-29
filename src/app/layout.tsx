@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { MovedNotice } from "@/components/MovedNotice";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body className="min-h-dvh">
+        <MovedNotice />
         {children}
         <ServiceWorker />
       </body>
