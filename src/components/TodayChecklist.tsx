@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
 import { Camera, Check, ChevronRight, Clock, Keyboard, Loader, Plus, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AiBadge, TribunalBadge } from "@/components/StatusBadges";
@@ -11,9 +12,9 @@ import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { TypingCard, type TypingScore } from "@/components/TypingCard";
-import { TypingTest, type TypingResult } from "@/components/TypingTest";
+import type { TypingResult } from "@/components/TypingTest";
 import { DEVICE_LABEL } from "@/lib/typing";
-import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
+import { compressProofPhotos, mediaPath, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
 import { promptOfDay } from "@/lib/study-prompts";
@@ -22,6 +23,11 @@ import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EX
 
 /** The proof this page just sent ("extra" for an extra session): its row plays the sheet animation once. */
 let justSent: string | null = null;
+
+// Completed days do not need to download the interactive typing board.
+const TypingTest = dynamic(() => import("@/components/TypingTest").then((m) => m.TypingTest), {
+  loading: () => <p role="status" className="min-h-12 text-sm text-muted">Carregando teste…</p>,
+});
 
 export interface DoneGoal {
   id: string;
@@ -372,8 +378,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       const supabase = createClient();
       const media = supabase.storage.from("media");
       const paths = shots.map(() => mediaPath(groupId, userId, goal));
-      const blobs = await Promise.all(shots.map((s) => compressImage(s.file)));
-      const thumb = await compressImage(shots[0].file, THUMB_SIDE);
+      const { photos: blobs, thumb } = await compressProofPhotos(shots.map((s) => s.file));
       // The thumbnail only speeds up lists; if it fails, lists fall back to the full photo.
       const [ups] = await Promise.all([
         Promise.all(paths.map((p, n) => media.upload(p, blobs[n], { contentType: "image/jpeg", upsert: false }))),
@@ -607,7 +612,7 @@ function NumberField(props: {
   const invalid = !props.ok && !!props.value;
   return (
     <div className="flex items-center justify-between gap-3">
-      <label htmlFor={props.id} className={`text-base leading-5 ${invalid ? "text-warn" : "text-fg"}`}>
+      <label htmlFor={props.id} className={`min-w-0 flex-1 break-words text-base leading-5 ${invalid ? "text-warn" : "text-fg"}`}>
         {props.label}
         <span className="block text-sm text-muted">Mínimo {props.min}</span>
       </label>
@@ -618,7 +623,7 @@ function NumberField(props: {
         min={props.min}
         max={props.max}
         aria-invalid={invalid}
-        className="input tabular w-24 text-right"
+        className="input tabular w-24 shrink-0 text-right"
         value={props.value}
         onChange={(e) => props.onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
         data-testid={props.testId}
