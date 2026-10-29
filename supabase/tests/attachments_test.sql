@@ -10,6 +10,7 @@ insert into storage.objects(bucket_id,name) values
   ('media','96000000-0000-0000-0000-000000000001/96000000-0000-0000-0000-000000000002/study.jpg');
 create temp table attachment_checkins(id uuid);
 grant select, insert on attachment_checkins to authenticated;
+grant select, insert on attachment_checkins to service_role;
 
 select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000002',false);
 set role authenticated;
