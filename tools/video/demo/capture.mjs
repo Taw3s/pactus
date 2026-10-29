@@ -83,7 +83,7 @@ async function shot(page, id, from, { to = from, parts = {}, pad = 0 } = {}) {
       const kids = from.locator(":scope > *");
       entry.parts[name] = [];
       for (const k of await kids.all()) entry.parts[name].push(await rel(k));
-    } else entry.parts[name] = await rel(from.locator(sel).first());
+    } else entry.parts[name] = await rel(page.locator(sel).filter({ visible: true }).first());
   }
   for (const [suffix, css] of [["-nojudge", entry.judge && hiding(JUDGE)], ["-bare", entry.folder && hiding(`${JUDGE},${FOLDER}`)]]) {
     if (!css) continue;
@@ -163,7 +163,12 @@ for (const goal of ["study", "typing", "reading"]) {
   await ana.addStyleTag({ content: "nav{display:none!important}" });
   await ana.screenshot({ path: path.join(OUT, `proof-${goal}-page.png`), fullPage: true });
   // From the document tab to the photo (or the typing card): owner, what was declared, the AI badge and the proof.
-  await shot(ana, `proof-${goal}`, ana.locator("main header.doc-tab").first(), { to: ana.locator("main figure").first(), pad: 12 });
+  await shot(ana, `proof-${goal}`, ana.locator("main header.doc-tab").first(), {
+    to: ana.locator("main figure").first(),
+    pad: 12,
+    // The video lays these out apart (Astra, round 5): who and what was declared, then the evidence.
+    parts: { header: "main header.doc-tab", informed: "main dl.card", evidence: "main figure" },
+  });
 }
 
 // --- another example: Carla's reading goes to the tribunal, and the group keeps it ---

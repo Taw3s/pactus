@@ -127,7 +127,8 @@ export function Shot({
       {j && <Judge action={judge!.action} start={judge!.start} px={Math.round(j.size * scale) as 96 | 144 | 192} x={(j.x - c.x) * scale} y={(j.y - c.y) * scale} />}
       {f && (
         <StepIn start={folder!.start}>
-          <Sprite name="evidenceFolder" px={Math.round(f.size * scale) as 96 | 144 | 192} x={(f.x - c.x) * scale} y={(f.y - c.y) * scale} />
+          {/* Always a whole-number sprite size (96 px), standing where the screenshot's folder stood (bottom centre). */}
+          <Sprite name="evidenceFolder" px={96} x={(f.x - c.x) * scale + (f.size * scale - 96) / 2} y={(f.y - c.y) * scale + f.size * scale - 96} />
         </StepIn>
       )}
     </div>
@@ -174,8 +175,8 @@ export function Between({ from = 0, to = Infinity, children }: { from?: number; 
 
 export type Format = "h" | "v";
 const TYPE = {
-  h: { main: [64, 72], aux: [36, 46], address: [72, 80] },
-  v: { main: [64, 76], aux: [40, 50], address: [64, 76] },
+  h: { main: [64, 72], aux: [36, 46], address: [72, 80], deadline: [48, 56] },
+  v: { main: [64, 76], aux: [42, 52], address: [64, 76], deadline: [54, 64] },
 } as const;
 
 export function Text({

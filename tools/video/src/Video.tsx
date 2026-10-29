@@ -1,7 +1,7 @@
 // The presentation video, as approved by Astra (brief of 28/10/2026): 43 s with the support card (Apoia-se, 16:9)
 // and 38 s without it (WhatsApp, 9:16). Each format is laid out on its own, never cropped from the other.
 import { AbsoluteFill, Sequence, useVideoConfig } from "remotion";
-import { Between, Brand, C, Card, Format, PIXEL, Shot, StepIn, Text, blocks, fit, judgeScale, shotMeta, sized, whole, useFonts, type ShotId } from "./parts";
+import { Between, Brand, C, Card, Format, PIXEL, Shot, StepIn, Text, blocks, fit, judgeScale, shotMeta, sized, whole, useFonts, type Box, type ShotId } from "./parts";
 
 export const FPS = 30;
 const s = (sec: number) => Math.round(sec * FPS);
@@ -79,12 +79,20 @@ const GOALS = ["study", "typing", "reading"] as const;
 const LABEL = { study: "Estudo", typing: "Digitação", reading: "Leitura" };
 const proofId = (g: (typeof GOALS)[number]) => `proof-${g}` as const;
 
-/** Scene 3: the three real proofs one by one, then the day's seal (the judge stamps the three together). */
+/**
+ * Scene 3: one proof at a time (Astra, round 5): who and what was declared, then the evidence, at reading size;
+ * then the day's seal (the judge stamps the three together).
+ */
 function Goals({ f }: { f: Format }) {
+  const turns = [0, s(2.2), s(4.4)];
   const seal = s(6.5);
   return (
     <AbsoluteFill>
-      <Between to={seal}>{f === "h" ? <GoalsRow /> : <GoalsOneByOne />}</Between>
+      {GOALS.map((g, i) => (
+        <Between key={g} from={turns[i]} to={turns[i + 1] ?? seal}>
+          <Proof f={f} goal={g} start={turns[i]} />
+        </Between>
+      ))}
       <Between from={seal}>
         <Seal f={f} />
       </Between>
@@ -92,58 +100,55 @@ function Goals({ f }: { f: Format }) {
   );
 }
 
-function GoalsRow() {
-  const { W, H, m } = useLayout("h");
-  // Three proofs of equal weight side by side, all at the scale of the one that fits least.
-  const gap = 48;
-  const top = 220;
-  const colW = Math.floor((W - 2 * m - 2 * gap) / 3);
-  const k = Math.min(...GOALS.map((g) => fit(whole(proofId(g)), colW, H - top - 60)));
-  return (
-    <>
-      <Text f="h" x={m} y={88} w={W - 2 * m}>
-        Estudo. Digitação. Leitura.
-      </Text>
-      {GOALS.map((g, i) => {
-        const { w } = sized(whole(proofId(g)), k);
-        return (
-          <StepIn key={g} start={s(0.4 + i * 1.6)}>
-            <Shot id={proofId(g)} scale={k} x={m + i * (colW + gap) + (colW - w) / 2} y={top} />
-          </StepIn>
-        );
-      })}
-    </>
-  );
-}
-
-function GoalsOneByOne() {
-  const { W, H, m } = useLayout("v");
-  // One proof at a time across the width, with the three labels as a small sequence above it.
-  const each = s(2);
-  const top = 560;
+function Proof({ f, goal, start }: { f: Format; goal: (typeof GOALS)[number]; start: number }) {
+  const { W, m } = useLayout(f);
+  const id = proofId(goal);
+  const p = shotMeta(id).parts as unknown as Record<"header" | "informed" | "evidence", Box>;
+  // Header and "Informado" read as one block: from the top of the header (with its folder tab) to the bottom of the box.
+  const who: Box = { x: p.header.x - 8, y: p.header.y - 12, w: p.header.w + 16, h: p.informed.y + p.informed.h - p.header.y + 20 };
+  const ev: Box = { x: p.evidence.x - 4, y: p.evidence.y - 4, w: p.evidence.w + 8, h: p.evidence.h + 8 };
+  if (f === "h") {
+    // Inside x120/y260, 1680×680: the declaration on the left, the evidence on the right.
+    const box = { x: m, y: 260, w: 1680, h: 680 };
+    const kWho = fit(who, 760, box.h);
+    const kEv = fit(ev, box.w - 760 - 64, box.h);
+    const evSize = sized(ev, kEv);
+    return (
+      <>
+        {/* The three goals in one line; the one being shown in yellow. */}
+        <Text f="h" x={m} y={88} w={W - 2 * m}>
+          {GOALS.map((g) => (
+            <span key={g} style={{ color: g === goal ? C.accent : C.fg }}>
+              {LABEL[g]}.{" "}
+            </span>
+          ))}
+        </Text>
+        <StepIn start={start}>
+          <Shot id={id} scale={kWho} crop={who} x={box.x} y={box.y} />
+          <Shot id={id} scale={kEv} crop={ev} x={box.x + box.w - evSize.w} y={box.y + (box.h - evSize.h) / 2} />
+        </StepIn>
+      </>
+    );
+  }
+  // Vertical: title, the active label, then the declaration and the evidence stacked, ending before y1740.
+  const w = 748;
+  const kWho = w / who.w;
+  const whoSize = sized(who, kWho);
+  const evTop = 470 + whoSize.h + 24;
+  const kEv = fit(ev, w, 1740 - evTop);
+  const evSize = sized(ev, kEv);
   return (
     <>
       <Text f="v" x={m} y={140} w={W - 2 * m}>
         Estudo. Digitação. Leitura.
       </Text>
-      <div style={{ position: "absolute", left: m, top: 400, display: "flex", gap: 40 }}>
-        {GOALS.map((g, i) => (
-          <Between key={g} from={s(0.4) + i * each}>
-            <span style={{ fontFamily: PIXEL, fontSize: 48, lineHeight: "56px", color: C.accent, textTransform: "uppercase" }}>{LABEL[g]}</span>
-          </Between>
-        ))}
-      </div>
-      {GOALS.map((g, i) => {
-        const k = fit(whole(proofId(g)), W - 2 * m, H - top - 120);
-        const { w } = sized(whole(proofId(g)), k);
-        return (
-          <Between key={g} from={s(0.4) + i * each} to={i < 2 ? s(0.4) + (i + 1) * each : undefined}>
-            <StepIn start={s(0.4) + i * each}>
-              <Shot id={proofId(g)} scale={k} x={(W - w) / 2} y={top} />
-            </StepIn>
-          </Between>
-        );
-      })}
+      <span style={{ position: "absolute", left: m, top: 340, fontFamily: PIXEL, fontSize: 48, lineHeight: "56px", color: C.accent, textTransform: "uppercase" }}>
+        {LABEL[goal]}
+      </span>
+      <StepIn start={start}>
+        <Shot id={id} scale={kWho} crop={who} x={(W - whoSize.w) / 2} y={470} />
+        <Shot id={id} scale={kEv} crop={ev} x={(W - evSize.w) / 2} y={evTop} />
+      </StepIn>
     </>
   );
 }
@@ -161,7 +166,7 @@ function Seal({ f }: { f: Format }) {
       {/* on the app it sits in a card: the panel keeps its colour around the screenshot */}
       <Card x={x - pad} y={y - pad} w={w + 2 * pad} h={h + 2 * pad} scale={k} />
       <Shot id={id} scale={k} x={x} y={y} judge={{ action: "stamp", start: s(0.3) }} />
-      <Text f={f} x={m} y={f === "h" ? H - 220 : 1200} w={W - 2 * m} align="center">
+      <Text f={f} kind="deadline" x={m} y={f === "h" ? 820 : 1200} w={W - 2 * m} align="center">
         Até 23:59 · horário de São Paulo
       </Text>
     </>
