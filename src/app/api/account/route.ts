@@ -20,7 +20,9 @@ export async function DELETE() {
   const { data: member } = await admin.from("members").select("group_id").eq("user_id", me).maybeSingle();
   if (member) {
     // LGPD art. 16: after deletion the group keeps the receipts, but not the person's name on them.
-    await admin.from("payments").update({ received_name: null }).eq("received_by", me);
+    // Nothing is done yet if this fails: answer an error instead of dropping the member with the name still on receipts.
+    const { error: unnamed } = await admin.from("payments").update({ received_name: null }).eq("received_by", me);
+    if (unnamed) return NextResponse.json({ error: unnamed.message }, { status: 500 });
     const { data: status, error } = await admin.rpc("_drop_member", { p_user: me, p_group: member.group_id });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (status === "closed") await removeGroupMedia(admin, member.group_id);
