@@ -13,7 +13,10 @@ export function safeNextPath(raw: string | null, origin: string, fallback = "/ho
   try {
     const url = new URL(raw, origin);
     if (url.origin !== new URL(origin).origin) return fallback;
-    return `${url.pathname}${url.search}`;
+    const path = `${url.pathname}${url.search}`;
+    // The caller resolves this path again: normalization can produce a leading //.
+    if (new URL(path, origin).origin !== url.origin) return fallback;
+    return path;
   } catch {
     return fallback;
   }

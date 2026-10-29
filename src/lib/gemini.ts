@@ -47,7 +47,7 @@ async function call(model: string, prompt: string, imagesBase64: string[]): Prom
   if (!res.ok) {
     // 400/401/403 are configuration problems (bad key, API disabled): another model won't help.
     const retryable = ![400, 401, 403].includes(res.status);
-    throw new GeminiError(`${model} ${res.status}: ${(await res.text()).slice(0, 300)}`, retryable);
+    throw new GeminiError(`${model}: HTTP ${res.status}`, retryable);
   }
   const body = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
