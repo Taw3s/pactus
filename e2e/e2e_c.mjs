@@ -61,7 +61,7 @@ await step("Ana disputes Bia's check-in: courtroom with defendant, jury and scor
   await ana.getByText("Em votação").waitFor();
   assert((await ana.getByTestId("defendant").innerText()) === "Bia", "defendant in the middle");
   assert((await ana.getByTestId("guilty-count").innerText()) === "1", "author counts as guilty");
-  await ana.getByText("Maioria: 3 de 5 jurados.").waitFor();
+  await ana.getByText("Decide quem chegar a 3 dos 5 votos.").waitFor();
   assert((await ana.locator("[data-juror]").count()) === 5, "5 jurors");
   assert((await ana.locator('[data-juror="Ana"]').getAttribute("data-vote")) === "guilty", "Ana's seat shows guilty");
   assert((await ana.getByTestId("vote-form").count()) === 0, "author can vote again");

@@ -63,7 +63,7 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
       const { member } = asking;
       const r = await post({ action: "remove", userId: member.id });
       if (r === "ok") {
-        setMsg(`${member.name} foi removido do grupo.`);
+        setMsg(`Você removeu ${member.name} do grupo.`);
         setClosing(true);
         startRefresh(() => router.refresh());
         return;

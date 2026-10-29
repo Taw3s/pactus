@@ -62,7 +62,7 @@ await step("the owner removes a member: proofs and photos go, payments received 
   await noAxeViolations(p);
   await p.screenshot({ path: `${SHOTS}/m2-remover.png` });
   await dialog.getByRole("button", { name: "Remover do grupo" }).click();
-  await p.getByText(`${name} foi removido do grupo.`).waitFor();
+  await p.getByText(`Você removeu ${name} do grupo.`).waitFor();
   await dialog.waitFor({ state: "detached" });
   assert(sql(`select count(*) from members where user_id = '${id}'`) === "0", "still a member");
   assert(sql(`select count(*) from auth.users where id = '${id}'`) === "1", "the account was deleted");
