@@ -33,13 +33,13 @@ O Pacto tem duas camadas:
 
 Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 semanas → cobrar pelo site (plano por grupo) → Play Store → App Store. Para desconhecidos usarem:
 
-- [ ] **E-mail de login** com SMTP próprio (Resend, região São Paulo). Em 28/10: domínio comprado, DNS da Vercel válido, registros do Resend (DKIM, `send`, `rsend`) e `_dmarc` na zona do registro.br. Falta (você): Resend "Verified"; Supabase → SMTP (`smtp.resend.com`, 465, usuário `resend`, chave só no painel); Supabase → URL Configuration (Site URL e Redirect URLs em `https://www.pactus.dev.br`); `NEXT_PUBLIC_SITE_URL=https://www.pactus.dev.br` na Vercel + Redeploy; teste com e-mail de fora. Depois do teste: PR que troca "Serviço de e-mail" por Resend na política (e a data em `src/lib/legal.ts`).
+- [x] **E-mail de login** pelo Resend (região São Paulo), testado em 29/10: e-mail de fora entregue e login pelo link funcionando. Domínio verificado no Resend (DKIM, `send`, `rsend`, `_dmarc` no registro.br); SMTP e URLs (`https://www.pactus.dev.br`) configurados no Supabase; política cita o Resend (#52).
 - [x] **Espaço das fotos**: apagar a foto grande depois de 30 dias e manter a miniatura; compressão menor (PR #35).
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [x] **Página de apresentação** e **primeiros passos** de um grupo novo (rodada 4: PRs #44, #45 e #46). Convite com Google testado em produção (28/10): volta com o código preenchido.
 - [ ] **Aviso de erros** (Sentry ou parecido): sem isso, a falha de um desconhecido não chega a ninguém. Serviço novo: atualizar a política no mesmo PR.
-- [ ] **E-mail para quem é de fora:** o SMTP padrão do Supabase só entrega para a equipe do projeto. Até o Resend funcionar, só o Google é garantido: não chamar ninguém antes do item acima.
+- [x] **E-mail para quem é de fora:** resolvido pelo Resend (29/10).
 - [x] **Beta fechado** (decidido em 28/10): sem código de beta. O Davi cria o grupo e manda o link de convite (`/join?convite=…`) num grupo de WhatsApp; quem recebe cai no mesmo desafio. Medir com `retention.sql` na 1ª e 2ª semana.
 - [ ] **Cópia do banco:** pausa por inatividade não preocupa (o cron diário mantém o projeto ativo e a pausa se desfaz pelo painel). O risco é apagar algo por engano: sem cobertura no plano grátis. Combinado: baixar um backup antes de cada migration; plano Pro (backup diário) se entrar dinheiro do Apoia-se.
 - [ ] **Limites dos planos grátis** (Supabase, Vercel Hobby, Gemini): anotar os números atuais e o que acontece quando estouram (o juiz IA só deixa de conferir; a prova continua valendo).

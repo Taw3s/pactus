@@ -83,7 +83,8 @@ export default function PrivacyPage() {
           <b>Serviços de aviso do navegador</b> (Google, Apple ou Mozilla, conforme o seu aparelho): entregam os avisos que você ativou.
         </li>
         <li>
-          <b>Serviço de e-mail:</b> envia os links de login e de confirmação.
+          <b>Resend (e-mail):</b> envia os links de login e de confirmação. Recebe o seu e-mail e o conteúdo da mensagem (o link). Os
+          envios saem por servidores em São Paulo.
         </li>
       </ul>
 
