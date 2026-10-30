@@ -8,7 +8,7 @@ import { thumbPath } from "./image";
 import { createClient } from "./supabase/server";
 import type { Verdict } from "./ai-review";
 import type { DayOffChange, MemberLedgerInput, Payment } from "./ledger";
-import { positions, scoreMonth, type RankingCheckin } from "./ranking";
+import { positions, scoreMonth, typingBestByDay, type RankingCheckin } from "./ranking";
 import type { Member, PaymentRow } from "./types";
 import { lastDayOfMonth } from "./dates";
 
@@ -116,8 +116,8 @@ export async function getMonthScores(supabase: SupabaseClient, membersPromise: P
   const to = lastDayOfMonth(from);
   const [members, checkins, upheld, completed, typing] = await Promise.all([
     membersPromise,
-    fetchAll<Omit<RankingCheckin, "annulled"> & { id: string }>((a, b) =>
-      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages").gte("day", from).lte("day", to).order("id").range(a, b),
+    fetchAll<Omit<RankingCheckin, "annulled"> & { id: string; created_at: string }>((a, b) =>
+      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages, created_at").gte("day", from).lte("day", to).order("id").range(a, b),
     ),
     fetchAll<{ checkin_id: string }>((a, b) =>
       supabase.from("dispute_results").select("checkin_id").eq("status", "upheld").order("checkin_id").range(a, b),
@@ -125,16 +125,12 @@ export async function getMonthScores(supabase: SupabaseClient, membersPromise: P
     fetchAll<{ user_id: string; day: string }>((a, b) =>
       supabase.from("completed_days").select("user_id, day").gte("day", from).lte("day", to).order("user_id").order("day").range(a, b),
     ),
-    fetchAll<{ user_id: string; day: string; score: number }>((a, b) =>
-      supabase.from("typing_tests").select("user_id, day, score").gte("day", from).lte("day", to).not("score", "is", null).order("id").range(a, b),
+    fetchAll<{ user_id: string; day: string; score: number; finished_at: string }>((a, b) =>
+      supabase.from("typing_tests").select("user_id, day, score, finished_at").gte("day", from).lte("day", to).not("score", "is", null).order("id").range(a, b),
     ),
   ]);
-  const typingBest = new Map<string, number>();
-  for (const t of typing) {
-    const k = `${t.user_id}|${t.day}`;
-    typingBest.set(k, Math.max(typingBest.get(k) ?? 0, Number(t.score)));
-  }
   const annulled = new Set(upheld.map((u) => u.checkin_id));
+  const typingBest = typingBestByDay(typing, checkins.filter((c) => c.goal === "typing" && annulled.has(c.id)));
   const scores = scoreMonth(
     members.map((x) => x.user_id),
     checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),

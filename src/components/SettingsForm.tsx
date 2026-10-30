@@ -63,6 +63,16 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
   }
 
   async function logout() {
+    // The device's push subscription belongs to this account: without this, its notices keep arriving after logout.
+    try {
+      const sub = await (await navigator.serviceWorker?.getRegistration())?.pushManager.getSubscription();
+      if (sub) {
+        await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        await sub.unsubscribe();
+      }
+    } catch {
+      // Best effort: never block logging out.
+    }
     await supabase.auth.signOut();
     router.replace("/login");
     router.refresh();

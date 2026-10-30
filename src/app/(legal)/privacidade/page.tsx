@@ -117,8 +117,9 @@ export default function PrivacyPage() {
           tratamos como dado pessoal.
         </li>
         <li>
-          Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos (eles passam a dizer “ex-membro”) e o seu login é
-          apagado.
+          Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos do grupo em que você está (eles passam a dizer
+          “ex-membro”) e o seu login é apagado. Recibos de grupos de que você já tinha saído continuam com o seu nome, sem ligação com a sua
+          conta, como no item acima.
         </li>
       </ul>
 

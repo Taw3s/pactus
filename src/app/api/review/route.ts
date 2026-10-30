@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { trustedMutationOrigin } from "@/lib/request-origin";
 import { buildPrompt, decideVerdict, parseAnswer } from "@/lib/ai-review";
+import { addDays, spToday } from "@/lib/dates";
 import { askGemini, geminiConfigured } from "@/lib/gemini";
 import { studyPrompt } from "@/lib/study-prompts";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -46,6 +47,9 @@ export async function POST(request: NextRequest) {
     if (error && error.code !== "23505") return NextResponse.json({ error: "review failed" }, { status: 502 });
     return NextResponse.json({ status: "reviewed" });
   }
+
+  // Same window as the tribunal and the proof page: a mismatch on an older proof would open a late tribunal (0026 refuses it too).
+  if (checkin.day < addDays(spToday(), -1)) return NextResponse.json({ status: "closed" }, { status: 409 });
 
   const {
     data: { user },

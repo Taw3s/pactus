@@ -32,14 +32,18 @@ interface Props {
   isOwner: boolean;
   /** Ask for a review when none exists (recent check-ins only). */
   canRequest: boolean;
+  /** No review and the window to ask for one is over (computed on the server, São Paulo date). */
+  closed: boolean;
   /** A tribunal decision exists: the analysis stays, but visually secondary. */
   secondary: boolean;
 }
 
 /** "Juiz IA": a first-instance reading that never replaces the group's decision. */
-export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner, canRequest, secondary }: Props) {
+export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner, canRequest, closed, secondary }: Props) {
   const router = useRouter();
-  const [state, setState] = useState<AiState | "off" | null>(review ? review.verdict : canRequest ? "analyzing" : null);
+  const [state, setState] = useState<AiState | "off" | "closed" | null>(
+    review ? review.verdict : canRequest ? "analyzing" : closed ? "closed" : null,
+  );
 
   useEffect(() => {
     if (review || !canRequest) return;
@@ -54,6 +58,7 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
           if (r.status === 501) setState("off"); // feature not configured: show nothing
           else if (body.status === "reviewed" || body.status === "exists") router.refresh();
           else if (body.status === "busy" && n < 12) timer = setTimeout(() => ask(n + 1), 5000);
+          else if (body.status === "closed") setState("closed"); // the day turned while the page was open
           else setState("unavailable");
         })
         .catch(() => !cancelled && setState("unavailable"));
@@ -65,6 +70,15 @@ export function AiPanel({ checkinId, review, declaredMinutes, ownerName, isOwner
   }, [checkinId, review, canRequest, router]);
 
   if (!state || state === "off") return null;
+  if (state === "closed")
+    return (
+      <section aria-labelledby="ai-title" className="card" data-testid="ai-review">
+        <h2 id="ai-title" className={`pixel uppercase ${secondary ? "text-base text-muted" : "text-lg leading-6"}`}>
+          Juiz IA
+        </h2>
+        <p className="mt-2 text-sm leading-5 text-muted">O prazo para pedir revisão da IA desta prova terminou.</p>
+      </section>
+    );
 
   const timerGap =
     review?.verdict === "mismatch" && declaredMinutes && review.detected !== null
