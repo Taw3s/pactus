@@ -2,16 +2,36 @@
 // database (open_chest, migration 0006) so nobody can pick an item; this is the display catalog.
 export type Rarity = "comum" | "raro" | "lendario";
 
+// `line` is the inspection card text. `set` is narrative metadata only (no UI, bonus or challenge yet).
+// Ids are stored in chest_openings: never rename or reuse one. Weights live in the database (0027).
 export const COLLECTIBLES = [
-  { id: "plant", name: "Planta", rarity: "comum" },
-  { id: "mug", name: "Caneca", rarity: "comum" },
-  { id: "duck", name: "Patinho", rarity: "comum" },
-  { id: "cat", name: "Gato", rarity: "raro" },
-  { id: "lamp", name: "Luminária", rarity: "raro" },
-  { id: "globe", name: "Globo", rarity: "raro" },
-  { id: "goldBook", name: "Livro dourado", rarity: "lendario" },
-  { id: "crown", name: "Coroa", rarity: "lendario" },
-] as const satisfies readonly { id: string; name: string; rarity: Rarity }[];
+  { id: "plant", name: "Planta", rarity: "comum", line: "Só pede água e um pouco de sol. Às vezes nem isso." },
+  { id: "mug", name: "Caneca", rarity: "comum", line: "Cabe café para uma madrugada inteira." },
+  { id: "duck", name: "Patinho", rarity: "comum", line: "Ouve o código em voz alta sem julgar." },
+  { id: "forgottenCoffee", name: "Café esquecido", rarity: "comum", line: "Já esfriou. A prova ainda não chegou.", set: "studyDesk" },
+  { id: "survivorPencil", name: "Lápis sobrevivente", rarity: "comum", line: "Ainda dá para mais uma página.", set: "studyDesk" },
+  { id: "patchedHeadphones", name: "Fone remendado", rarity: "comum", line: "Concentração por meios alternativos.", set: "studyDesk" },
+  { id: "cat", name: "Gato", rarity: "raro", line: "Senta exatamente onde você ia escrever." },
+  { id: "lamp", name: "Luminária", rarity: "raro", line: "Acesa até mais tarde do que deveria." },
+  { id: "globe", name: "Globo", rarity: "raro", line: "Tantos lugares, e você aqui estudando." },
+  { id: "crookedHourglass", name: "Ampulheta torta", rarity: "raro", line: "O tempo passa. Ela também quase cai.", set: "oddFinds" },
+  { id: "suspiciousLoupe", name: "Lupa desconfiada", rarity: "raro", line: "Essa foto merece uma segunda olhada.", set: "judgeChambers" },
+  { id: "witnessPigeon", name: "Pombo testemunha", rarity: "raro", line: "Viu tudo. Não entendeu nada.", set: "oddFinds" },
+  { id: "goldBook", name: "Livro dourado", rarity: "lendario", line: "Lido uma vez. Citado sempre." },
+  { id: "crown", name: "Coroa", rarity: "lendario", line: "Pesa mais do que parece." },
+  { id: "judgeSlippers", name: "Pantufas do juiz", rarity: "lendario", line: "A autoridade também sente frio.", set: "judgeChambers" },
+  { id: "rubberGavel", name: "Martelo de borracha", rarity: "lendario", line: "A decisão é séria. O equipamento, discutível.", set: "judgeChambers" },
+  { id: "goldenJudgeBust", name: "Busto dourado do juiz", rarity: "lendario", line: "Encomendado por ele mesmo.", set: "judgeChambers" },
+  { id: "magistrateDuck", name: "Patinho magistrado", rarity: "lendario", line: "Promovido sem concurso." },
+] as const satisfies readonly { id: string; name: string; rarity: Rarity; line: string; set?: CollectionSet }[];
+
+export type CollectionSet = "studyDesk" | "judgeChambers" | "oddFinds";
+
+/** Last day of the shelf note about the 8 -> 18 expansion (no stored dismissal for a one-off note). */
+export const COLLECTION_EXPANSION_NOTE_UNTIL = "2026-11-30";
+
+/** Name shown for an id this version of the app does not know (stored by a newer catalog). */
+export const UNKNOWN_COLLECTIBLE = "Objeto da coleção";
 
 export type CollectibleId = (typeof COLLECTIBLES)[number]["id"];
 
@@ -20,6 +40,10 @@ export const RARITY_TONE: Record<Rarity, string> = { comum: "text-fg", raro: "te
 
 export function collectible(id: string) {
   return COLLECTIBLES.find((c) => c.id === id);
+}
+
+export function copies(n: number) {
+  return n === 1 ? "1 cópia" : `${n} cópias`;
 }
 
 /** Monday of the week of `day` (ISO), the period of the weekly group challenge. */

@@ -32,13 +32,37 @@ await step("the item shows in Ana's collection (Perfil), seen by the group", asy
   await ana.waitForURL("**/historico/**");
   const shelf = ana.getByTestId("collection");
   await shelf.waitFor();
-  assert((await ana.getByTestId("collection-count").innerText()) === "1/8", await ana.getByTestId("collection-count").innerText());
+  assert((await ana.getByTestId("collection-count").innerText()) === "1/18", await ana.getByTestId("collection-count").innerText());
   assert((await shelf.locator('[data-owned="true"]').count()) === 1, "one owned slot");
-  await shelf.getByText(won, { exact: false }).first().waitFor();
+  // Silhouettes are not buttons and never name the object they hide.
+  assert((await shelf.locator('[data-owned="false"] button').count()) === 0, "silhouettes are not interactive");
+  assert((await shelf.locator('[data-owned="false"]').filter({ hasText: won }).count()) === 0, "silhouettes hide names");
   await ana.screenshot({ path: `${SHOTS}/i2-colecao.png`, fullPage: true });
+
+  // The owned object opens its card; Escape closes it and focus goes back to the object.
+  const item = shelf.getByRole("button", { name: new RegExp(won, "i") });
+  await item.click();
+  const card = ana.getByTestId("collection-item-dialog");
+  await card.getByRole("heading", { name: new RegExp(won, "i") }).waitFor();
+  assert((await card.getByTestId("collection-item-copies").innerText()) === "Você tem 1 cópia.", "own copies line");
+  assert(await ana.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Fechar"), "focus starts on Fechar");
+  await ana.screenshot({ path: `${SHOTS}/i2b-ficha.png` });
+  await ana.keyboard.press("Escape");
+  await card.waitFor({ state: "hidden" });
+  assert(await item.evaluate((el) => el === document.activeElement), "focus returns to the object");
 });
 
 const davi = await as("davi@pacto.test");
+await step("another member sees Ana's object card without \"Você tem\"", async () => {
+  await davi.goto(ana.url());
+  const shelf = davi.getByTestId("collection");
+  await shelf.getByRole("button", { name: new RegExp(won, "i") }).click();
+  const card = davi.getByTestId("collection-item-dialog");
+  assert((await card.getByTestId("collection-item-copies").innerText()) === "1 cópia na coleção.", "other member copies line");
+  await card.getByRole("button", { name: "Fechar" }).last().click();
+  await card.waitFor({ state: "hidden" });
+  await davi.goto(`${APP}/hoje`);
+});
 await step("someone who didn't close the day sees a locked chest and the weekly challenge", async () => {
   await davi.getByTestId("daily-chest-card").getByText("Feche as 3 metas").waitFor();
   assert((await davi.getByRole("button", { name: "Abrir baú" }).count()) === 0, "open button without closing the day");

@@ -5,7 +5,7 @@ import { GroupSidebar } from "@/components/GroupSidebar";
 import { PendingReviews } from "@/components/PendingReviews";
 import { Scoreboard, type GoalState } from "@/components/Scoreboard";
 import { TodayChecklist } from "@/components/TodayChecklist";
-import { collectible, weekStart } from "@/lib/collectibles";
+import { collectible, weekStart, type Rarity } from "@/lib/collectibles";
 import { addDays, formatDayPt, spToday, weekdayOf } from "@/lib/dates";
 import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/data";
 import { isDebtItem } from "@/lib/debt-items";
@@ -43,7 +43,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
     supabase.from("dispute_results").select("checkin_id, status"),
     getMembers(supabase),
-    supabase.from("chest_openings").select("kind, period, item_id").eq("user_id", me.user_id).in("period", [today, monday]),
+    supabase.from("chest_openings").select("kind, period, item_id, collectibles(rarity)").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
     supabase.from("typing_tests").select("wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
@@ -65,8 +65,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   };
   const chestOf = (kind: "daily" | "weekly", period: string) => {
     const row = (chests ?? []).find((c) => c.kind === kind && c.period === period);
-    const info = row ? collectible(row.item_id) : null;
-    return info ? { itemId: info.id, rarity: info.rarity } : null;
+    if (!row) return null;
+    // Rarity comes from the database, so an id this version does not know still shows as opened.
+    const embedded = row.collectibles as { rarity: Rarity } | { rarity: Rarity }[] | null;
+    const rarity = (Array.isArray(embedded) ? embedded[0]?.rarity : embedded?.rarity) ?? collectible(row.item_id)?.rarity ?? "comum";
+    return { itemId: row.item_id as string, rarity };
   };
   const nameOf = new Map(members.map((m) => [m.user_id, m.display_name]));
   const week = ((weekRows ?? []) as { user_id: string; done_days: number }[])
