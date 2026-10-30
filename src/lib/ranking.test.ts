@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { podium, positions, scoreMonth, SCORING, type RankingCheckin, type Score } from "./ranking";
+import { podium, positions, scoreMonth, SCORING, typingBestByDay, type RankingCheckin, type Score } from "./ranking";
 
 const c = (over: Partial<RankingCheckin>): RankingCheckin => ({
   user_id: "ana",
@@ -92,5 +92,18 @@ describe("podium", () => {
     expect(shape([sc("a", 0), sc("b", 0)])).toEqual([]);
     expect(shape([sc("a", 3)])).toEqual(["1:a"]);
     expect(shape([sc("a", 3), sc("b", 0)])).toEqual(["1:a"]);
+  });
+});
+
+describe("typingBestByDay", () => {
+  const t = (score: number, finished_at: string) => ({ user_id: "a", day: "2026-10-29", score, finished_at });
+  it("takes the best test of the day", () => {
+    expect(typingBestByDay([t(30, "2026-10-29T10:00:00Z"), t(80, "2026-10-29T11:00:00Z")], []).get("a|2026-10-29")).toBe(80);
+  });
+  it("ignores tests judged on a typing proof the tribunal annulled", () => {
+    const condemned = [{ user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:05:00Z" }];
+    const best = typingBestByDay([t(200, "2026-10-29T11:00:00Z"), t(15, "2026-10-29T15:00:00Z")], condemned);
+    expect(best.get("a|2026-10-29")).toBe(15);
+    expect(typingBestByDay([t(200, "2026-10-29T11:00:00Z")], condemned).has("a|2026-10-29")).toBe(false);
   });
 });

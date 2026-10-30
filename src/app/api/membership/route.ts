@@ -38,5 +38,10 @@ export async function POST(req: Request) {
       console.error("media cleanup failed; queued for retry", e instanceof Error ? e.message : e),
     );
   }
+  // Removing someone rotates the invite code (0026): hand back the new one, read through the owner's own session.
+  if (body.action === "remove" && rpc.data === "left") {
+    const { data: group } = await supabase.from("groups").select("invite_code").eq("id", member.group_id).maybeSingle();
+    return NextResponse.json({ status: rpc.data, inviteCode: group?.invite_code ?? null });
+  }
   return NextResponse.json({ status: rpc.data });
 }

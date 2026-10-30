@@ -44,16 +44,19 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   ]);
   if (!checkin) notFound();
   // Typing: the proof shows the day's best test (what scores), not only the first one it was sent with.
+  // A retake only exists because the first proof was annulled: tests judged on it (finished before it) do not count.
+  const { data: condemned } = checkin.typing_tests && checkin.retake_of
+    ? await supabase.from("checkins").select("created_at").eq("id", checkin.retake_of).maybeSingle<{ created_at: string }>()
+    : { data: null };
+  let bestQuery = supabase
+    .from("typing_tests")
+    .select("wpm, accuracy, device, minutes")
+    .eq("user_id", checkin.user_id)
+    .eq("day", checkin.day)
+    .not("score", "is", null);
+  if (condemned) bestQuery = bestQuery.gt("finished_at", condemned.created_at);
   const { data: bestTest } = checkin.typing_tests
-    ? await supabase
-        .from("typing_tests")
-        .select("wpm, accuracy, device, minutes")
-        .eq("user_id", checkin.user_id)
-        .eq("day", checkin.day)
-        .not("score", "is", null)
-        .order("score", { ascending: false })
-        .limit(1)
-        .maybeSingle<TypingScore>()
+    ? await bestQuery.order("score", { ascending: false }).limit(1).maybeSingle<TypingScore>()
     : { data: null };
   const typingShown = bestTest ?? checkin.typing_tests;
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -184,6 +187,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           ownerName={ownerName}
           isOwner={isOwner}
           canRequest={recent}
+          closed={!recent && !review}
           secondary={result?.status === "upheld"}
         />
       </div>

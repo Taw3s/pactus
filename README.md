@@ -106,7 +106,8 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
    - recomendar que todos entrem **com senha**, que não gasta e-mail no login; ou
    - configurar um SMTP próprio em **Authentication → SMTP Settings** (Resend, Brevo etc.).
 
-   Para economizar ainda mais, você pode desligar **Confirm email** em *Authentication → Providers → Email*. O risco é aceitar e-mails digitados errado.
+   **Não desligue Confirm email** (*Authentication → Providers → Email*). Sem ele, qualquer pessoa cria uma conta com o e-mail de outra e uma senha
+   que só ela sabe; quando o dono do e-mail entra depois (link ou Google), cai na mesma conta e a senha do outro continua valendo.
 7. **Project Settings → API:** copie a `Project URL` e a chave `anon` (ou *publishable*) para o `.env.local`.
 
 > **Não desligue "Allow new users to sign up".** A entrada por convite usa o cadastro normal do Supabase: o código vai nos metadados e um trigger cria o membro. Quem criar conta sem código válido fica sem acesso a nada (RLS) e cai na tela de pedir código.

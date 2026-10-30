@@ -17,11 +17,16 @@ type Member = { id: string; name: string };
 type Outcome = "ok" | "gone" | "failed";
 
 /** POST to /api/membership. A 4xx means the server refused (target gone, no permission); anything else is uncertain. */
-async function post(body: object): Promise<Outcome> {
+async function post(body: object): Promise<{ outcome: Outcome; inviteCode?: string | null }> {
   const res = await fetch("/api/membership", { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(20_000) }).catch(() => null);
-  if (res?.ok) return "ok";
-  return res && res.status >= 400 && res.status < 500 ? "gone" : "failed";
+  if (res?.ok) return { outcome: "ok", inviteCode: ((await res.json().catch(() => ({}))) as { inviteCode?: string | null }).inviteCode ?? null };
+  return { outcome: res && res.status >= 400 && res.status < 500 ? "gone" : "failed" };
 }
+
+/** Tells GroupSettings that the invite code is changing (removal sent) and what the server confirmed. */
+export type InviteEvent = { phase: "rotating" } | { phase: "rotated"; code: string | null } | { phase: "unchanged" };
+export const INVITE_EVENT = "pacto:invite";
+const tellInvite = (detail: InviteEvent) => window.dispatchEvent(new CustomEvent<InviteEvent>(INVITE_EVENT, { detail }));
 
 /**
  * Leaving the group, removing a member (owner only) and deleting the account. Removing and leaving
@@ -74,7 +79,9 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
     }
     if (asking.kind === "remove") {
       const { member } = asking;
-      const r = await post({ action: "remove", userId: member.id });
+      tellInvite({ phase: "rotating" });
+      const { outcome: r, inviteCode } = await post({ action: "remove", userId: member.id });
+      tellInvite(r === "ok" ? { phase: "rotated", code: inviteCode ?? null } : { phase: "unchanged" });
       if (r === "ok") {
         setMsg(`Você removeu ${member.name} do grupo.`);
         setClosing(true);
@@ -85,7 +92,7 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
       if (r === "gone") setGone(true);
       else setError("Não foi possível confirmar a remoção. Confira sua conexão e tente novamente.");
     } else {
-      const r = await post({ action: "leave" });
+      const { outcome: r } = await post({ action: "leave" });
       // Keeps "Saindo…" until the next page shows up.
       if (r === "ok") return router.replace("/join?step=code");
       setSending(false);
@@ -226,6 +233,10 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
             <p>
               {removing.name} perderá o acesso a este grupo. As provas, fotos e dívidas dessa pessoa serão removidas do grupo. Os pagamentos que ela recebeu, as
               acusações e os votos continuam valendo no histórico.
+            </p>
+            <p>
+              O código de convite será trocado automaticamente. O código e os links anteriores deixarão de funcionar para novas entradas. Compartilhe o novo
+              link com quem ainda quiser convidar.
             </p>
             <p className="font-semibold">Remover do grupo não exclui a conta da pessoa.</p>
           </>

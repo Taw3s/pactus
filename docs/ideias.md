@@ -106,6 +106,7 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 ## Decisões em aberto
 
+- **Auditoria de segurança, rodada 1 (29/10):** 6 falhas confirmadas corrigidas no PR da 0026. Ficam como pistas a validar no painel: Confirm email, inscrições push sem limite por pessoa, Storage sem limite total por membro (e órfãos de avatar/prova recusada), laço da limpeza se o `list()` do Storage casar prefixo sem diferenciar maiúsculas, limpezas do cron depois do loop de lembretes, nome de arquivo com `..`. Adiado: ranking/baús quando o tribunal muda depois, backups do Supabase, configurações reais do Storage, vazamento entre sites (COOP/CORP). Melhorias anotadas: fixar actions por SHA, `contents: write` só no passo de publicar, troca de senha, entrar no grupo só com e-mail confirmado, hosts exatos do push, nomes de foto no formato do `mediaPath`.
 - **Dia da entrada não gera dívida (0025, 29/10):** antes, quem entrava à noite começava devendo às 23:59. Agora a dívida começa no dia seguinte; o dia da entrada, se cumprido, conta na sequência.
 - **Vínculo da limpeza (0024):** a API passou a exigir que o grupo consultado ainda seja o grupo da alteração; reentrada/mudança durante a chamada não pode apagar fotos do grupo anterior. Testado com sessão válida e armazenamento real no laboratório. Não aplicado em produção.
 
