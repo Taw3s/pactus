@@ -7,6 +7,7 @@ import { CollectionShelf } from "@/components/CollectionShelf";
 import { MilestonePlaque } from "@/components/MilestonePlaque";
 import { PersonPicker } from "@/components/PersonPicker";
 import { Sprite } from "@/components/Sprite";
+import { collectible, COLLECTION_EXPANSION_NOTE_UNTIL } from "@/lib/collectibles";
 import { eachDay, lastDayOfMonth, monthKey, spToday, weekdayOf } from "@/lib/dates";
 import { getLedgerInputs, getMembers, requireMember } from "@/lib/data";
 import { currentStreak, dayStatus, streakMilestone, type DayStatus } from "@/lib/ledger";
@@ -50,12 +51,15 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   const member = members.find((x) => x.user_id === userId);
   if (!member) notFound();
 
-  const [{ inputs }, { data: chestRows }] = await Promise.all([
+  const [{ inputs }, { data: chestRows, error: chestError }] = await Promise.all([
     getLedgerInputs(supabase, [member]),
     supabase.from("chest_openings").select("item_id").eq("user_id", userId),
   ]);
-  const counts = new Map<string, number>();
-  for (const r of chestRows ?? []) counts.set(r.item_id, (counts.get(r.item_id) ?? 0) + 1);
+  // A failed read shows an error with a retry, never an empty shelf ("0/18" would look like a loss).
+  const counts: Record<string, number> | null = chestError ? null : {};
+  for (const r of chestRows ?? []) if (counts) counts[r.item_id] = (counts[r.item_id] ?? 0) + 1;
+  const unknownIds = Object.keys(counts ?? {}).filter((id) => !collectible(id));
+  if (unknownIds.length) console.warn("collection: unknown collectible ids", unknownIds);
   const input = inputs.get(userId)!;
   const current = monthKey(today);
   const month = m && /^\d{4}-\d{2}$/.test(m) ? m : current;
@@ -108,7 +112,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
         </div>
       </dl>
 
-      <CollectionShelf counts={counts} isMe={isMe} />
+      <CollectionShelf counts={counts} isMe={isMe} failed={!!chestError} expansionNote={today <= COLLECTION_EXPANSION_NOTE_UNTIL} />
 
       <MonthNav month={month} current={current} hrefFor={(x) => `/historico/${userId}?m=${x}`} />
 

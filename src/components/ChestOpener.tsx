@@ -2,7 +2,7 @@
 
 import { Loader } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { collectible, RARITY_LABEL, RARITY_TONE, type Rarity } from "@/lib/collectibles";
+import { collectible, RARITY_LABEL, RARITY_TONE, UNKNOWN_COLLECTIBLE, type Rarity } from "@/lib/collectibles";
 import { createClient } from "@/lib/supabase/client";
 import { Sprite, type SpriteName } from "./Sprite";
 
@@ -115,11 +115,11 @@ export function ChestOpener({ kind, opened, label }: { kind: "daily" | "weekly";
         )}
       </div>
       <div className="min-w-0" aria-live="polite">
-        {item && info ? (
+        {item ? (
           <>
             <p className={`pixel text-sm uppercase ${RARITY_TONE[item.rarity]}`}>{RARITY_LABEL[item.rarity]}</p>
             <p className="pixel text-2xl font-bold uppercase leading-7" data-testid="chest-item">
-              {info.name}
+              {info?.name ?? UNKNOWN_COLLECTIBLE}
             </p>
             <p className="mt-1 text-sm text-muted">Guardado na sua coleção (Perfil).</p>
           </>

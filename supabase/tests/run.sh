@@ -61,3 +61,7 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f join_day_test.sql
 "${PSQL[@]}" -f ../migrations/0026_audit_fixes.sql
 "${PSQL[@]}" -f audit_fixes_test.sql
+"${PSQL[@]}" -f collection_18_fixture.sql
+"${PSQL[@]}" -f ../migrations/0027_collection_18.sql
+"${PSQL[@]}" -f ../migrations/0027_collection_18.sql
+"${PSQL[@]}" -f collection_18_test.sql
