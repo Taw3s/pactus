@@ -1,7 +1,15 @@
 // Collectibles from the Astra cosmetics brief of 30/10/2026 (shelf objects, no gameplay effect); kept apart from models.js so helper names cannot collide.
 import * as THREE from "./node_modules/three/build/three.module.js";
 const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:1,metalness:0,flatShading:true});
-function add(g,geo,c,x=0,y=0,z=0){const m=new THREE.Mesh(geo,mat(c));m.position.set(x,y,z);g.add(m);return m;}
+function add(g,geo,c,x=0,y=0,z=0){const m=new THREE.Mesh(geo,c.isMaterial?c:mat(c));m.position.set(x,y,z);g.add(m);return m;}
+// Gold with light and dark specks, so it never reads as one flat yellow block.
+function goldMat(seed){
+ const c=document.createElement("canvas");c.width=c.height=8;const x=c.getContext("2d");let s=seed;
+ const tones=["#ffcd38","#e0ac1c","#ffe07a","#c89d35","#b8862a"];
+ for(let i=0;i<64;i++){s=(s*9301+49297)%233280;x.fillStyle=tones[Math.floor(s/233280*tones.length)];x.fillRect(i%8,i>>3,1,1);}
+ const t=new THREE.CanvasTexture(c);t.magFilter=t.minFilter=THREE.NearestFilter;t.colorSpace=THREE.SRGBColorSpace;
+ return new THREE.MeshStandardMaterial({map:t,roughness:1,metalness:0,flatShading:true});
+}
 
 /** Comum: a short, much-used yellow pencil: big wooden tip, eraser half gone. */
 export function survivorPencil(){
@@ -99,9 +107,11 @@ export function patchedHeadphones(){
  const g=new THREE.Group(),h=new THREE.Group();
  // Built facing +Z: a clear upside-down U.
  add(h,new THREE.TorusGeometry(.5,.07,4,10,Math.PI),0x444951,0,.32);
+ // Lighter cups and a narrow lit strip on the band keep the shape off the dark background at 48 px (Astra, 30/10).
+ add(h,new THREE.TorusGeometry(.53,.03,3,10,Math.PI),0x7a808a,0,.32,.04);
  for(const x of [-.5,.5]){
-  add(h,new THREE.BoxGeometry(.1,.16,.1),0x444951,x,.26);
-  add(h,new THREE.CylinderGeometry(.22,.22,.16,8),0x444951,x,.2).rotation.z=Math.PI/2;
+  add(h,new THREE.BoxGeometry(.1,.16,.1),0x59616d,x,.26);
+  add(h,new THREE.CylinderGeometry(.22,.22,.16,8),0x59616d,x,.2).rotation.z=Math.PI/2;
   add(h,new THREE.CylinderGeometry(.18,.18,.06,8),0x1a1c20,x*.79,.2).rotation.z=Math.PI/2;
  }
  // Tape on one side only: two crossed strips around the band.
@@ -139,5 +149,45 @@ export function rubberGavel(){
  hd.position.y=.3;hd.rotation.x=.42;m.add(hd);
  m.rotation.y=-.35;
  g.add(m);
+ return g;
+}
+
+/** Lendário: a gilded bust of the judge on a low wooden plinth, one brow up. Vanity, not a trophy: no cup, plate or podium. */
+export function goldenJudgeBust(){
+ const g=new THREE.Group(),b=new THREE.Group();
+ // Speckled gold on the shoulders; a plain faceted gold head, so the face is not lost in the noise.
+ const gold=goldMat(5),face=0xe8b52a,deep=0x5e4527;
+ add(g,new THREE.BoxGeometry(1.3,.16,1),0x8a6a45,0,.08);
+ add(g,new THREE.BoxGeometry(1.36,.05,1.06),0x5e4527,0,.185);
+ // Wide shoulders and collar, then the same head proportions as the app icon.
+ add(b,new THREE.CylinderGeometry(.42,.62,.42,8),gold,0,.21);
+ add(b,new THREE.CylinderGeometry(.34,.42,.1,8),gold,0,.46);
+ add(b,new THREE.BoxGeometry(.18,.2,.06),gold,0,.34,.45);
+ const head=new THREE.Group();head.position.y=1.06;b.add(head);
+ add(head,new THREE.IcosahedronGeometry(.64,1),face).scale.set(1.05,.95,.95);
+ for(const x of [-.62,.62])add(head,new THREE.IcosahedronGeometry(.24,0),gold,x,-.06,-.08).scale.set(.9,1.25,1.1);
+ add(head,new THREE.BoxGeometry(.15,.17,.14),face,0,-.08,.64);
+ for(const x of [-.21,.21])add(head,new THREE.BoxGeometry(.11,.13,.06),deep,x,.06,.6);
+ // Asymmetric brows: the right one raised, as on the icon.
+ [[-.22,-.1,0],[.22,-.4,.11]].forEach(([x,t,l])=>{const w=add(head,new THREE.BoxGeometry(.3,.09,.08),deep,x,.23+l,.58);w.rotation.z=t;});
+ for(const side of [-1,1])add(head,new THREE.BoxGeometry(.15,.055,.06),deep,side*.07,-.3,.57);
+ b.position.y=.21;b.rotation.y=.55;g.add(b);
+ return g;
+}
+
+/** Lendário: the shelf's rubber duck promoted to the bench: wine robe, big cream collar, two cloth tabs at the hem. Nothing else. */
+export function magistrateDuck(){
+ const g=new THREE.Group();
+ const yellow=0xffd23f;
+ // Same head, beak and eyes as the common duck, so it is recognisably the same character.
+ // Body slimmer than the common duck's: it sits inside the robe and must not poke through.
+ const body=add(g,new THREE.IcosahedronGeometry(.42,1),yellow,0,.34);body.scale.set(.92,.8,.85);
+ add(g,new THREE.IcosahedronGeometry(.26,1),yellow,.22,.82);
+ add(g,new THREE.BoxGeometry(.2,.08,.16),0xf08a24,.5,.78);
+ for(const z of [-.12,.12])add(g,new THREE.BoxGeometry(.05,.06,.05),0x1a1c20,.38,.9,z);
+ add(g,new THREE.CylinderGeometry(.36,.5,.56,8),0x7a2e3a,.02,.3);
+ add(g,new THREE.CylinderGeometry(.33,.4,.11,8),0xf5f1e6,.06,.6);
+ // Hem tabs on the side facing the camera, a shade darker so they separate from the robe.
+ for(const z of [-.1,.1]){const t=add(g,new THREE.BoxGeometry(.05,.22,.13),0x5f2430,.5,.12,z+.18);t.rotation.z=.2;t.rotation.y=-.68;}
  return g;
 }
