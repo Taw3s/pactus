@@ -104,6 +104,14 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 - MVP: uma linguagem, uma área, cerca de 10 conceitos; testar com o grupo do Pacto.
 - O gargalo vai ser conteúdo, não código.
 
+## Cosméticos (brief do Astra, 30/10/2026)
+
+Coleção de 8 para 16 objetos, em três PRs, um de cada vez:
+- [ ] **Arte:** os 4 prioritários (`survivorPencil`, `suspiciousLoupe`, `witnessPigeon`, `judgeSlippers`) foram prototipados em `tools/lowpoly/collectibles.js`. A prancha 48/96/144 px está com o Astra. Depois da aprovação vêm os outros 4 (`forgottenCoffee`, `patchedHeadphones`, `crookedHourglass`, `rubberGavel`).
+- [ ] **Catálogo e ficha:** migration 0027 só acrescentando os 8 itens (3 de peso 20, 3 de 10, 2 de 5), `collectibles.ts`, prateleira com 2 colunas (4 a partir de 560 px de container) e `CollectionItemDialog`. **A chance individual de cada objeto antigo cai pela metade**; só se mantêm as proporções por raridade (diário 60/30/10, semanal 75/25).
+- [ ] **Abertura:** resultado imediato, inclusive com movimento reduzido. "Novo" e "duplicata" só com contrato do servidor testado; sem ele, "Você recebeu {nome}.". Conferido em 30/10: a `open_chest` (0006) sorteia por `weight`; o `already` devolvido depois de uma corrida é `item_id <> v_item`, então duas chamadas simultâneas que sorteiam o mesmo item dizem `already = false` às duas. Não serve como "duplicata" nem como "baú já aberto" confiável.
+- Fora desta rodada: favoritos no perfil (exige tabela, posse e RLS), categorias na interface, roupas no juiz.
+
 ## Decisões em aberto
 
 - **Auditoria de segurança, rodada 1 (29/10):** 6 falhas confirmadas corrigidas no PR da 0026. Ficam como pistas a validar no painel: Confirm email, inscrições push sem limite por pessoa, Storage sem limite total por membro (e órfãos de avatar/prova recusada), laço da limpeza se o `list()` do Storage casar prefixo sem diferenciar maiúsculas, limpezas do cron depois do loop de lembretes, nome de arquivo com `..`. Adiado: ranking/baús quando o tribunal muda depois, backups do Supabase, configurações reais do Storage, vazamento entre sites (COOP/CORP). Melhorias anotadas: fixar actions por SHA, `contents: write` só no passo de publicar, troca de senha, entrar no grupo só com e-mail confirmado, hosts exatos do push, nomes de foto no formato do `mediaPath`.

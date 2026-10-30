@@ -1,6 +1,7 @@
 // Procedural PS1/N64-style low-poly props for Pacto. Original work (no third-party assets).
 import * as THREE from "./node_modules/three/build/three.module.js";
 import { archiveBox, documentTray, pencilCup } from "./decor.js";
+import { survivorPencil, suspiciousLoupe, witnessPigeon, judgeSlippers } from "./collectibles.js";
 
 // ---- tiny pixel textures -------------------------------------------------------
 function tex(w, h, draw) {
@@ -1162,7 +1163,7 @@ function evidenceFolder() {
 /** App icon: the group's judge, one brow raised (suspicious of your proof), gavel at rest. Framed by icons.mjs. */
 const logoJudge = () => judgeScene({ brows: "raised", mouth: "flat", r: [-0.9, 0.3, "gavel"] });
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, benchFront, evidenceFolder, archiveBox, documentTray, pencilCup, ...JUDGE, logoJudge };
+export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, survivorPencil, suspiciousLoupe, witnessPigeon, judgeSlippers, benchFront, evidenceFolder, archiveBox, documentTray, pencilCup, ...JUDGE, logoJudge };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {
