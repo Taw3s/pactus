@@ -82,7 +82,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
       <PersonPicker people={members.map((x) => ({ id: x.user_id, name: x.display_name }))} selected={userId} month={month} />
 
       <div className="card mb-4 flex items-center gap-3">
-        <Sprite name="memoryCard" />
+        <Sprite name="archiveBox" />
         <div className="min-w-0">
           <h2 className="pixel break-words text-2xl font-bold uppercase leading-7">{member.display_name}</h2>
           <p className="text-sm text-muted">{isMe ? "Seu histórico" : "Histórico"}</p>
