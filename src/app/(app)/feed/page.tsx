@@ -100,7 +100,7 @@ export default async function FeedPage() {
 
       {checkins.length === 0 && (
         <div className="card mb-4 flex flex-wrap items-center gap-3" data-testid="feed-empty">
-          <Sprite name="evidenceFolder" />
+          <Sprite name="documentTray" />
           <p className="min-w-0 flex-1">As primeiras provas vão aparecer aqui. Envie a sua na tela Hoje.</p>
           <Link href="/hoje" className="btn-secondary min-h-12">
             Ir para Hoje
