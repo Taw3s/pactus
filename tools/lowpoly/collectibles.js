@@ -3,16 +3,16 @@ import * as THREE from "./node_modules/three/build/three.module.js";
 const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:1,metalness:0,flatShading:true});
 function add(g,geo,c,x=0,y=0,z=0){const m=new THREE.Mesh(geo,mat(c));m.position.set(x,y,z);g.add(m);return m;}
 
-/** Comum: a yellow pencil worn down to a stub, big wooden tip, eraser half gone. */
+/** Comum: a short, much-used yellow pencil: big wooden tip, eraser half gone. */
 export function survivorPencil(){
  const g=new THREE.Group(),p=new THREE.Group();
- // Built along +X, then laid on the floor at a diagonal.
- add(p,new THREE.CylinderGeometry(.19,.19,.3,6),0xffcd38,0).rotation.z=Math.PI/2;
- add(p,new THREE.CylinderGeometry(.2,.2,.12,6),0x9aa3ad,-.21).rotation.z=Math.PI/2;
+ // Built along +X, then laid on the floor at a diagonal. Long enough to read as a pencil, not a crayon (Astra, 30/10).
+ add(p,new THREE.CylinderGeometry(.19,.19,.58,6),0xffcd38,0).rotation.z=Math.PI/2;
+ add(p,new THREE.CylinderGeometry(.2,.2,.12,6),0x9aa3ad,-.35).rotation.z=Math.PI/2;
  // Worn eraser: short and tapered, wider at the ferrule.
- add(p,new THREE.CylinderGeometry(.13,.19,.1,6),0xb66b74,-.32).rotation.z=Math.PI/2;
- add(p,new THREE.CylinderGeometry(0,.19,.42,6),0xc9935e,.36).rotation.z=-Math.PI/2;
- add(p,new THREE.CylinderGeometry(0,.07,.15,6),0x26292e,.5).rotation.z=-Math.PI/2;
+ add(p,new THREE.CylinderGeometry(.13,.19,.1,6),0xb66b74,-.46).rotation.z=Math.PI/2;
+ add(p,new THREE.CylinderGeometry(0,.19,.42,6),0xc9935e,.5).rotation.z=-Math.PI/2;
+ add(p,new THREE.CylinderGeometry(0,.07,.15,6),0x26292e,.64).rotation.z=-Math.PI/2;
  // Roll first, then yaw: the pencil lies flat on a face instead of pointing up.
  p.rotation.order="YXZ";p.position.y=.17;p.rotation.x=Math.PI/6;p.rotation.y=.95;
  g.add(p);
@@ -62,20 +62,82 @@ export function judgeSlippers(){
  const slipper=(raised)=>{
   const s=new THREE.Group();
   add(s,new THREE.BoxGeometry(.95,.08,.44),0x8a6a45,0,.04);
-  add(s,new THREE.BoxGeometry(.5,.03,.34),0x7a2e3a,-.2,.095);
-  // Low heel collar around the opening.
-  add(s,new THREE.BoxGeometry(.08,.14,.42),0xf5f1e6,-.44,.15);
-  for(const z of [-.19,.19])add(s,new THREE.BoxGeometry(.5,.12,.06),0xf5f1e6,-.2,.14,z);
-  const toe=add(s,new THREE.SphereGeometry(.3,6,4,0,Math.PI*2,0,Math.PI/2),0xf5f1e6,.2,.08);toe.scale.set(1.15,.95,.78);
-  add(s,new THREE.BoxGeometry(.06,.06,.3),0xe4dcc8,-.04,.12);
-  // Brow on top of the toe, like the judge's: the raised one tilts up on the outer side.
-  const brow=add(s,new THREE.BoxGeometry(.13,.11,.36),0x443127,.22,.4);
-  brow.rotation.z=-.3;if(raised){brow.rotation.x=.4;brow.position.y=.42;}
+  // Low walls and a raised lining, so the wine opening shows from the shelf camera.
+  add(s,new THREE.BoxGeometry(.48,.04,.34),0x7a2e3a,-.2,.12);
+  add(s,new THREE.BoxGeometry(.07,.1,.42),0xf5f1e6,-.44,.13);
+  for(const z of [-.19,.19])add(s,new THREE.BoxGeometry(.48,.08,.06),0xf5f1e6,-.2,.12,z);
+  const toe=add(s,new THREE.SphereGeometry(.3,6,4,0,Math.PI*2,0,Math.PI/2),0xf5f1e6,.2,.08);toe.scale.set(1.15,1.1,.78);
+  // Brow near the tip of the toe, with cream between it and the opening (~6 px wide, ~2 px thick at 48 px).
+  const brow=add(s,new THREE.BoxGeometry(.07,.06,.24),0x443127,.32,.38);
+  brow.rotation.z=-.55;if(raised){brow.rotation.x=.3;brow.position.y=.4;}
   return s;
  };
- const a=slipper(false);a.position.z=-.3;a.rotation.y=.1;g.add(a);
- const b=slipper(true);b.position.set(.16,0,.3);b.rotation.y=-.12;g.add(b);
- // Toes point at the camera, so both brows face the viewer.
- g.rotation.y=-.55;
+ // Seen from the side (opening behind, toe in front), each turned on its own; a ~2 px gap, the back one a little ahead so its brow shows.
+ const a=slipper(false);a.position.set(-.12,0,-.3);a.rotation.y=.12;g.add(a);
+ const b=slipper(true);b.position.set(.18,0,.2);b.rotation.y=-.12;g.add(b);
+ return g;
+}
+
+/** Comum: a low wine cup of coffee gone cold, a biscuit leaning on the rim. No steam. */
+export function forgottenCoffee(){
+ const g=new THREE.Group();
+ // Low and wide, so it never reads as the existing mug.
+ add(g,new THREE.CylinderGeometry(.44,.3,.36,10),0x7a2e3a,0,.18);
+ add(g,new THREE.CylinderGeometry(.4,.4,.02,10),0x3b2418,0,.365);
+ add(g,new THREE.TorusGeometry(.43,.045,4,10),0xf5f1e6,0,.37).rotation.x=Math.PI/2;
+ const h=add(g,new THREE.TorusGeometry(.13,.045,4,8),0x7a2e3a,.47,.2);h.scale.set(1,1.15,1);
+ const b=new THREE.Group();
+ // Half dipped in the coffee, leaning on the rim at the left of the view and facing the camera, so it reads as a flat biscuit, not a lid knob.
+ add(b,new THREE.CylinderGeometry(.18,.18,.07,8),0xd6ad68).rotation.x=Math.PI/2;
+ b.rotation.order="YXZ";b.position.set(-.3,.44,.2);b.rotation.y=.68;b.rotation.x=-.35;
+ g.add(b);
+ return g;
+}
+
+/** Comum: wide headphones, one side held together with yellow tape. Headphones only, no listening device. */
+export function patchedHeadphones(){
+ const g=new THREE.Group(),h=new THREE.Group();
+ // Built facing +Z: a clear upside-down U.
+ add(h,new THREE.TorusGeometry(.5,.07,4,10,Math.PI),0x444951,0,.32);
+ for(const x of [-.5,.5]){
+  add(h,new THREE.BoxGeometry(.1,.16,.1),0x444951,x,.26);
+  add(h,new THREE.CylinderGeometry(.22,.22,.16,8),0x444951,x,.2).rotation.z=Math.PI/2;
+  add(h,new THREE.CylinderGeometry(.18,.18,.06,8),0x1a1c20,x*.79,.2).rotation.z=Math.PI/2;
+ }
+ // Tape on one side only: two crossed strips around the band.
+ for(const r of [.5,-.5]){const t=add(h,new THREE.BoxGeometry(.26,.07,.2),0xffcd38,.43,.6);t.rotation.z=-.9+r*.35;}
+ h.rotation.y=.68;
+ g.add(h);
+ return g;
+}
+
+/** Raro: an hourglass leaning a little, steady on its base. No counter or deadline: time is only a joke here. */
+export function crookedHourglass(){
+ const g=new THREE.Group(),a=new THREE.Group();
+ const glass=new THREE.MeshStandardMaterial({color:0xa3caff,roughness:1,metalness:0,flatShading:true,transparent:true,opacity:.55,depthWrite:false});
+ for(const y of [.05,1.05])add(a,new THREE.CylinderGeometry(.36,.36,.1,6),0x8a6a45,0,y);
+ for(let i=0;i<3;i++){const t=i/3*Math.PI*2+.5;add(a,new THREE.CylinderGeometry(.03,.03,.9,5),0x5e4527,Math.cos(t)*.28,.55,Math.sin(t)*.28);}
+ // Sand first, glass after (transparent), so the sand shows through.
+ add(a,new THREE.CylinderGeometry(.08,.24,.16,6),0xffcd38,0,.18);
+ add(a,new THREE.CylinderGeometry(.06,.18,.08,6),0xffcd38,0,.74);
+ add(a,new THREE.CylinderGeometry(.015,.015,.3,4),0xffcd38,0,.4);
+ for(const [y,rt,rb] of [[.3,.05,.25],[.8,.25,.05]]){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,.4,6),glass);m.position.y=y;a.add(m);}
+ a.rotation.z=-.22;a.rotation.y=.3;
+ g.add(a);
+ return g;
+}
+
+/** Lendário: a toy rubber gavel lying on its side. Exaggerated and soft, never the court's gavel; no sounding block. */
+export function rubberGavel(){
+ const g=new THREE.Group(),m=new THREE.Group();
+ add(m,new THREE.CylinderGeometry(.3,.3,.66,8),0xffcd38,0,.3).rotation.z=Math.PI/2;
+ for(const x of [-.38,.38])add(m,new THREE.CylinderGeometry(.33,.33,.12,8),0xf5f1e6,x,.3).rotation.z=Math.PI/2;
+ // Short handle angled down to the floor from the middle of the head.
+ const hd=new THREE.Group();
+ add(hd,new THREE.CylinderGeometry(.075,.075,.62,6),0x8a6a45,0,0,.31).rotation.x=Math.PI/2;
+ add(hd,new THREE.CylinderGeometry(.1,.1,.08,6),0x8a6a45,0,0,.62).rotation.x=Math.PI/2;
+ hd.position.y=.3;hd.rotation.x=.42;m.add(hd);
+ m.rotation.y=-.35;
+ g.add(m);
  return g;
 }
