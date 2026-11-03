@@ -32,9 +32,10 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             tools/video/package-lock.json
+      # Pinned: CLI 3.0.0 (02/11/2026) rejects [inbucket] in supabase/config.toml. Upgrade on purpose, not by `latest`.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Start local Supabase (applies supabase/migrations)
         run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
