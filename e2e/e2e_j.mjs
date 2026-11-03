@@ -12,7 +12,7 @@ async function send(goal, state, fill = async () => {}) {
     await typingTest(davi, card);
     return card.waitFor({ state: "detached" });
   }
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await fill(card);
   await card.getByRole("button", { name: /Enviar prova|Enviar nova prova|Somar sessão/ }).click();
   await card.waitFor({ state: "detached" });

@@ -4,13 +4,12 @@
 // is listed apart as "sr-only (ok)". Screenshots go next to report.json: look at them too, an empty report is
 // not proof that a screen is fine.
 //   cd e2e && node responsive-audit.mjs /tmp/audit
-import { chromium } from "playwright";
+import { APP, launch } from "./lib.mjs";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 
 const OUT = process.argv[2];
 fs.mkdirSync(OUT, { recursive: true });
-const APP = "http://localhost:3000";
 const WIDTHS = [320, 360, 390, 768, 1024, 1440];
 const sql = (q) =>
   execSync(`PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -tAc "${q.replace(/"/g, '\\"')}"`).toString().trim();
@@ -97,7 +96,7 @@ function check() {
   return out;
 }
 
-const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+const b = await launch();
 const report = {};
 for (const w of WIDTHS) {
   const mobile = w < 768;

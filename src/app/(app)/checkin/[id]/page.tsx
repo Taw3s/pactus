@@ -15,6 +15,7 @@ import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 import { PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
+import { CheckinAttachments } from "@/components/CheckinAttachments";
 import { addDays, formatDayPt, spToday } from "@/lib/dates";
 import { getMembers, requireMember, signUrls } from "@/lib/data";
 import { thumbPath } from "@/lib/image";
@@ -69,6 +70,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const accuserMember = dispute?.author_id ? byId.get(dispute.author_id) : undefined;
   const photoPaths = [checkin.photo_path, ...(checkin.extra_photos ?? [])];
   const urls = await signUrls(supabase, [...photoPaths, thumbPath(checkin.photo_path), owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
+  const { data: attachmentRows } = await supabase.from("checkin_attachments").select("id,kind,storage_path,display_name,size_bytes").eq("checkin_id", id);
+  const attachments = await Promise.all((attachmentRows ?? []).map(async (item) => {
+    const { data } = await supabase.storage.from("attachments").createSignedUrl(item.storage_path, 60 * 60, { download: item.display_name });
+    return { kind: item.kind as "study_pdf" | "project_zip", display_name: item.display_name, size_bytes: item.size_bytes, url: data?.signedUrl ?? null };
+  }));
   const fullPhotos = photoPaths.map((p) => urls.get(p)).filter((u): u is string => !!u);
   // After KEEP_FULL_DAYS only the first photo's thumbnail is kept (media-retention.ts).
   const trimmed = fullPhotos.length === 0 && !!urls.get(thumbPath(checkin.photo_path));
@@ -164,6 +170,11 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           <dd className="pixel tabular text-[32px] font-bold leading-9">{value}</dd>
         </dl>
       )}
+      {checkin.goal === "project" && checkin.project_url && (
+        <a href={checkin.project_url} target="_blank" rel="noreferrer" className="card mb-4 block break-all underline decoration-accent underline-offset-4">
+          Repositório do projeto no GitHub
+        </a>
+      )}
       {photoBlock}
       <ReactionBar
         checkinId={checkin.id}
@@ -179,6 +190,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           <p className="whitespace-pre-wrap break-words">{checkin.summary}</p>
         </section>
       )}
+      <CheckinAttachments checkinId={checkin.id} goal={checkin.goal} isOwner={isOwner} attachments={attachments} />
       <div className="mb-4">
         <AiPanel
           checkinId={checkin.id}

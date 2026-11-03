@@ -21,18 +21,23 @@ export function GroupSidebar() {
   useEffect(() => {
     const media = window.matchMedia(DESKTOP);
     let cancelled = false;
+    let pending: AbortController | null = null;
     const load = () => {
-      if (!media.matches || document.visibilityState !== "visible") return;
-      fetch("/api/group-summary")
+      if (!media.matches || document.visibilityState !== "visible" || pending) return;
+      const controller = new AbortController();
+      pending = controller;
+      fetch("/api/group-summary", { signal: controller.signal })
         .then((r) => (r.ok ? (r.json() as Promise<GroupSummary>) : Promise.reject()))
         .then((d) => !cancelled && (setData(d), setFailed(false)))
-        .catch(() => !cancelled && setFailed(true));
+        .catch(() => !cancelled && !controller.signal.aborted && setFailed(true))
+        .finally(() => { pending = null; });
     };
     load();
     media.addEventListener("change", load);
     document.addEventListener("visibilitychange", load);
     return () => {
       cancelled = true;
+      pending?.abort();
       media.removeEventListener("change", load);
       document.removeEventListener("visibilitychange", load);
     };

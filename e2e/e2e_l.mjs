@@ -50,7 +50,7 @@ await step("a photo the phone dates 3 days back: warned before sending, flagged 
   assert(who, "nobody left with a pending reading");
   const p = await loginAs(browser, `${who}@pacto.test`);
   const card = p.locator("[data-goal=reading][data-state=pending]");
-  await card.locator("input[type=file]").setInputFiles({ name: "velha.jpg", mimeType: "image/jpeg", buffer: await oldJpeg(p, 3) });
+  await card.getByTestId("proof-photo-input").setInputFiles({ name: "velha.jpg", mimeType: "image/jpeg", buffer: await oldJpeg(p, 3) });
   await card.getByTestId("photo-age-note").getByText("Foto de 3 dias atrás").waitFor();
   await card.getByTestId("pages").fill("7");
   await card.getByRole("button", { name: "Enviar prova" }).click();

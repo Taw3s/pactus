@@ -60,6 +60,8 @@ export interface Checkin {
   minutes: number | null;
   pages: number | null;
   title: string | null;
+  /** Required repository link for new optional project proofs. */
+  project_url: string | null;
   /** An extra study session (adds minutes; never counts as the study goal itself). */
   extra: boolean;
   /** The annulled proof this one retakes (same goal, same day). */
@@ -70,6 +72,18 @@ export interface Checkin {
   photo_taken_at: string | null;
   /** Typing: the in-app test this proof comes from. */
   typing_test_id: string | null;
+  created_at: string;
+}
+
+export interface CheckinAttachment {
+  id: string;
+  checkin_id: string;
+  group_id: string;
+  user_id: string;
+  kind: "study_pdf" | "project_zip";
+  storage_path: string;
+  display_name: string;
+  size_bytes: number;
   created_at: string;
 }
 
