@@ -305,7 +305,7 @@ body {
   }
 }
 
-/* Chest: idle bob (2 steps) and the won item popping out. */
+/* Chest: idle bob (2 steps) and the won item rising 16 px in 4 steps (no scale, spin or flash). */
 @keyframes bob {
   0%,
   100% {
@@ -315,14 +315,12 @@ body {
     transform: translateY(-4px);
   }
 }
-@keyframes pop {
+@keyframes rise {
   0% {
-    opacity: 0;
-    transform: translate(-50%, 16px) scale(0.5);
+    transform: translateY(16px);
   }
   100% {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
   }
 }
 
