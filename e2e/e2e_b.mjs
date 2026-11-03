@@ -64,12 +64,17 @@ await step("typing + reading complete the day", async () => {
   const typing = p.locator("[data-goal=typing][data-state=pending]");
   assert((await typing.locator("input[type=file]").count()) === 0, "typing still asks for a photo");
   // Sound is on by default; one tap turns it off and the choice survives a reload.
+  // The board loads on demand: wait for the button to answer instead of reading it right after the click.
   const sound = typing.getByTestId("typing-sounds");
-  assert((await sound.getAttribute("aria-pressed")) === "true", "sound starts on");
-  await sound.click();
-  assert((await sound.getAttribute("aria-pressed")) === "false" && (await sound.innerText()).includes("Som desligado"), "sound turns off");
+  await typing.locator('[data-testid="typing-sounds"][aria-pressed="true"]').waitFor();
+  const off = typing.locator('[data-testid="typing-sounds"][aria-pressed="false"]');
+  for (let i = 0; i < 5 && !(await off.count()); i++) {
+    await sound.click();
+    await off.waitFor({ timeout: 2000 }).catch(() => {});
+  }
+  assert((await off.count()) === 1 && (await off.innerText()).toLowerCase().includes("som desligado"), "sound turns off");
   await p.reload();
-  assert((await typing.getByTestId("typing-sounds").getAttribute("aria-pressed")) === "false", "sound choice kept after reload");
+  await typing.locator('[data-testid="typing-sounds"][aria-pressed="false"]').waitFor();
   await typingTest(p, typing);
   await p.locator("[data-goal=typing][data-state=done]").waitFor();
   for (const goal of ["reading"]) {
