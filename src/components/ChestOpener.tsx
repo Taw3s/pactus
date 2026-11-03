@@ -89,7 +89,7 @@ export function ChestOpener({ kind, opened, label }: { kind: "daily" | "weekly";
       <div className="min-w-0" aria-live="polite">
         {item ? (
           <>
-            <p className="text-sm leading-5 text-muted">{how === "repeat" ? "Este baú já foi aberto. Você recebeu" : "Você recebeu"}</p>
+            <p className="text-sm leading-5 text-muted">{how === "repeat" ? "Este baú já foi aberto." : "Você recebeu"}</p>
             <p className="pixel break-words text-2xl font-bold uppercase leading-7" data-testid="chest-item">
               {name}
             </p>

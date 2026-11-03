@@ -125,7 +125,8 @@ await step("push: Davi turns notices on (fake push service), Caio closes the day
   assert(!moving, "no rising animation with reduced motion");
   const late = other.getByTestId("chest-daily");
   await late.getByRole("button", { name: "Abrir baú" }).click();
-  await late.getByText(/^Este baú já foi aberto\./).waitFor();
+  await late.getByText("Este baú já foi aberto.", { exact: true }).waitFor();
+  assert((await late.getByText("Você recebeu", { exact: true }).count()) === 0, "no second \"Você recebeu\" on a reopened chest");
   assert((await late.getByTestId("chest-item").innerText()) === item, "second tab shows the stored item");
   await other.close();
 });
