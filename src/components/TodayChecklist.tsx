@@ -20,6 +20,7 @@ import { spToday } from "@/lib/dates";
 import { promptOfDay } from "@/lib/study-prompts";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeGitHubRepoUrl, validateAttachment } from "@/lib/attachments";
+import { attachmentCopy, attachmentSize } from "@/components/CheckinAttachments";
 import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
 /** The proof this page just sent ("extra" for an extra session): its row plays the sheet animation once. */
@@ -331,7 +332,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   // What is still missing, in words, next to the disabled button.
   const missing = [
     !titleOk && "dê um nome ao projeto",
-    !projectUrlOk && "informe o link do repositório no GitHub",
+    !projectUrlOk && "informe o repositório no GitHub",
     shots.length === 0 && "adicione a foto",
     goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
     goal === "reading" && !pagesOk && "informe as páginas lidas",
@@ -383,7 +384,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
     const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
     const validation = validateAttachment(kind, file.name, file.size, header);
     if (!validation.ok) {
-      setError(validation.reason === "size" ? "O anexo deve ter até 10 MB." : validation.reason === "signature" ? "O arquivo não corresponde ao formato esperado." : "Escolha um arquivo PDF ou ZIP válido.");
+      setError(validation.reason === "size" ? attachmentCopy.tooBig : attachmentCopy.wrongType(kind));
       setAttachment(null);
       return;
     }
@@ -465,7 +466,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
         const form = new FormData();
         form.set("file", attachment);
         const response = await fetch(`/api/checkins/${savedCheckinId}/attachments`, { method: "POST", body: form });
-        if (!response.ok && response.status !== 409) throw new Error("A prova foi salva, mas o anexo não subiu. Tente enviar novamente pela prova salva.");
+        if (!response.ok && response.status !== 409) throw new Error("A prova foi salva, mas não foi possível enviar o arquivo. Tente novamente na página da prova.");
       }
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
       // The server may nudge the group (this person closed the day / weekly challenge done).
@@ -523,20 +524,71 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
             onChange={(e) => setTitle(e.target.value)}
             data-testid="title"
           />
-          <label className="label" htmlFor={fieldId("github")}>Repositório GitHub</label>
-          <input id={fieldId("github")} type="url" className="input" placeholder="https://github.com/usuario/repositorio" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} data-testid="project-url" />
-          <p className="text-xs text-muted">Projetos são opcionais; para registrar um, informe seu repositório no GitHub.</p>
+          <label className="label" htmlFor={fieldId("github")}>
+            Repositório no GitHub
+          </label>
+          <p id={fieldId("github-help")} className="text-sm leading-5 text-muted">
+            Cole o link do repositório deste projeto.
+          </p>
+          <input
+            id={fieldId("github")}
+            type="url"
+            inputMode="url"
+            className="input"
+            placeholder="https://github.com/usuario/projeto"
+            value={projectUrl}
+            onChange={(e) => setProjectUrl(e.target.value)}
+            aria-invalid={!!projectUrl.trim() && !normalizedProjectUrl}
+            aria-describedby={`${fieldId("github-help")}${projectUrl.trim() && !normalizedProjectUrl ? ` ${fieldId("github-error")}` : ""}`}
+            data-testid="project-url"
+          />
+          {projectUrl.trim() && !normalizedProjectUrl && (
+            <p id={fieldId("github-error")} className="text-sm leading-5 text-warn">
+              Use um link de repositório do GitHub, como https://github.com/usuario/projeto.
+            </p>
+          )}
         </div>
       )}
 
       {(goal === "study" || goal === "project") && (
-        <div className="mt-3 flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
-          <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3">
-          <Plus size={18} aria-hidden />
-          <span className="min-w-0 flex-1">{attachment ? attachment.name : goal === "study" ? "Anexar PDF do conteúdo (opcional, até 10 MB)" : "Anexar ZIP do projeto (opcional, até 10 MB)"}</span>
-          <input type="file" accept={goal === "study" ? ".pdf,application/pdf" : ".zip,application/zip,application/x-zip-compressed"} className="sr-only" data-testid="attachment-input" onChange={(e) => { void pickAttachment(e.target.files?.[0]); e.target.value = ""; }} />
-          </label>
-          {attachment && <button type="button" className="min-h-11 shrink-0 underline" onClick={() => setAttachment(null)}>Remover</button>}
+        <div className="mt-3 space-y-2">
+          <p className="text-sm font-semibold leading-5">{attachmentCopy.title(goal === "study" ? "study_pdf" : "project_zip")} (opcional)</p>
+          <p id={fieldId("attach-help")} className="text-sm leading-5 text-muted">
+            {attachmentCopy.help(goal === "study" ? "study_pdf" : "project_zip")}
+          </p>
+          <div className="flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
+            <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3">
+              <Plus size={18} aria-hidden />
+              <span className="min-w-0 flex-1 break-all">
+                {attachment ? (
+                  <>
+                    <span className="text-fg">{attachment.name}</span>
+                    <span className="block">
+                      Arquivo selecionado · {goal === "study" ? "PDF" : "ZIP"} · {attachmentSize(attachment.size)}
+                    </span>
+                  </>
+                ) : (
+                  attachmentCopy.add(goal === "study" ? "study_pdf" : "project_zip")
+                )}
+              </span>
+              <input
+                type="file"
+                accept={goal === "study" ? ".pdf,application/pdf" : ".zip,application/zip,application/x-zip-compressed"}
+                className="sr-only"
+                aria-describedby={fieldId("attach-help")}
+                data-testid="attachment-input"
+                onChange={(e) => {
+                  void pickAttachment(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {attachment && (
+              <button type="button" className="min-h-11 shrink-0 underline" onClick={() => setAttachment(null)}>
+                Remover arquivo
+              </button>
+            )}
+          </div>
         </div>
       )}
 

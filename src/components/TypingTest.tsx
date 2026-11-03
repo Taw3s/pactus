@@ -59,6 +59,9 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   const [typingLang, setTypingLang] = useState<TypingLang>("pt");
   const [focused, setFocused] = useState(false);
   const [sounds, setSounds] = useState(true);
+  // Known only in the browser; until then assume audio works, so the server render matches.
+  const [audioOk, setAudioOk] = useState(true);
+  useEffect(() => setAudioOk("AudioContext" in window), []);
   const run = useRef({ committed: [] as string[], current: "", words: [] as string[] });
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -309,9 +312,14 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               testid="typing-lang"
             />
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-muted">Sons ao digitar</span>
-            {soundButton}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-muted">Sons ao digitar</span>
+              {soundButton}
+            </div>
+            <p className="text-sm leading-5 text-muted">
+              {audioOk ? "Você pode desligar o som antes ou durante o teste." : "O som não está disponível neste navegador. Você pode continuar o teste."}
+            </p>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Duração</span>
