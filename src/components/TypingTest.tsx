@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Check, Keyboard, Loader, Shuffle } from "lucide-react";
+import { BookOpen, Check, Keyboard, Loader, Shuffle, Volume2, VolumeX } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel, type TypingLang } from "@/lib/typing";
@@ -216,6 +216,24 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setCurrent(value);
   }
 
+  // On by default (owner's decision, 03/11/2026); one tap turns it off, also mid-test, and the choice is kept.
+  async function toggleSounds() {
+    const enabled = !sounds;
+    setSounds(enabled);
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}");
+      localStorage.setItem(PREF, JSON.stringify({ ...saved, sounds: enabled }));
+    } catch {}
+    if (enabled && "AudioContext" in window) {
+      try {
+        audio.current ??= new AudioContext();
+        await audio.current.resume();
+      } catch { /* audio is optional */ }
+    }
+    // Mid-test the button must not steal the keyboard from the board.
+    if (phase === "running") input.current?.focus();
+  }
+
   function playKeyTone(correct: boolean) {
     try {
       const ctx = audio.current;
@@ -262,6 +280,18 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
 
   const at = committed.length;
 
+  const soundButton = (
+    <button
+      type="button"
+      className="btn-secondary !min-h-11 shrink-0 !px-3 text-sm"
+      aria-pressed={sounds}
+      onClick={toggleSounds}
+      data-testid="typing-sounds"
+    >
+      {sounds ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
+      {sounds ? "Som ligado" : "Som desligado"}
+    </button>
+  );
   return (
     <div className="space-y-3" data-testid="typing-test" data-phase={phase}>
       {phase === "idle" || phase === "starting" ? (
@@ -279,14 +309,10 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               testid="typing-lang"
             />
           </div>
-          <label className="flex min-h-11 items-center justify-between gap-3 text-sm text-muted">
-            Sons suaves ao digitar
-            <input type="checkbox" checked={sounds} onChange={(e) => {
-              const enabled = e.target.checked;
-              setSounds(enabled);
-              try { const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}"); localStorage.setItem(PREF, JSON.stringify({ ...saved, sounds: enabled })); } catch {}
-            }} />
-          </label>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted">Sons ao digitar</span>
+            {soundButton}
+          </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Duração</span>
             <Segmented
@@ -348,7 +374,10 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               </p>
               {title && <p className="truncate text-sm text-muted">{title}</p>}
             </div>
-            <p className="tabular shrink-0 text-sm text-muted">{committed.length} palavras</p>
+            <div className="flex shrink-0 items-center gap-2">
+              <p className="tabular text-sm text-muted">{committed.length} palavras</p>
+              {soundButton}
+            </div>
           </div>
           <Board words={words} committed={committed} current={current} lang={typingLang} focused={focused} running={phase === "running"}>
             <input

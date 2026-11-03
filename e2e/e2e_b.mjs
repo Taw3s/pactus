@@ -63,6 +63,13 @@ await step("typing + reading complete the day", async () => {
   // Typing is a test inside the app: no photo, no form.
   const typing = p.locator("[data-goal=typing][data-state=pending]");
   assert((await typing.locator("input[type=file]").count()) === 0, "typing still asks for a photo");
+  // Sound is on by default; one tap turns it off and the choice survives a reload.
+  const sound = typing.getByTestId("typing-sounds");
+  assert((await sound.getAttribute("aria-pressed")) === "true", "sound starts on");
+  await sound.click();
+  assert((await sound.getAttribute("aria-pressed")) === "false" && (await sound.innerText()).includes("Som desligado"), "sound turns off");
+  await p.reload();
+  assert((await typing.getByTestId("typing-sounds").getAttribute("aria-pressed")) === "false", "sound choice kept after reload");
   await typingTest(p, typing);
   await p.locator("[data-goal=typing][data-state=done]").waitFor();
   for (const goal of ["reading"]) {

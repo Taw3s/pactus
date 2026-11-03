@@ -18,6 +18,8 @@ export const GUIDE: GuideEntry[] = [
       "O prazo é 23:59, horário de São Paulo. O dia só vale com as três.",
       `Cada prova com foto aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
       "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e vale a melhor.",
+      "O teste toca um som baixo a cada tecla. O botão \"Som ligado\" desliga, inclusive no meio do teste, e a escolha fica salva neste aparelho.",
+      "O projeto é opcional. Para registrar um, informe o link do repositório no GitHub. A prova de estudo aceita um PDF, e a de projeto um ZIP, os dois opcionais, com até 10 MB.",
       "No teste dá para escolher Palavras (aleatórias) ou Texto: explicações curtas sobre fundamentos, SQL, Python, JavaScript, TypeScript, Java e web. Cada texto continua de onde você parou no teste anterior. Dá para fazer tudo em português ou em inglês, em 1 ou 5 minutos.",
     ],
   },

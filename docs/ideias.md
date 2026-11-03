@@ -115,7 +115,7 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 
 ## Anexos e PR #63 (GXDZ1)
 
-- [ ] **Integração do #63** (branch de integração sobre o `main` de 03/11): anexos PDF/ZIP, link do GitHub obrigatório em projeto, sons na digitação, ajustes de layout e memória das fotos. Migration renumerada para 0028.
+- [ ] **Integração do #63** (PR #71): anexos PDF/ZIP, link do GitHub obrigatório em projeto e sons na digitação ligados por padrão com botão para desligar (decisões do dono em 03/11), ajustes de layout e memória das fotos. Migration renumerada para 0028: rodar depois do merge.
 - [ ] **Retenção de 30 dias para PDF/ZIP** e **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1 (as 0027/0028 dele colidem com as nossas). Quando ele der push, entram como 0029/0030.
 - [ ] Cota de armazenamento: cada prova de estudo ou projeto pode ter até 10 MB sem prazo para sair; o plano grátis do Supabase tem 1 GB. A retenção resolve.
 
