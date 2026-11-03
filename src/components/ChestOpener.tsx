@@ -12,122 +12,95 @@ export interface OpenedItem {
 }
 
 const SPIN: SpriteName[] = ["chest1", "chest2", "chest3"];
-const OPEN: SpriteName[] = ["chest4", "chest5", "chest6"];
 
 /**
- * A chest that spins while the server draws the item, then opens and reveals it.
- * The draw happens in the database (open_chest): this component only plays it.
+ * A chest that spins only while the server draws the item, then shows it. The draw happens in the
+ * database (open_chest): this component only plays it. The result text appears as soon as the server
+ * confirms, with or without motion; the 4-step rise of the item is decoration, once per new opening.
+ * "New" / "duplicate" are not claimed: open_chest's `already` only means this chest was opened before.
  */
 export function ChestOpener({ kind, opened, label }: { kind: "daily" | "weekly"; opened: OpenedItem | null; label: string }) {
   const [item, setItem] = useState<OpenedItem | null>(opened);
-  const [frame, setFrame] = useState<SpriteName>(opened ? "chest6" : "chest1");
-  const [phase, setPhase] = useState<"idle" | "spinning" | "opening" | "done">(opened ? "done" : "idle");
+  const [frame, setFrame] = useState<SpriteName>("chest1");
+  const [phase, setPhase] = useState<"idle" | "spinning" | "done">(opened ? "done" : "idle");
+  // fresh: opened by this click (rises once); repeat: the server says this chest was already opened.
+  const [how, setHow] = useState<"stored" | "fresh" | "repeat">("stored");
   const [error, setError] = useState("");
-  // Every timer of the opening (spin interval and reveal timeouts), cancelled together on unmount.
-  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const spin = useRef<ReturnType<typeof setInterval> | null>(null);
   const alive = useRef(true);
+  const stopSpin = () => {
+    if (spin.current !== null) clearInterval(spin.current);
+    spin.current = null;
+  };
   useEffect(() => {
     alive.current = true;
-    const all = timers.current;
     return () => {
       alive.current = false;
-      all.forEach((t) => clearTimeout(t));
-      all.clear();
+      stopSpin();
     };
   }, []);
-  const wait = (ms: number) =>
-    new Promise<void>((done) => {
-      const t = setTimeout(() => {
-        timers.current.delete(t);
-        done();
-      }, ms);
-      timers.current.add(t);
-    });
 
   async function open() {
     if (phase !== "idle") return;
     setError("");
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setPhase("spinning");
-    // Reduced motion: no frame swapping at all, just the result.
-    let spin: ReturnType<typeof setInterval> | null = null;
-    if (!still) {
+    // Reduced motion: no frame swapping at all, just the spinner text in the button.
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       let i = 0;
-      spin = setInterval(() => setFrame(SPIN[++i % SPIN.length]), 140);
-      timers.current.add(spin);
+      spin.current = setInterval(() => setFrame(SPIN[++i % SPIN.length]), 140);
     }
-    const stopSpin = () => {
-      if (spin === null) return;
-      clearInterval(spin);
-      timers.current.delete(spin);
-      spin = null;
-    };
-    let won: OpenedItem | null = null;
+    let won: (OpenedItem & { already: boolean }) | null = null;
     try {
-      const started = Date.now();
-      // The draw is the server's: open_chest is idempotent, so asking again after a lost
-      // answer returns the item already stored instead of drawing a new one.
+      // open_chest is idempotent: asking again after a lost answer returns the item already stored
+      // instead of drawing a new one, so a retry is always safe.
       const { data, error } = await createClient().rpc("open_chest", { p_kind: kind });
       const row = Array.isArray(data) ? data[0] : null;
-      if (!error && row) won = { itemId: row.item_id as string, rarity: row.rarity as Rarity };
-      // Keep spinning for at least ~1 s so the reveal never feels instant.
-      if (!still) await wait(Math.max(0, 1000 - (Date.now() - started)));
+      if (!error && row) won = { itemId: row.item_id as string, rarity: row.rarity as Rarity, already: row.already === true };
     } catch {
       won = null;
     } finally {
       stopSpin();
     }
     if (!alive.current) return;
+    setFrame("chest1");
     if (!won) {
-      setFrame("chest1");
       setPhase("idle");
-      setError("Não foi possível abrir agora. Tente de novo: se o baú já tiver sido aberto, o mesmo item aparece.");
+      setError("Não foi possível confirmar a abertura. Tente novamente.");
       return;
     }
-    const result = won;
-    if (still) {
-      setFrame("chest6");
-      setItem(result);
-      setPhase("done");
-      return;
-    }
-    setPhase("opening");
-    for (const f of OPEN) {
-      setFrame(f);
-      await wait(160);
-      if (!alive.current) return;
-    }
-    await wait(120);
-    if (!alive.current) return;
-    setItem(result);
+    setItem({ itemId: won.itemId, rarity: won.rarity });
+    setHow(won.already ? "repeat" : "fresh");
     setPhase("done");
   }
 
   const info = item ? collectible(item.itemId) : null;
+  const name = info?.name ?? UNKNOWN_COLLECTIBLE;
   return (
     <div className="flex items-center gap-4" data-testid={`chest-${kind}`} data-phase={phase}>
-      <div className="relative shrink-0">
-        <Sprite name={frame} scale={2} className={phase === "idle" ? "animate-[bob_1.2s_steps(2)_3] motion-reduce:animate-none" : ""} />
-        {item && info && (
-          <span className="absolute -top-3 left-1/2 -translate-x-1/2 animate-[pop_240ms_steps(3)_both]">
-            <Sprite name={info.id} />
+      <div className="relative size-24 shrink-0">
+        {item ? (
+          <span className={`block ${how === "fresh" ? "animate-[rise_240ms_steps(4)_both] motion-reduce:animate-none" : ""}`} data-testid="chest-item-sprite">
+            <Sprite name={info?.id ?? "chest6"} scale={2} />
           </span>
+        ) : (
+          <Sprite name={frame} scale={2} className={phase === "idle" ? "animate-[bob_1.2s_steps(2)_3] motion-reduce:animate-none" : ""} />
         )}
       </div>
       <div className="min-w-0" aria-live="polite">
         {item ? (
           <>
-            <p className={`pixel text-sm uppercase ${RARITY_TONE[item.rarity]}`}>{RARITY_LABEL[item.rarity]}</p>
-            <p className="pixel text-2xl font-bold uppercase leading-7" data-testid="chest-item">
-              {info?.name ?? UNKNOWN_COLLECTIBLE}
+            <p className="text-sm leading-5 text-muted">{how === "repeat" ? "Este baú já foi aberto. Você recebeu" : "Você recebeu"}</p>
+            <p className="pixel break-words text-2xl font-bold uppercase leading-7" data-testid="chest-item">
+              {name}
             </p>
-            <p className="mt-1 text-sm text-muted">Guardado na sua coleção (Perfil).</p>
+            <p className={`text-sm font-semibold leading-5 ${RARITY_TONE[item.rarity]}`}>{RARITY_LABEL[item.rarity]}</p>
+            <p className="mt-1 text-sm leading-5 text-muted">Guardado na sua coleção, no Perfil.</p>
           </>
         ) : (
           <>
             <p className="font-semibold">{label}</p>
             <button className="btn-primary mt-2" onClick={open} disabled={phase !== "idle"}>
-              {phase === "idle" ? "Abrir baú" : <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite]" />}
+              {phase === "idle" ? "Abrir baú" : <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" />}
               {phase === "idle" ? "" : "Abrindo…"}
             </button>
             {error && (

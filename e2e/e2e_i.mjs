@@ -109,6 +109,25 @@ await step("push: Davi turns notices on (fake push service), Caio closes the day
   // Calling again the same day sends nothing new.
   const again = await caio.evaluate(async () => (await fetch("/api/progress", { method: "POST" })).json());
   assert(again.nudged === 0, `second nudge ${JSON.stringify(again)}`);
+
+  // Caio opens his chest with reduced motion: the result shows at once, without the rising item.
+  // A second tab opened before then gets "Este baú já foi aberto." and the same item, not a new draw.
+  await caio.goto(`${APP}/hoje`);
+  const other = await caio.context().newPage();
+  await other.goto(`${APP}/hoje`);
+  await caio.emulateMedia({ reducedMotion: "reduce" });
+  const card = caio.getByTestId("chest-daily");
+  await card.getByRole("button", { name: "Abrir baú" }).click();
+  await card.getByTestId("chest-item").waitFor();
+  const item = await card.getByTestId("chest-item").innerText();
+  await card.getByText("Você recebeu", { exact: true }).waitFor();
+  const moving = await card.getByTestId("chest-item-sprite").evaluate((el) => getComputedStyle(el).animationName !== "none" && parseFloat(getComputedStyle(el).animationDuration) > 0);
+  assert(!moving, "no rising animation with reduced motion");
+  const late = other.getByTestId("chest-daily");
+  await late.getByRole("button", { name: "Abrir baú" }).click();
+  await late.getByText(/^Este baú já foi aberto\./).waitFor();
+  assert((await late.getByTestId("chest-item").innerText()) === item, "second tab shows the stored item");
+  await other.close();
 });
 
 await step("daily reminder (cron): pending members get one reminder a day", async () => {

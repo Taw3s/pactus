@@ -106,10 +106,11 @@ Aprender programação cuidando de uma fazenda: cada área é um conteúdo, e ap
 
 ## Cosméticos (brief do Astra, 30/10/2026)
 
-Coleção de 8 para 16 objetos, em três PRs, um de cada vez:
+Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [x] **Arte (PR de arte):** 10 modelos em `tools/lowpoly/collectibles.js`, todos aprovados pelo Astra em 30/10 (prancha de 18). Lápis na versão longa; fone com conchas e arco mais claros; lendários extras `goldenJudgeBust` ("Encomendado por ele mesmo.") e `magistrateDuck` ("Promovido sem concurso."). O café seguiu uma referência de silhueta gerada no Gemini, só como referência. Para outra expansão: peruca cerimonial e toga reserva.
-- [ ] **Catálogo e ficha (PR aberto):** migration 0027 com os 10 itens novos e pesos 30/15/5 para todos (comuns antigos 20→30, raros 10→15). Mantém o diário em 60/30/10 e o semanal em 75/25; cada lendário fica com 1,67% no diário e 4,17% no semanal (hoje, 5% e 12,5%). Ordem: **merge primeiro, 0027 logo depois** (o app antigo trava o baú com id novo). Prateleira responsiva, ficha `CollectionItemDialog`, nota da expansão até 30/11. Pendente do Astra: frases dos 8 objetos antigos (propostas pelo Claude).
-- [ ] **Abertura:** resultado imediato, inclusive com movimento reduzido. "Novo" e "duplicata" só com contrato do servidor testado; sem ele, "Você recebeu {nome}.". Conferido em 30/10: a `open_chest` (0006) sorteia por `weight`; o `already` devolvido depois de uma corrida é `item_id <> v_item`, então duas chamadas simultâneas que sorteiam o mesmo item dizem `already = false` às duas. Não serve como "duplicata" nem como "baú já aberto" confiável.
+- [x] **Catálogo e ficha (#68):** 18 objetos, pesos 30/15/5, ficha e prateleira responsiva; 0027 rodada em produção. Pendente do Astra: frases dos 8 objetos antigos (propostas pelo Claude).
+- [x] **Abertura (PR de abertura):** resultado imediato, inclusive com movimento reduzido; texto neutro "Você recebeu" + nome (sem afirmar novo ou duplicata); "Este baú já foi aberto." quando outra aba abriu antes; item sobe em 4 passos, sem escala. 
+- [ ] **"Novo na coleção" / "Mais um para a coleção"** (fase futura, precisa de migration): a `open_chest` teria de devolver, na mesma transação que grava, a ordem da abertura daquele item para a pessoa (1 = primeira cópia) e a quantidade confirmada, serializando por pessoa (`pg_advisory_xact_lock`) para dois baús diferentes abertos ao mesmo tempo não dizerem "novo" os dois. Testar: dois baús simultâneos com o mesmo item, resposta perdida e reconsulta. Até lá, texto neutro.
 - Fora desta rodada: favoritos no perfil (exige tabela, posse e RLS), categorias na interface, roupas no juiz.
 
 ## Decisões em aberto
