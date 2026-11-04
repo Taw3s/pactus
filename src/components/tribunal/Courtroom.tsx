@@ -5,7 +5,7 @@ import { GavelStamp } from "../GavelStamp";
 import { JudgeBubble } from "../Judge";
 import { PhotoViewer } from "../PhotoViewer";
 import { Sprite } from "../Sprite";
-import { BenchJudge } from "./BenchJudge";
+import { CourtBench } from "./CourtBench";
 import { JuryBench } from "./JuryBench";
 import { VoteForm } from "./VoteForm";
 import type { Verdict } from "@/lib/ai-review";
@@ -55,7 +55,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
     : `O júri decidiu: prova ${upheld ? "anulada" : "mantida"}.`;
   const seated = jurors.slice(0, jurors.length > BENCH_SEATS ? BENCH_SEATS - 1 : BENCH_SEATS);
   const voted = jurors.filter((j) => j.vote).length;
-  // One key per viewer and dispute: the decision is announced once per device.
+  // One key per viewer and dispute (the stamp listens to impacts with it; a closed session no longer strikes).
   const verdictKey = `verdict:${me.id}:${disputeId}`;
 
   return (
@@ -84,10 +84,9 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         <div className="relative mx-auto mt-1 flex w-fit flex-col items-center">
           <Crest name={groupName} />
           {/* the judge stands behind the bench: his lower half is hidden by it */}
-          <BenchJudge
-            action={open ? (byAi ? "present" : "idle") : "gavel"}
-            playKey={open ? (byAi ? `present:${me.id}:${disputeId}` : undefined) : verdictKey}
-          />
+          {/* Open: the session opens with one strike, once per viewer and tribunal (the AI's accusations too).
+              Closed: the final pose, still; the decision is told by the text below, never re-enacted. */}
+          <CourtBench open={open} playKey={`session:${me.id}:${disputeId}`} />
         </div>
         <div className="relative z-10 mx-auto mt-2 flex max-w-xs justify-center pb-3">
           <JudgeBubble tail="up">{line}</JudgeBubble>
