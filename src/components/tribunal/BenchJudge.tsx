@@ -8,7 +8,7 @@ import { Sprite } from "../Sprite";
 
 /**
  * The judge behind the bench. On the gavel's impact the bench jolts (and a stamp listening to the key lands).
- * `still` keeps the resting frame (a closed session is not replayed); `onPlay` tells the audience the entrance started.
+ * `still` keeps the resting frame (a closed session is not replayed); `onPlay` tells the scene the entrance started.
  */
 export function BenchJudge({ action, playKey, still, onPlay }: { action: JudgeAction; playKey?: string; still?: boolean; onPlay?: () => void }) {
   const [hits, setHits] = useState(0);

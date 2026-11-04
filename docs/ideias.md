@@ -125,7 +125,10 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [x] PR 1: entrada do tribunal (uma batida de abertura, uma vez por pessoa e tribunal) e plateia genérica de costas; tribunal encerrado parado. Q1 = A e Q2 = A aplicadas pela recomendação; o dono pode reverter.
 - [ ] PR 2 (depois do merge do PR 1): cédula entrando na urna (320 ms, 4 quadros, só após confirmação do servidor; nada em voto já registrado ou repetido) e batida única na transição ao vivo para encerrado (até 600 ms, resultado em texto antes do fim). Se voto e encerramento chegarem juntos, só o encerramento anima. Arte nova: urna e cédula em `tools/lowpoly`.
 - [ ] Reserva, um PR por item e só com pedido: aba vinho da prova levantando (240 ms), juiz olhando a pasta enquanto a IA analisa (ciclo de 1,8 s só com processamento confirmado), canto do recibo dobrando no recebimento, juiz se recostando na folga.
-- [ ] Astra: revisar a prancha da plateia (48/96/144) e a leitura em 48 px no celular; o carimbo "Condenado/Absolvido" ainda marca a pessoa (pendência antiga).
+- [x] Salão cheio (ajuste final do Astra de 04/11): cinco fileiras de costas no lugar da plateia de dois bancos, também no tribunal encerrado (Q4 = A); estático.
+- [ ] Movimento da multidão: pequenos grupos se ajeitam com atrasos diferentes junto com a batida (até 1,2 s), depois tudo parado; nunca a fileira inteira junto, nem vaia ou comemoração. Precisa de poses novas no `crowd.js`. Até esse PR, só o juiz se mexe na abertura.
+- [ ] PR 2: **Q3 = A** (04/11), sem polling: a batida de encerramento só aparece quando o voto da própria pessoa encerra o tribunal.
+- [ ] O carimbo "Condenado/Absolvido" ainda marca a pessoa (pendência antiga do Astra).
 
 ## Sessão de design do Astra (03/11/2026)
 

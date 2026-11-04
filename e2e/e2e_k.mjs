@@ -28,26 +28,27 @@ async function framesFor(page, ms) {
 
 const eva = await loginAs(browser, "eva@pacto.test");
 
-await step("a closed tribunal is not re-enacted: verdict at once, the judge still on the final pose, no audience", async () => {
+await step("a closed tribunal is not re-enacted: verdict at once, the judge still on the final pose, the crowd still there", async () => {
   await eva.goto(url);
   await eva.getByTestId("verdict").getByText("Condenado").waitFor({ timeout: 2000 });
   const frames = await framesFor(eva, 2000);
   assert(frames.length === 1 && frames[0] === "gavel8", `a closed session moved: ${frames.join(",")}`);
-  assert((await eva.getByTestId("court-audience").count()) === 0, "audience on a closed tribunal");
+  // The crowd stays in a closed session too, still (Astra, Q4 = A): scenery, never a reaction to the verdict.
+  assert((await eva.getByTestId("court-crowd").count()) === 1, "no crowd on a closed tribunal");
 });
 
 // The tribunal the AI opened in stage g (Caio's study) is still open here.
 const open = sql(`select r.checkin_id from public.dispute_results r where r.status = 'open' order by r.closes_at desc limit 1`);
 const openUrl = `${APP}/checkin/${open}`;
 
-/** The judge's frame and the audience poses over `ms`, from right after navigation. */
+/** The judge's frames over `ms`, from right after navigation. The crowd is static until its settling movement is approved. */
 async function sceneFor(page, ms) {
   return page.evaluate(async (ms) => {
     const seen = [];
     const end = performance.now() + ms;
     while (performance.now() < end) {
       const q = (s) => document.querySelector(`[data-testid="dispute"] ${s}`);
-      const k = `${q("[data-judge]")?.getAttribute("data-frame")}|${q("[data-audience=left]")?.getAttribute("data-pose")}|${q("[data-audience=right]")?.getAttribute("data-pose")}`;
+      const k = `${q("[data-judge]")?.getAttribute("data-frame")}`;
       if (seen.at(-1) !== k) seen.push(k);
       await new Promise((r) => setTimeout(r, 15));
     }
@@ -55,7 +56,7 @@ async function sceneFor(page, ms) {
   }, ms);
 }
 
-await step("an open tribunal opens with one strike while the audience settles, once; voting works from the start", async () => {
+await step("an open tribunal opens with one strike, once, in front of the crowd; voting works from the start", async () => {
   assert(open, "an open tribunal from stage g");
   const p = await loginAs(browser, "eva@pacto.test");
   await p.goto(openUrl, { waitUntil: "commit" });
@@ -63,15 +64,15 @@ await step("an open tribunal opens with one strike while the audience settles, o
   // The controls (or Eva's recorded vote) are there before the scene ends.
   await p.getByTestId("vote-form").or(p.getByText(/^Seu voto:/)).first().waitFor({ timeout: 1000 });
   const scene = await sceneFor(p, 2500);
-  const judge = scene.map((k) => k.split("|")[0]);
+  const judge = scene;
   assert(judge.includes("gavel5"), `no strike: ${scene.join(" ")}`);
   assert(judge.filter((f) => f === "gavel5").length === 1, `struck more than once: ${scene.join(" ")}`);
-  assert(scene.at(-1) === "idle1|3|3", `does not end at rest and settled: ${scene.join(" ")}`);
-  assert(scene.some((k) => /\|[12]\|/.test(k)), `the audience never moved: ${scene.join(" ")}`);
+  assert(scene.at(-1) === "idle1", `does not end at rest: ${scene.join(" ")}`);
+  assert((await p.getByTestId("court-crowd").count()) === 1, "no crowd on an open tribunal");
   await p.reload();
   await p.getByTestId("dispute").waitFor();
   const again = await sceneFor(p, 1500);
-  assert(again.every((k) => k === "idle1|3|3"), `replayed: ${again.join(" ")}`);
+  assert(again.every((k) => k === "idle1"), `replayed: ${again.join(" ")}`);
   await p.context().close();
 });
 
@@ -105,11 +106,11 @@ await step("reduced motion: the judge never changes frame", async () => {
   await p.getByTestId("verdict").waitFor();
   const frames = await framesFor(p, 1500);
   assert(frames.length === 1 && frames[0] === "gavel8", `frames with reduced motion: ${frames.join(",")}`);
-  // An open session with reduced motion: the final pose at once, the audience settled.
+  // An open session with reduced motion: the final pose at once.
   await p.goto(openUrl);
   await p.getByTestId("dispute").waitFor();
   const scene = await sceneFor(p, 1500);
-  assert(scene.length === 1 && scene[0] === "idle1|3|3", `scene with reduced motion: ${scene.join(" ")}`);
+  assert(scene.length === 1 && scene[0] === "idle1", `scene with reduced motion: ${scene.join(" ")}`);
   await ctx.close();
 });
 
