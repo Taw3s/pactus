@@ -119,6 +119,16 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [ ] **Retenção de 30 dias para PDF/ZIP** e **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1 (as 0027/0028 dele colidem com as nossas). Quando ele der push, entram como 0029/0030.
 - [ ] Cota de armazenamento: cada prova de estudo ou projeto pode ter até 10 MB sem prazo para sair; o plano grátis do Supabase tem 1 GB. A retenção resolve.
 
+## Sessão de design do Astra (03/11/2026)
+
+- [x] Bloco 1 (#71): textos e estados de anexos e som.
+- [ ] Bloco 3, autoria dos selos (PR aberto); cena de entrada com **Q1 = C** (uma vez por pessoa e grupo, em todos os aparelhos): migration, política e texto dentro do `FirstSteps`.
+- [ ] Bloco 2, Perfil como arquivo: celular primeiro; o desktop em duas colunas (contêiner de 1120 px) volta para o Astra, porque o app inteiro usa uma coluna de até 640 px.
+- **Q2 = A:** a coleção fica em 18; peruca, toga e os outros conceitos ficam reservados.
+- **Q3 = A:** sem anistia no beta.
+- Bloco 5 ("Novo na coleção") espera o contrato do servidor; bloco 7 (auditoria visual) espera capturas.
+- A comentar com o Astra: o carimbo "Condenado"/"Absolvido" do tribunal marca a pessoa, e o brief diz para nunca carimbar usuário.
+
 ## Decisões em aberto
 
 - **Auditoria de segurança, rodada 1 (29/10):** 6 falhas confirmadas corrigidas no PR da 0026. Ficam como pistas a validar no painel: Confirm email, inscrições push sem limite por pessoa, Storage sem limite total por membro (e órfãos de avatar/prova recusada), laço da limpeza se o `list()` do Storage casar prefixo sem diferenciar maiúsculas, limpezas do cron depois do loop de lembretes, nome de arquivo com `..`. Adiado: ranking/baús quando o tribunal muda depois, backups do Supabase, configurações reais do Storage, vazamento entre sites (COOP/CORP). Melhorias anotadas: fixar actions por SHA, `contents: write` só no passo de publicar, troca de senha, entrar no grupo só com e-mail confirmado, hosts exatos do push, nomes de foto no formato do `mediaPath`.
