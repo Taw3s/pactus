@@ -124,6 +124,21 @@ await step("Hoje: pending goals come before the chests", async () => {
   assert(order > 0, "the daily chest is above the pending goals");
 });
 
+await step("Hoje: each prop on the desk takes the pose of its goal's confirmed state", async () => {
+  const p = await loginAs(browser, "bia@pacto.test");
+  await p.locator("[data-shelf]").first().waitFor();
+  const poses = await p.locator("[data-shelf]").evaluateAll((items) =>
+    items.map((li) => [li.getAttribute("data-shelf"), li.getAttribute("data-shelf-state"), li.querySelector("img")?.getAttribute("src")]),
+  );
+  assert(poses.length === 3, `three props: ${JSON.stringify(poses)}`);
+  const expected = { study: ["notebookDone", "notebookPending"], typing: ["keyboard", "keyboard"], reading: ["bookDone", "bookPending"] };
+  for (const [goal, state, src] of poses) {
+    const sprite = expected[goal][state === "done" ? 0 : 1]; // annulled takes the pending pose
+    assert(src === `/lowpoly/${sprite}.png`, `${goal} ${state} shows ${src}`);
+  }
+  await p.context().close();
+});
+
 await step("a proof takes up to 4 photos: gallery on the proof page and all of them go to the AI judge", async () => {
   const p = await loginAs(browser, "davi@pacto.test");
   const card = p.locator("[data-goal=reading][data-state=pending]");

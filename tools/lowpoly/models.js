@@ -92,6 +92,74 @@ function notebook() {
   return g;
 }
 
+// Hoje, "mesa de trabalho" (Astra brief of 04/11/2026): the goal props change pose with the confirmed state. Each pair
+// shares one invisible frame and one shadow, so both poses sit on the same spot at the same scale.
+function poseFrame(g, w, h, d, y, shadowRadius) {
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ visible: false }));
+  frame.position.y = y;
+  g.add(frame);
+  g.userData.shadowRadius = shadowRadius;
+  g.userData.shadowCenter = new THREE.Vector3(0, 0, 0);
+  return g;
+}
+
+/** Estudo: pending = the top page a little lifted at the free edge, as if about to be turned; done = the page lies flat. */
+function notebookPose(lifted) {
+  const g = notebook();
+  if (lifted) {
+    // the far corner of the top page curls up a little, as if about to be turned; same ruled paper as the page
+    const ruled = tex(8, 8, (c) => {
+      c.fillStyle = "#f6f3ea";
+      c.fillRect(0, 0, 8, 8);
+      c.fillStyle = "#9fc1e8";
+      for (let y = 2; y < 8; y += 3) c.fillRect(0, y, 8, 1);
+    });
+    const hinge = new THREE.Group();
+    hinge.position.set(0.12, 0.115, -0.22);
+    hinge.rotation.y = -0.6; // the fold runs across the corner
+    // the underside faces away from the light: a little emission keeps it reading as paper, not as a dark wing
+    const under = new THREE.MeshStandardMaterial({ color: 0xe4dfd2, emissive: 0x8f8a80, flatShading: true, roughness: 1, metalness: 0 });
+    const flap = box(0.62, 0.012, 0.62, [under, under, mat(0, ruled), under, under, under]);
+    flap.position.x = 0.31;
+    hinge.add(flap);
+    hinge.rotation.z = 0.85;
+    g.add(hinge);
+  }
+  return poseFrame(g, 1.62, 0.56, 1.22, 0.24, 0.92);
+}
+
+/** Leitura: pending = the book open (the existing sprite); done = closed, resting on the same spot, ribbon out. */
+function bookPose(open) {
+  let g;
+  if (open) g = openBook();
+  else {
+    g = new THREE.Group();
+    const coverMat = mat(0xc0392b);
+    const cover = box(0.86, 0.05, 1.12, coverMat);
+    cover.position.y = 0.025;
+    g.add(cover);
+    const pages = box(0.8, 0.12, 1.06, [mat(0xe9e0c6), mat(0xe9e0c6), mat(0xe9e0c6), mat(0xe9e0c6), mat(0xe9e0c6), mat(0xe9e0c6)]);
+    pages.position.set(0.02, 0.11, 0);
+    g.add(pages);
+    const top = box(0.86, 0.05, 1.12, coverMat);
+    top.position.y = 0.195;
+    g.add(top);
+    const spine = box(0.06, 0.22, 1.12, mat(0x9e2f23));
+    spine.position.set(-0.43, 0.11, 0);
+    g.add(spine);
+    const ribbon = box(0.05, 0.02, 0.32, mat(0xf2c230));
+    ribbon.position.set(0.0, 0.1, 0.66);
+    ribbon.rotation.x = 0.5;
+    g.add(ribbon);
+    g.rotation.y = 0.12; // set down a little crooked, as it was put away
+  }
+  return poseFrame(g, 1.74, 0.4, 1.24, 0.18, 0.9);
+}
+const notebookPending = () => notebookPose(true);
+const notebookDone = () => notebookPose(false);
+const bookPending = () => bookPose(true);
+const bookDone = () => bookPose(false);
+
 /** Digitação: retro beige keyboard. */
 function keyboard() {
   const g = new THREE.Group();
@@ -1164,7 +1232,7 @@ function evidenceFolder() {
 /** App icon: the group's judge, one brow raised (suspicious of your proof), gavel at rest. Framed by icons.mjs. */
 const logoJudge = () => judgeScene({ brows: "raised", mouth: "flat", r: [-0.9, 0.3, "gavel"] });
 
-export const MODELS = { notebook, keyboard, openBook, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, forgottenCoffee, survivorPencil, patchedHeadphones, crookedHourglass, suspiciousLoupe, witnessPigeon, judgeSlippers, rubberGavel, goldenJudgeBust, magistrateDuck, benchFront, evidenceFolder, archiveBox, documentTray, pencilCup, ...CROWD, ...JUDGE, logoJudge };
+export const MODELS = { notebook, keyboard, openBook, notebookPending, notebookDone, bookPending, bookDone, computer, beachChair, sodaCan, coxinha, coffeeCup, chocolateBar, acaiBowl, pizzaSlice, iceCream, pixCoin, gavel, gavelMid, gavelUp, judgeBench, trophy, trophySilver, trophyBronze, scales, memoryCard, calendar, chest1, chest2, chest3, chest4, chest5, chest6, plant, mug, duck, cat, lamp, globe, goldBook, crown, forgottenCoffee, survivorPencil, patchedHeadphones, crookedHourglass, suspiciousLoupe, witnessPigeon, judgeSlippers, rubberGavel, goldenJudgeBust, magistrateDuck, benchFront, evidenceFolder, archiveBox, documentTray, pencilCup, ...CROWD, ...JUDGE, logoJudge };
 
 // ---- render --------------------------------------------------------------------
 export function render(name, size) {
