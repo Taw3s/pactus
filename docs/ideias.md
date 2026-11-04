@@ -120,6 +120,12 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [ ] **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1. Quando ele der push, conferir contra o catálogo do servidor (0022) e numerar a partir da 0031.
 - [x] Cota de armazenamento: com a 0030, cada pessoa ocupa no máximo ~30 dias de anexos (até 10 MB por prova de estudo ou projeto). Acompanhar o uso do Storage no painel do Supabase.
 
+## Hoje, mesa de trabalho (brief do Astra de 04/11/2026)
+
+- [x] Poses estáticas: caderno com o canto levantado/assentado, livro aberto/fechado, teclado igual; tampo de 8 px; anulada com a pose de pendente; pendente mais claro (0,92/0,85).
+- [ ] Animação: ao concluir a digitação, uma tecla desce e volta (240 ms, 4 quadros), só na transição confirmada; recarregar mostra a pose sem animar.
+- [ ] Desktop (aprovado): lateral "O grupo hoje" com tribunal, progresso e ranking; máximo de 1160 px, 24 px entre as colunas, sem `sticky`; 1024 px continua em uma coluna.
+
 ## Tribunal vivo (brief do Astra de 04/11/2026)
 
 - [x] PR 1: entrada do tribunal (uma batida de abertura, uma vez por pessoa e tribunal) e plateia genérica de costas; tribunal encerrado parado. Q1 = A e Q2 = A aplicadas pela recomendação; o dono pode reverter.
