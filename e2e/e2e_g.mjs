@@ -72,7 +72,7 @@ await step("mismatch opens a tribunal with the AI as accuser, never annuls by it
   });
   await wait(1500);
   await davi.goto(`${APP}/feed`);
-  await davi.locator('[data-member="Caio"]').getByText("Tribunal · aberto").waitFor();
+  await davi.locator('[data-member="Caio"]').getByText("Em votação").waitFor();
   await davi.getByText(/tribuna(l|is) em andamento/i).waitFor();
   await davi.screenshot({ path: `${SHOTS}/g2-feed.png`, fullPage: true });
   await openTile(davi, "Caio", "Estudo");

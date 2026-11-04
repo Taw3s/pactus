@@ -12,7 +12,7 @@ import { TypingCard, type TypingScore } from "@/components/TypingCard";
 import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
 import { photoDaysBefore } from "@/lib/photo-date";
 import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
-import { PrimaryBadge } from "@/components/StatusBadges";
+import { AiAuthorship, PrimaryBadge } from "@/components/StatusBadges";
 import { Courtroom } from "@/components/tribunal/Courtroom";
 import { TribunalTabs } from "@/components/tribunal/TribunalTabs";
 import { CheckinAttachments } from "@/components/CheckinAttachments";
@@ -329,6 +329,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
       {review && (
         <div className="mb-4">
           <PrimaryBadge ai={review.verdict} />
+          <AiAuthorship state={review.verdict} />
         </div>
       )}
       {details}
