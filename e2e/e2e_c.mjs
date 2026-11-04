@@ -104,7 +104,7 @@ await step("Davi votes guilty — majority reached: gavel + CONDENADO, proof ann
   await p.screenshot({ path: `${SHOTS}/c2-tribunal.png`, fullPage: true });
 });
 
-await step("Eva can no longer vote; Votos tab shows who convicted and why; feed shows 'anulado'", async () => {
+await step("Eva can no longer vote; Votos tab shows who convicted and why; feed shows 'Grupo rejeitou'", async () => {
   const p = await as("eva@pacto.test");
   await p.goto(url);
   await p.waitForLoadState("networkidle");
@@ -116,7 +116,7 @@ await step("Eva can no longer vote; Votos tab shows who convicted and why; feed 
   await p.locator('[data-vote-by="Ana"]').getByText("A foto parece ser de ontem").waitFor();
   await p.screenshot({ path: `${SHOTS}/c3-votos.png`, fullPage: true });
   await p.goto(`${APP}/feed`);
-  await p.locator("[data-member=Bia]").getByText("anulado").waitFor();
+  await p.locator("[data-member=Bia]").getByText("Grupo rejeitou").waitFor();
   assert((await p.getByText(/tribuna(l|is) em andamento/i).count()) === 0, "tribunal banner still shown");
 });
 
