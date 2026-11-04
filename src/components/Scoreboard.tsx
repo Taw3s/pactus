@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { msUntilEndOfDay } from "@/lib/dates";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { GOALS, type DailyGoal } from "@/lib/types";
-import { Sprite } from "./Sprite";
+import { Sprite, type SpriteName } from "./Sprite";
 import { VerifiedSeal } from "./VerifiedSeal";
 
 export type GoalState = "done" | "pending" | "annulled";
@@ -44,21 +44,35 @@ function missingPhrase(missing: string[]) {
 
 const WORD: Record<GoalState, string> = { done: "Feita", pending: "Pendente", annulled: "Anulada" };
 
-/** The shelf: one low-poly prop per goal, lit when the goal is done. */
+// The prop's pose follows the confirmed state (Astra brief of 04/11, "mesa de trabalho"): the notebook's page curls up and
+// the book lies open while the goal is pending; done, the page lies flat and the book is closed. The keyboard keeps one pose.
+// An annulled goal is open again: it takes the pending pose, never a torn or burnt prop; "Anulada" and the mark tell it.
+const POSE: Record<DailyGoal, Record<"pending" | "done", SpriteName>> = {
+  study: { pending: "notebookPending", done: "notebookDone" },
+  typing: { pending: "keyboard", done: "keyboard" },
+  reading: { pending: "bookPending", done: "bookDone" },
+};
+
+/** The desk: one low-poly prop per goal on a wooden top, posed by the goal's state. */
 function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
   return (
-    <div>
-      <ul className="grid grid-cols-3 gap-1.5" aria-label="Metas do dia">
+    <div className="@container">
+      {/* 96 px from a 240 px desk (the sprites' transparent margins may overlap, the props do not), else 48 px: never an in-between scale */}
+      <ul className="relative z-10 -mb-2 grid grid-cols-3 gap-1.5" aria-label="Metas do dia">
         {GOALS.map((g) => {
           const s = states[g.id];
           return (
             <li key={g.id} className="flex flex-col items-center" data-shelf={g.id} data-shelf-state={s}>
               <div className="relative">
-                <Sprite name={GOAL_SPRITE[g.id]} scale={2} dim={s !== "done"} />
+                <Sprite
+                  name={POSE[g.id][s === "done" ? "done" : "pending"]}
+                  scale={2}
+                  className={`h-12 w-12 @min-[240px]:h-24 @min-[240px]:w-24 ${s === "done" ? "" : "brightness-[0.92] saturate-[0.85]"}`}
+                />
                 {s !== "pending" && (
                   <span
                     aria-hidden
-                    className={`absolute right-0 top-7 flex h-6 w-6 items-center justify-center rounded-sm border-2 ${
+                    className={`absolute -right-2 top-1 flex h-6 w-6 items-center justify-center rounded-sm border-2 @min-[240px]:right-0 @min-[240px]:top-7 ${
                       s === "done" ? "border-done bg-done-bg text-done" : "border-fail bg-fail-bg text-fail"
                     }`}
                   >
@@ -70,8 +84,11 @@ function Shelf({ states }: { states: Record<DailyGoal, GoalState> }) {
           );
         })}
       </ul>
-      {/* wooden shelf plank */}
-      <div aria-hidden className="h-2.5 rounded-[1px] border-b-4 border-wood-dark bg-wood shadow-[3px_3px_0_var(--color-hard-shadow)]" />
+      {/* the desk: an 8 px top seen from above, then the front edge with the hard shadow */}
+      <div aria-hidden className="shadow-[3px_3px_0_var(--color-hard-shadow)]">
+        <div className="h-2 bg-wood" />
+        <div className="h-2.5 rounded-b-[1px] border-b-4 border-wood-dark bg-wood-dark/70" />
+      </div>
       <ul className="mt-2 grid grid-cols-3 gap-1.5 text-center" aria-hidden>
         {GOALS.map((g) => (
           <li key={g.id}>
