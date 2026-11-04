@@ -39,6 +39,10 @@ await step("a new challenge opens on Hoje with 'Seu grupo começa aqui' (alone, 
   code = sql(`select g.invite_code from groups g join members m on m.group_id = g.id where m.display_name = '${OWNER.name}'`);
   link = `${APP}/join?convite=${code}`;
   await card(p).getByRole("heading", { name: "Seu grupo começa aqui" }).waitFor();
+  // The welcome (0029) opens the card once, with the group's full name.
+  const welcome = card(p).getByTestId("welcome");
+  await welcome.getByText("Bem-vindo ao Pacto").waitFor();
+  await welcome.getByText("Desafio da Lia com um nome bem comprido para quebrar a linha").waitFor();
   await card(p).getByText("Por enquanto, só você está aqui.").waitFor();
   assert((await p.getByTestId("invite-link").inputValue()) === link, await p.getByTestId("invite-link").inputValue());
   assert((await card(p).getByText("A fazer").count()) === 3, "three steps to do");
@@ -56,6 +60,17 @@ await step("a new challenge opens on Hoje with 'Seu grupo começa aqui' (alone, 
     await p.screenshot({ path: `${SHOTS}/o1-primeiros-passos-${w}.png`, fullPage: w >= 1024 });
   }
   await p.setViewportSize({ width: 390, height: 844 });
+
+  // Seen once, on any device: gone after a reload and on a new phone with the same account.
+  for (let i = 0; i < 20 && sql(`select count(*) from welcome_seen w join members m using (user_id) where m.display_name = '${OWNER.name}'`) !== "1"; i++) await p.waitForTimeout(250);
+  await p.reload();
+  await card(p).getByRole("heading", { name: "Seu grupo começa aqui" }).waitFor();
+  assert((await card(p).getByTestId("welcome").count()) === 0, "welcome again after reload");
+  const other = await signIn(OWNER.email);
+  await other.waitForURL("**/hoje");
+  await card(other).getByRole("heading", { name: "Seu grupo começa aqui" }).waitFor();
+  assert((await card(other).getByTestId("welcome").count()) === 0, "welcome again on another device");
+  await other.context().close();
 
   // The group's empty screens say how they fill up, without making anything up.
   await p.goto(`${APP}/feed`);

@@ -37,6 +37,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     { data: doneRows },
     { count: proofCount },
     { data: group },
+    // Before 0029 runs the table is missing: treat it as seen, so nobody gets a welcome by mistake.
+    { data: welcomeRow, error: welcomeError },
     { data: menuRows },
   ] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
@@ -48,7 +50,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     supabase.from("typing_tests").select("wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
     supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", me.user_id).in("goal", GOALS.map((g) => g.id)),
-    supabase.from("groups").select("invite_code").maybeSingle<{ invite_code: string }>(),
+    supabase.from("groups").select("invite_code, name").maybeSingle<{ invite_code: string; name: string }>(),
+    supabase.from("welcome_seen").select("user_id").maybeSingle(),
     supabase.from("debt_menus").select("effective_from, items").order("effective_from"),
   ]);
   const firstProof = (proofCount ?? 0) > 0;
@@ -131,6 +134,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
             firstProof={firstProof}
             alone={members.length <= 1}
             reopen={reopenFirstSteps}
+            welcome={!welcomeError && !welcomeRow}
+            groupName={group.name}
           />
         )}
         <Scoreboard isOff={isOff} states={states} streak={streak} verified={verified ? { day: today, userId: me.user_id } : null} />

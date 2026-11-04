@@ -25,7 +25,8 @@ export default function PrivacyPage() {
           o e-mail e o nome da sua conta Google.
         </li>
         <li>
-          <b>Perfil:</b> o nome que você escolhe, a foto de perfil (se enviar) e o seu dia de folga.
+          <b>Perfil:</b> o nome que você escolhe, a foto de perfil (se enviar), o seu dia de folga e quando você viu a apresentação do grupo
+          (só a data e a hora, para ela não aparecer de novo em outro aparelho; só você vê e ela sai junto quando você sai do grupo).
         </li>
         <li>
           <b>Provas:</b> as fotos que você envia (até quatro por prova), os minutos de estudo, as páginas lidas, a pergunta do dia e a sua resposta sobre o estudo, o nome do

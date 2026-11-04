@@ -122,7 +122,7 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 ## Sessão de design do Astra (03/11/2026)
 
 - [x] Bloco 1 (#71): textos e estados de anexos e som.
-- [ ] Bloco 3, autoria dos selos (PR aberto); cena de entrada com **Q1 = C** (uma vez por pessoa e grupo, em todos os aparelhos): migration, política e texto dentro do `FirstSteps`.
+- [x] Bloco 3, autoria dos selos (#72); cena de entrada com **Q1 = C** (PR aberto, migration 0029) (uma vez por pessoa e grupo, em todos os aparelhos): migration, política e texto dentro do `FirstSteps`.
 - [x] Bloco 2, Perfil como arquivo no celular (PR aberto); desktop pendente: o desktop em duas colunas (contêiner de 1120 px) volta para o Astra, porque o app inteiro usa uma coluna de até 640 px.
 - **Q2 = A:** a coleção fica em 18; peruca, toga e os outros conceitos ficam reservados.
 - **Q3 = A:** sem anistia no beta.

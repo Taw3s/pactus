@@ -7,6 +7,7 @@ import { Sprite } from "@/components/Sprite";
 import { formatDayPt } from "@/lib/dates";
 import { menuPhrase, type DebtItem } from "@/lib/debt-items";
 import { inviteUrl } from "@/lib/invite";
+import { createClient } from "@/lib/supabase/client";
 
 interface Props {
   userId: string;
@@ -19,6 +20,9 @@ interface Props {
   alone: boolean;
   /** Opened from the guide ("Rever primeiros passos"): show it again even if it was closed. */
   reopen: boolean;
+  /** From the server (0029): this person has not seen the welcome in this group yet, on any device. */
+  welcome: boolean;
+  groupName: string;
 }
 
 /** What this device remembers, per person and group (a new group starts over; nothing is sent anywhere). */
@@ -54,7 +58,7 @@ type StepId = "invite" | "rules" | "proof";
  * the first proof); only the open one shows its details. Copying the link is "Link copiado", never
  * "amigos convidados": copying proves neither sending nor joining. The first proof comes from the server.
  */
-export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, firstProof, alone, reopen }: Props) {
+export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, firstProof, alone, reopen, welcome, groupName }: Props) {
   const key = `pacto:first-steps:${userId}:${groupId}`;
   const [saved, setSaved] = useState<Saved | null>(null);
   const [open, setOpen] = useState<StepId | null>(null);
@@ -62,6 +66,10 @@ export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, f
   const [canShare, setCanShare] = useState(false);
   const [feedback, setFeedback] = useState("");
   const linkField = useRef<HTMLTextAreaElement>(null);
+  // The welcome shows once per person and group (Q1 = C): marked as seen on the server as soon as it is shown,
+  // so another device or a reload does not show it again. Failing to mark only means it may show once more.
+  const [welcomeOpen, setWelcomeOpen] = useState(welcome);
+  const marked = useRef(false);
   const toggle = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   // Where focus goes after the card changes shape, so it is never dropped on <body>.
@@ -87,6 +95,14 @@ export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, f
     // Start on the first step not done yet.
     setOpen(!s.copied ? "invite" : !s.understood ? "rules" : !firstProof ? "proof" : null);
   }, [key, reopen, inviteCode, firstProof]);
+
+  // Mark only once the welcome is really on screen (a card closed or collapsed on this device does not show it).
+  const welcomeShown = welcomeOpen && !!saved && !saved.closed && !saved.later;
+  useEffect(() => {
+    if (!welcomeShown || marked.current) return;
+    marked.current = true;
+    createClient().rpc("mark_welcome_seen").then(() => {}, () => {});
+  }, [welcomeShown]);
 
   // Nothing until this device's state is known: no flash of a card that was already closed.
   if (!saved || saved.closed) return null;
@@ -243,6 +259,26 @@ export function FirstSteps({ userId, groupId, inviteCode, menuToday, menuNext, f
 
   return (
     <section aria-labelledby="first-steps-title" className="card doc-tab mb-4 space-y-3 !p-4" data-testid="first-steps">
+      {welcomeOpen && (
+        <div className="space-y-3 border-b-2 border-divider pb-4" data-testid="welcome">
+          <div className="flex items-center gap-3">
+            <Sprite name="judge-present6" scale={2} />
+            <div className="min-w-0">
+              <p className="pixel break-words text-2xl leading-7">Bem-vindo ao Pacto</p>
+              <p className="break-words text-base leading-6 text-muted">{groupName}</p>
+            </div>
+          </div>
+          <p>O combinado começa com uma prova. Escolha uma meta para começar.</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" className="btn-primary" onClick={() => (setWelcomeOpen(false), goToGoals())}>
+              Ir para as metas
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => ((focusAfter.current = "heading"), setWelcomeOpen(false), setSaved({ ...saved }))}>
+              Pular apresentação
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <Sprite name="evidenceFolder" />
         <div className="min-w-0">
