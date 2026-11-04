@@ -39,10 +39,12 @@ await step("a new challenge opens on Hoje with 'Seu grupo começa aqui' (alone, 
   code = sql(`select g.invite_code from groups g join members m on m.group_id = g.id where m.display_name = '${OWNER.name}'`);
   link = `${APP}/join?convite=${code}`;
   await card(p).getByRole("heading", { name: "Seu grupo começa aqui" }).waitFor();
-  // The welcome (0029) opens the card once, with the group's full name.
+  // The welcome (0029) opens the card once, with the group's name as stored (the field keeps 40 characters).
+  const groupName = sql(`select g.name from groups g join members m on m.group_id = g.id where m.display_name = '${OWNER.name}'`);
+  assert(groupName.length >= 30, `group name too short: ${groupName}`);
   const welcome = card(p).getByTestId("welcome");
   await welcome.getByText("Bem-vindo ao Pacto").waitFor();
-  await welcome.getByText("Desafio da Lia com um nome bem comprido para quebrar a linha").waitFor();
+  await welcome.getByText(groupName, { exact: true }).waitFor();
   await card(p).getByText("Por enquanto, só você está aqui.").waitFor();
   assert((await p.getByTestId("invite-link").inputValue()) === link, await p.getByTestId("invite-link").inputValue());
   assert((await card(p).getByText("A fazer").count()) === 3, "three steps to do");
