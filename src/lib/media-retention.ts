@@ -28,3 +28,34 @@ export async function trimOldPhotos(admin: SupabaseClient, today: ISODate) {
   }
   return removed;
 }
+
+/**
+ * Attachments (PDF/ZIP) follow the photos: once the proof is older than KEEP_FULL_DAYS the file is deleted and the
+ * row is stamped expired_at (0030), so the page can say so and the owner cannot upload it again. No window here:
+ * every live attachment past the limit is caught, including one that slipped in on an old proof.
+ */
+export async function trimOldAttachments(admin: SupabaseClient, today: ISODate) {
+  const { data, error } = await admin
+    .from("checkin_attachments")
+    .select("id, storage_path, checkins!inner(day)")
+    .is("expired_at", null)
+    .lte("checkins.day", addDays(today, -(KEEP_FULL_DAYS + 1)))
+    .limit(1000);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { id: string; storage_path: string }[];
+  const files = admin.storage.from("attachments");
+  let expired = 0;
+  for (let i = 0; i < rows.length; i += 100) {
+    const batch = rows.slice(i, i + 100);
+    // Stamp only after the delete went through: a failed batch stays live and is retried the next day.
+    const { error: err } = await files.remove(batch.map((r) => r.storage_path));
+    if (err) {
+      console.error("attachment trim failed", err.message);
+      continue;
+    }
+    const { error: stampError } = await admin.from("checkin_attachments").update({ expired_at: new Date().toISOString() }).in("id", batch.map((r) => r.id));
+    if (stampError) console.error("attachment expiry stamp failed", stampError.message);
+    else expired += batch.length;
+  }
+  return expired;
+}

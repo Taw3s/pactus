@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { trustedMutationOrigin } from "@/lib/request-origin";
 import { validateAttachment } from "@/lib/attachments";
+import { addDays, spToday } from "@/lib/dates";
+import { KEEP_FULL_DAYS } from "@/lib/media-retention";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,11 +21,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const userId = data?.claims?.sub;
   if (!userId) return NextResponse.json({ error: "Entre na sua conta." }, { status: 401 });
 
-  const { data: checkin } = await supabase.from("checkins").select("id,user_id,group_id,goal").eq("id", id).maybeSingle();
+  const { data: checkin } = await supabase.from("checkins").select("id,user_id,group_id,goal,day").eq("id", id).maybeSingle();
   if (!checkin) return NextResponse.json({ error: "Prova não encontrada." }, { status: 404 });
   if (checkin.user_id !== userId) return NextResponse.json({ error: "Só quem enviou a prova pode anexar arquivos." }, { status: 403 });
   const kind = checkin.goal === "study" ? "study_pdf" : checkin.goal === "project" ? "project_zip" : null;
   if (!kind) return NextResponse.json({ error: "Anexos só são aceitos em provas de estudo e projeto." }, { status: 400 });
+  // Past the retention limit the cron would delete it the next night (media-retention.ts).
+  if (checkin.day < addDays(spToday(), -KEEP_FULL_DAYS)) {
+    return NextResponse.json({ error: `Provas com mais de ${KEEP_FULL_DAYS} dias não recebem arquivos.` }, { status: 400 });
+  }
 
   const form = await request.formData().catch(() => null);
   const candidate = form?.get("file");

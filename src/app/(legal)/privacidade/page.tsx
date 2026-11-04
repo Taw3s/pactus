@@ -106,7 +106,10 @@ export default function PrivacyPage() {
           As fotos das provas ficam guardadas em tamanho original por {KEEP_FULL_DAYS} dias. Depois disso, só fica uma versão reduzida da
           primeira foto.
         </li>
-        <li>PDFs e ZIPs permanecem enquanto a prova existir no grupo; ao sair ou ser removido do grupo, os arquivos associados à sua conta são apagados junto.</li>
+        <li>
+          PDFs e ZIPs também ficam guardados por {KEEP_FULL_DAYS} dias. Depois disso, o arquivo é apagado e só ficam o nome, o tipo e o
+          tamanho, para a prova mostrar que ele existiu. Ao sair ou ser removido do grupo, os arquivos associados à sua conta são apagados junto.
+        </li>
         <li>
           Quando você <b>sai do grupo</b> ou é removido, suas provas, fotos, dívidas e testes saem junto. Ficam no histórico do grupo, sem
           ligação com a sua conta, os pagamentos que você recebeu (com o seu nome, para o recibo de quem pagou continuar valendo), as

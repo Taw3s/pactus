@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { addDays, spToday } from "@/lib/dates";
 import { plural } from "@/lib/text";
 import { groupToday, notifyOnce } from "@/lib/push";
-import { trimOldPhotos } from "@/lib/media-retention";
+import { trimOldAttachments, trimOldPhotos } from "@/lib/media-retention";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { retryPendingMediaCleanup } from "@/lib/membership";
 
@@ -38,11 +38,15 @@ export async function GET(request: NextRequest) {
     console.error("photo trim failed", e);
     return 0;
   });
+  const attachmentsExpired = await trimOldAttachments(admin, today).catch((e) => {
+    console.error("attachment trim failed", e);
+    return 0;
+  });
   const { count: forgotten, error } = await admin.from("membership_log").delete({ count: "exact" }).lt("left_on", addDays(today, -365));
   if (error) console.error("membership log purge failed", error);
   const mediaCleaned = await retryPendingMediaCleanup(admin).catch(() => {
     console.error("media cleanup retry failed");
     return 0;
   });
-  return NextResponse.json({ reminded, trimmed, forgotten: forgotten ?? 0, mediaCleaned });
+  return NextResponse.json({ reminded, trimmed, attachmentsExpired, forgotten: forgotten ?? 0, mediaCleaned });
 }

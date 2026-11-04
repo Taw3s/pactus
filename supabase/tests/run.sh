@@ -78,3 +78,6 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0029_welcome_seen.sql
 "${PSQL[@]}" -f ../migrations/0029_welcome_seen.sql
 "${PSQL[@]}" -f welcome_test.sql
+"${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
+"${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
+"${PSQL[@]}" -f attachment_retention_test.sql
