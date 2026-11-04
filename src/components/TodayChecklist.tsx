@@ -169,8 +169,9 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
     return (
       <div className="space-y-2">
         {retake && done && <DoneRow item={done} />}
-        <section className={`card ${retake ? "!border-warn" : ""}`} data-goal="typing" data-state={retake ? "retake" : "pending"} aria-labelledby="typing-title">
-          <div className="mb-3 flex items-center gap-3">
+        <section className={`card relative ${retake ? "!border-warn" : ""}`} data-goal="typing" data-state={retake ? "retake" : "pending"} aria-labelledby="typing-title">
+          {/* pr-12 leaves the top-right corner to the sound button inside TypingTest. */}
+          <div className="mb-3 flex items-center gap-3 pr-12">
             {retake ? <RotateCcw size={24} aria-hidden className="shrink-0 text-warn" /> : <Sprite name={GOAL_SPRITE.typing} dim />}
             <div className="min-w-0 flex-1">
               <h3 id="typing-title" className="pixel text-xl uppercase leading-6">
@@ -199,7 +200,7 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
         </p>
       )}
       {again ? (
-        <section className="card" data-goal="typing" data-state="again" aria-label="Tentar de novo">
+        <section className="card relative pt-14" data-goal="typing" data-state="again" aria-label="Tentar de novo">
           <TypingTest
             attemptsLeft={left}
             onResult={(r) => {

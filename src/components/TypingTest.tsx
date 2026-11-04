@@ -283,20 +283,24 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
 
   const at = committed.length;
 
-  const soundButton = (
+  // Icon only in the card's top-right corner (owner's decision, 04/11/2026); the name and aria-pressed carry the
+  // state for screen readers, the tooltip for the mouse. The card is `relative` (TodayChecklist). No audio, no button.
+  const soundButton = audioOk && (
     <button
       type="button"
-      className="btn-secondary !min-h-11 shrink-0 !px-3 text-sm"
+      className="btn-secondary absolute right-2 top-2 !h-11 !min-h-11 !w-11 !p-0"
       aria-pressed={sounds}
+      aria-label={sounds ? "Som ligado" : "Som desligado"}
+      title={sounds ? "Som ligado: toque para desligar" : "Som desligado: toque para ligar"}
       onClick={toggleSounds}
       data-testid="typing-sounds"
     >
-      {sounds ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
-      {sounds ? "Som ligado" : "Som desligado"}
+      {sounds ? <Volume2 size={20} aria-hidden /> : <VolumeX size={20} aria-hidden />}
     </button>
   );
   return (
     <div className="space-y-3" data-testid="typing-test" data-phase={phase}>
+      {soundButton}
       {phase === "idle" || phase === "starting" ? (
         <>
           <div className="flex items-center justify-between gap-3">
@@ -311,15 +315,6 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               onChange={(l) => choose({ lang: l })}
               testid="typing-lang"
             />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted">Sons ao digitar</span>
-              {soundButton}
-            </div>
-            <p className="text-sm leading-5 text-muted">
-              {audioOk ? "Você pode desligar o som antes ou durante o teste." : "O som não está disponível neste navegador. Você pode continuar o teste."}
-            </p>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Duração</span>
@@ -382,10 +377,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               </p>
               {title && <p className="truncate text-sm text-muted">{title}</p>}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <p className="tabular text-sm text-muted">{committed.length} palavras</p>
-              {soundButton}
-            </div>
+            <p className="tabular shrink-0 text-sm text-muted">{committed.length} palavras</p>
           </div>
           <Board words={words} committed={committed} current={current} lang={typingLang} focused={focused} running={phase === "running"}>
             <input

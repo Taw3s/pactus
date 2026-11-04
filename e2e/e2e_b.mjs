@@ -72,7 +72,7 @@ await step("typing + reading complete the day", async () => {
     await sound.click();
     await off.waitFor({ timeout: 2000 }).catch(() => {});
   }
-  assert((await off.count()) === 1 && (await off.innerText()).toLowerCase().includes("som desligado"), "sound turns off");
+  assert((await off.count()) === 1 && (await off.getAttribute("aria-label")) === "Som desligado", "sound turns off");
   await p.reload();
   await typing.locator('[data-testid="typing-sounds"][aria-pressed="false"]').waitFor();
   await typingTest(p, typing);
