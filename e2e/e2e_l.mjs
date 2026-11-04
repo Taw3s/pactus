@@ -228,7 +228,8 @@ await step("a proof older than 30 days keeps only its thumbnail and loses its PD
   await block.getByTestId("attachment-expired").waitFor();
   assert((await block.getByRole("link", { name: /Baixar PDF/ }).count()) === 0, "a download link for a deleted file");
   assert((await block.locator("form").count()) === 0, "the owner can upload the expired file again");
-  assert((await upload(id)) === 409, "a second file on the same proof");
+  // Refused by age first (400); the (checkin_id, kind) row would refuse it too.
+  assert((await upload(id)) === 400, "the old proof accepted its file again");
   // An old study proof with no file cannot get one either: it would be deleted the next night.
   const other = sql(`select c.id from checkins c join auth.users u on u.id = c.user_id where u.email = 'ana@pacto.test'
     and c.goal = 'study' and c.id <> '${id}' and not exists (select 1 from checkin_attachments a where a.checkin_id = c.id) limit 1`);
