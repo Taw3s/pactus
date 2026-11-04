@@ -74,6 +74,11 @@ export default function PrivacyPage() {
           <b>Vercel:</b> hospedagem do app.
         </li>
         <li>
+          <b>Sentry:</b> recebe um relatório quando o app dá erro: a mensagem do erro, o trecho do código em que ele aconteceu, o endereço
+          da tela (sem o que vem depois do “?”), o navegador e o sistema do aparelho. Não recebe o seu nome, e-mail, endereço IP, cookies nem
+          o conteúdo das provas, e não registra o que você faz no app quando não há erro. Os relatórios ficam guardados lá por até 90 dias.
+        </li>
+        <li>
           <b>Google (API Gemini):</b> o juiz IA envia a foto, os números e, no estudo, a pergunta do dia com a sua resposta para a IA do Google conferir se batem. Usamos o plano
           gratuito da API Gemini, e os termos desse plano permitem ao Google usar o que enviamos (e as respostas da IA) para melhorar e
           desenvolver os próprios produtos, inclusive com revisão por pessoas, depois de separar os dados da conta do Pacto no Google. Por

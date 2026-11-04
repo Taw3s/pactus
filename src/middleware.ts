@@ -6,6 +6,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip static assets, PWA files and images.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|sw.js|offline.html|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)"],
+  // Skip static assets, PWA files, images and the error-report tunnel (/monitoring, see next.config.ts).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|sw.js|offline.html|manifest.webmanifest|monitoring|.*\\.(?:png|jpg|jpeg|svg|webp)$).*)"],
 };

@@ -38,7 +38,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [x] **Página de apresentação** e **primeiros passos** de um grupo novo (rodada 4: PRs #44, #45 e #46). Convite com Google testado em produção (28/10): volta com o código preenchido.
-- [ ] **Aviso de erros** (Sentry ou parecido): sem isso, a falha de um desconhecido não chega a ninguém. Serviço novo: atualizar a política no mesmo PR.
+- [x] **Aviso de erros** (Sentry, PR de 04/11): só erros, sem dados pessoais, ligado pelo `NEXT_PUBLIC_SENTRY_DSN` em Production. Falta o dono criar o projeto no Sentry (região UE ou EUA), ligar "Prevent Storing of IP Addresses", pôr o DSN na Vercel e um alerta por e-mail.
 - [x] **E-mail para quem é de fora:** resolvido pelo Resend (29/10).
 - [x] **Beta fechado** (decidido em 28/10): sem código de beta. O Davi cria o grupo e manda o link de convite (`/join?convite=…`) num grupo de WhatsApp; quem recebe cai no mesmo desafio. Medir com `retention.sql` na 1ª e 2ª semana.
 - [ ] **Cópia do banco:** pausa por inatividade não preocupa (o cron diário mantém o projeto ativo e a pausa se desfaz pelo painel). O risco é apagar algo por engano: sem cobertura no plano grátis. Combinado: baixar um backup antes de cada migration; plano Pro (backup diário) se entrar dinheiro do Apoia-se.
