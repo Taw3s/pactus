@@ -6,6 +6,7 @@ import { JudgeBubble } from "../Judge";
 import { PhotoViewer } from "../PhotoViewer";
 import { Sprite } from "../Sprite";
 import { CourtBench } from "./CourtBench";
+import { CourtCrowd } from "./CourtCrowd";
 import { JuryBench } from "./JuryBench";
 import { VoteForm } from "./VoteForm";
 import type { Verdict } from "@/lib/ai-review";
@@ -87,6 +88,10 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
           {/* Open: the session opens with one strike, once per viewer and tribunal (the AI's accusations too).
               Closed: the final pose, still; the decision is told by the text below, never re-enacted. */}
           <CourtBench open={open} playKey={`session:${me.id}:${disputeId}`} />
+        </div>
+        {/* the crowd starts at the bench's top: its back rows flank the bench, whose centre, the judge's head and gavel stay clear */}
+        <div className="relative z-10 -mt-[66px] desk:-mt-[75px]">
+          <CourtCrowd />
         </div>
         <div className="relative z-10 mx-auto mt-2 flex max-w-xs justify-center pb-3">
           <JudgeBubble tail="up">{line}</JudgeBubble>
