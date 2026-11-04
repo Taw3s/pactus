@@ -38,7 +38,7 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 - [x] **Sair do grupo, remover membro, excluir conta** (migration 0016). Rodar a 0016 antes do merge.
 - [x] **Política de privacidade e termos**: páginas `/privacidade` e `/termos`. Falta: você preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL` na Vercel, e uma revisão jurídica antes de cobrar.
 - [x] **Página de apresentação** e **primeiros passos** de um grupo novo (rodada 4: PRs #44, #45 e #46). Convite com Google testado em produção (28/10): volta com o código preenchido.
-- [x] **Aviso de erros** (Sentry, PR de 04/11): só erros, sem dados pessoais, ligado pelo `NEXT_PUBLIC_SENTRY_DSN` em Production. Falta o dono criar o projeto no Sentry (região UE ou EUA), ligar "Prevent Storing of IP Addresses", pôr o DSN na Vercel e um alerta por e-mail.
+- [x] **Aviso de erros** (Sentry, PR de 04/11): só erros, sem dados pessoais, ligado pelo `NEXT_PUBLIC_SENTRY_DSN` em Production. Configurado em 04/11: projeto `pactus` (região EUA), IP não guardado, DSN só em Production, alerta por e-mail para erro novo; o erro de teste chegou sem usuário nem IP.
 - [x] **E-mail para quem é de fora:** resolvido pelo Resend (29/10).
 - [x] **Beta fechado** (decidido em 28/10): sem código de beta. O Davi cria o grupo e manda o link de convite (`/join?convite=…`) num grupo de WhatsApp; quem recebe cai no mesmo desafio. Medir com `retention.sql` na 1ª e 2ª semana.
 - [ ] **Cópia do banco:** pausa por inatividade não preocupa (o cron diário mantém o projeto ativo e a pausa se desfaz pelo painel). O risco é apagar algo por engano: sem cobertura no plano grátis. Combinado: baixar um backup antes de cada migration; plano Pro (backup diário) se entrar dinheiro do Apoia-se.
@@ -119,6 +119,13 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [x] **Retenção de 30 dias para PDF/ZIP** (0030): feita aqui, sem esperar a versão do GXDZ1; o arquivo sai, o nome fica e a prova diz que ele não está mais guardado.
 - [ ] **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1. Quando ele der push, conferir contra o catálogo do servidor (0022) e numerar a partir da 0031.
 - [x] Cota de armazenamento: com a 0030, cada pessoa ocupa no máximo ~30 dias de anexos (até 10 MB por prova de estudo ou projeto). Acompanhar o uso do Storage no painel do Supabase.
+
+## Tribunal vivo (brief do Astra de 04/11/2026)
+
+- [x] PR 1: entrada do tribunal (uma batida de abertura, uma vez por pessoa e tribunal) e plateia genérica de costas; tribunal encerrado parado. Q1 = A e Q2 = A aplicadas pela recomendação; o dono pode reverter.
+- [ ] PR 2 (depois do merge do PR 1): cédula entrando na urna (320 ms, 4 quadros, só após confirmação do servidor; nada em voto já registrado ou repetido) e batida única na transição ao vivo para encerrado (até 600 ms, resultado em texto antes do fim). Se voto e encerramento chegarem juntos, só o encerramento anima. Arte nova: urna e cédula em `tools/lowpoly`.
+- [ ] Reserva, um PR por item e só com pedido: aba vinho da prova levantando (240 ms), juiz olhando a pasta enquanto a IA analisa (ciclo de 1,8 s só com processamento confirmado), canto do recibo dobrando no recebimento, juiz se recostando na folga.
+- [ ] Astra: revisar a prancha da plateia (48/96/144) e a leitura em 48 px no celular; o carimbo "Condenado/Absolvido" ainda marca a pessoa (pendência antiga).
 
 ## Sessão de design do Astra (03/11/2026)
 

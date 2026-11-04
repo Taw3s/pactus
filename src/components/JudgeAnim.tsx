@@ -14,6 +14,8 @@ interface Props {
   playKey?: string;
   /** Called on the impact frame (gavel or stamp hit), to sync the stamp and the bench. */
   onImpact?: () => void;
+  /** Called when a one-shot really starts playing (not when it is skipped), to start other art in sync. */
+  onPlay?: () => void;
   /** Always the still frame (e.g. "unavailable": nothing is happening). */
   still?: boolean;
   className?: string;
@@ -51,12 +53,14 @@ function preload(ids: string[]) {
  * on action change, when the tab is hidden or the judge scrolls out of view, and when reduced
  * motion is turned on. Decorative: the state is always told by the text next to it.
  */
-export function JudgeAnim({ action, scale = 2, playKey, onImpact, still = false, className = "" }: Props) {
+export function JudgeAnim({ action, scale = 2, playKey, onImpact, onPlay, still = false, className = "" }: Props) {
   const s = JUDGE[action];
   const [frame, setFrame] = useState(s.still);
   const ref = useRef<HTMLImageElement>(null);
   const impact = useRef(onImpact);
   impact.current = onImpact;
+  const playing = useRef(onPlay);
+  playing.current = onPlay;
 
   useEffect(() => {
     setFrame(s.still);
@@ -87,6 +91,7 @@ export function JudgeAnim({ action, scale = 2, playKey, onImpact, still = false,
     function play(i = 0) {
       if (!canPlay()) return;
       const f = s.frames[i];
+      if (i === 0 && once) playing.current?.();
       setFrame(f.id);
       if (i === s.impact) impact.current?.();
       if (i < s.frames.length - 1) return later(() => play(i + 1), f.ms);
@@ -122,8 +127,11 @@ export function JudgeAnim({ action, scale = 2, playKey, onImpact, still = false,
     }
 
     setFrame(s.still);
+    const asked = performance.now();
     preload(s.frames.map((f) => f.id)).then(() => {
       ready = true;
+      // Too late for an entrance: the person is already reading or voting, so keep the still frame.
+      if (once && !played && s.startBy && performance.now() - asked > s.startBy) played = true;
       if (!cancelled) start();
     });
 
