@@ -365,3 +365,43 @@ body {
     opacity: 0;
   }
 }
+
+/*
+ * Courtroom crowd (CourtCrowd, Astra brief of 04/11): five staggered rows, back (r0) to front (r4). Per row: top, half-gap
+ * from the centre (the back rows flank the bench and keep its centre free; the front rows open the aisle, at most 24 px on
+ * the phone and 48 px from desk at the bottom edge), pitch between people, sprite size (48/96, front 96/144: whole scales
+ * only), figure width inside the sprite and stagger (in pitches). The top of the block sits at the bench's top.
+ */
+.court-crowd {
+  height: 118px;
+  --bench-y: 38px;
+  --bench-h: 4px;
+}
+.crowd-r0 { --top: 0px; --half: 46px; --pitch: 26px; --size: 48px; --fig: 32px; --stagger: 0; }
+.crowd-r1 { --top: 12px; --half: 46px; --pitch: 26px; --size: 48px; --fig: 32px; --stagger: 0.5; }
+.crowd-r2 { --top: 24px; --half: 46px; --pitch: 26px; --size: 48px; --fig: 32px; --stagger: 0; }
+.crowd-r3 { --top: 52px; --half: 8px; --pitch: 26px; --size: 48px; --fig: 32px; --stagger: 0; }
+.crowd-r4 { --top: 58px; --half: 12px; --pitch: 56px; --size: 96px; --fig: 64px; --stagger: 0; }
+@media (min-width: 75rem) {
+  .court-crowd { height: 160px; --bench-y: 76px; --bench-h: 8px; }
+  .crowd-r0 { --top: 0px; --half: 46px; --pitch: 52px; --size: 96px; --fig: 64px; }
+  .crowd-r1 { --top: 14px; --half: 46px; --pitch: 52px; --size: 96px; --fig: 64px; }
+  .crowd-r2 { --top: 28px; --half: 46px; --pitch: 52px; --size: 96px; --fig: 64px; }
+  .crowd-r3 { --top: 56px; --half: 16px; --pitch: 52px; --size: 96px; --fig: 64px; }
+  .crowd-r4 { --top: 70px; --half: 24px; --pitch: 84px; --size: 144px; --fig: 96px; }
+}
+.crowd-seat {
+  top: var(--top);
+  width: var(--size);
+  height: var(--size);
+  left: calc(50% + var(--sign) * (var(--half) + var(--fig) / 2 + (var(--seat) + var(--stagger)) * var(--pitch)) - var(--size) / 2);
+}
+.crowd-bench {
+  position: absolute;
+  top: calc(var(--top) + var(--bench-y));
+  height: var(--bench-h);
+  background: var(--color-wood);
+  border-bottom: 1px solid var(--color-wood-dark);
+}
+.crowd-bench-l { left: 0; right: calc(50% + var(--half)); }
+.crowd-bench-r { left: calc(50% + var(--half)); right: 0; }

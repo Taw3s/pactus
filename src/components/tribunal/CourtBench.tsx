@@ -9,7 +9,8 @@ import { BenchJudge } from "./BenchJudge";
  */
 export function CourtBench({ open, playKey }: { open: boolean; playKey: string }) {
   return (
-    <div className="relative">
+    // 16 px closer to the crest (Astra brief): the judge's highest frame still clears it by ~7 px
+    <div className="relative -mt-4">
       <BenchJudge action={open ? "session" : "gavel"} playKey={open ? playKey : undefined} still={!open} />
     </div>
   );

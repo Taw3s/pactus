@@ -1,48 +1,49 @@
 /* eslint-disable @next/next/no-img-element -- tiny pixel-art PNGs; next/image would smooth them */
 
-// Six silhouettes from tools/lowpoly/crowd.js. The order per seat is fixed (no randomness: server and client must match,
-// and a reload shows the same room), picked so that neighbours and the person right behind never share a variant.
-const ROWS = 3;
-const SEATS = 7; // per side and row; the room's edges cut whatever does not fit
+/**
+ * Five staggered rows, back (0) to front (4). The geometry per row lives in globals.css (`.crowd-r0` … `.crowd-r4`, phone
+ * and `desk` values): top, half-gap from the centre, pitch between people, sprite size and figure width. The three back
+ * rows flank the bench (the half-gap keeps its centre free); the two front rows open the aisle, narrow near the bench and
+ * wider at the bottom edge (at most 24 px on the phone, 48 px from `desk`). The front row is larger and cut by the edge.
+ */
+const SEATS = [8, 8, 8, 8, 5]; // per side; the room's edges cut whatever does not fit
+const BENCH_ROWS = 4; // the front row has no visible bench: the edge cuts it at the shoulders
+
+// Fixed order (server and client must match, and a reload shows the same room): neighbours and the person right behind differ.
 const variant = (row: number, side: number, seat: number) => ((seat * 2 + row * 3 + side * 5 + (seat >> 1)) % 6) + 1;
 
 /**
- * The crowd in the courtroom (Astra brief of 04/11, "salão cheio"): three rows seen from behind, in front of the bench,
- * with the centre aisle free under the judge (48 px on the phone, 96 px from `desk`). The front row is cut by the edge of
- * the wall, so the room seems to go on. Scenery only: it never stands for the members, the votes or the decision, and it
- * is hidden from assistive technology and from the pointer. Static for now; the settling movement comes after approval.
+ * The crowd in the courtroom (Astra brief of 04/11, "salão cheio", final composition): people seen from behind, shoulders
+ * overlapping, heads showing between the shoulders of the row ahead, cut at the sides and at the bottom so the room goes
+ * on. Scenery only: it never stands for the members, the votes or the decision; hidden from assistive technology and from
+ * the pointer. It stays in a closed session too, still (Q4 = A). Static for now; the settling movement comes after approval.
  */
 export function CourtCrowd() {
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none relative -mx-4 h-[72px] overflow-hidden [--crowd-pitch:40px] [--crowd-row:16px] desk:h-[140px] desk:[--crowd-pitch:60px] desk:[--crowd-row:28px]"
-      data-testid="court-crowd"
-    >
-      {Array.from({ length: ROWS }, (_, row) => (
-        // Row 0 is the back row (highest); later rows sit lower and in front.
-        <div key={row} className="absolute inset-x-0 flex justify-center gap-12 desk:gap-24" style={{ top: `calc(${row} * var(--crowd-row))` }}>
-          {[0, 1].map((side) => (
-            <div
-              key={side}
-              className={`relative flex flex-1 ${side ? "justify-start" : "flex-row-reverse justify-start"}`}
-              // alternate rows shift half a seat, so heads fall between the heads in front
-              style={{ [side ? "paddingLeft" : "paddingRight"]: row % 2 ? "calc(var(--crowd-pitch) / 2)" : 0 }}
-            >
-              {Array.from({ length: SEATS }, (_, seat) => (
-                <img
-                  key={seat}
-                  src={`/lowpoly/crowd${variant(row, side, seat)}.png`}
-                  alt=""
-                  width={96}
-                  height={96}
-                  className="sprite -mx-[4px] h-12 w-12 max-w-none shrink-0 desk:-mx-[18px] desk:h-24 desk:w-24"
-                />
-              ))}
-              {/* the bench back in front of this row hides the waists */}
-              <div className="absolute inset-x-0 top-[40px] h-2 border-b-2 border-wood-dark bg-wood desk:top-[80px] desk:h-4 desk:border-b-4" />
-            </div>
-          ))}
+    <div aria-hidden className="court-crowd pointer-events-none relative -mx-4 overflow-hidden" data-testid="court-crowd">
+      {SEATS.map((seats, row) => (
+        <div key={row} className={`crowd-r${row} absolute inset-0`}>
+          {[-1, 1].map((sign, side) =>
+            Array.from({ length: seats }, (_, seat) => (
+              <img
+                key={`${side}-${seat}`}
+                src={`/lowpoly/crowd${variant(row, side, seat)}.png`}
+                alt=""
+                width={96}
+                height={96}
+                className="sprite crowd-seat absolute max-w-none"
+                // the figure's centre: past the half-gap, one pitch per seat, plus the row's stagger (globals.css)
+                style={{ "--sign": sign, "--seat": seat } as React.CSSProperties}
+              />
+            )),
+          )}
+          {/* the bench back of this row shows between the bodies of the row in front */}
+          {row < BENCH_ROWS && (
+            <>
+              <div className="crowd-bench crowd-bench-l" />
+              <div className="crowd-bench crowd-bench-r" />
+            </>
+          )}
         </div>
       ))}
     </div>
