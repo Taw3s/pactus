@@ -187,11 +187,25 @@ await step("typing: a 5-minute test is timed by the server for its length and ke
   await p.getByTestId("typing-records").locator('[data-minutes="5"]').getByText(/Caio/).first().waitFor();
 });
 
-await step("a proof older than 30 days keeps only its thumbnail, and the proof page still shows it", async () => {
-  // Move one of Ana's photo proofs to 31 days ago (a day she has no proof of that kind), then run the daily cron.
+await step("a proof older than 30 days keeps only its thumbnail and loses its PDF, and the proof page says so", async () => {
+  // Move one of Ana's study proofs to 31 days ago (a day she has no study proof), then run the daily cron.
   const row = sql(`select c.id || '|' || c.photo_path || '|' || c.goal from checkins c join auth.users u on u.id = c.user_id
-    where u.email = 'ana@pacto.test' and c.goal in ('study', 'reading') and not c.extra and c.typing_test_id is null order by c.created_at limit 1`);
+    where u.email = 'ana@pacto.test' and c.goal = 'study' and not c.extra and c.typing_test_id is null order by c.created_at limit 1`);
+  assert(row, "Ana has a study proof");
   const [id, photo, goal] = row.split("|");
+  // While the proof is recent, Ana attaches a PDF through the app's route (0030 retention target).
+  const p = await loginAs(browser, "ana@pacto.test");
+  await p.goto(`${APP}/checkin/${id}`);
+  const upload = (checkinId) =>
+    p.evaluate(async (cid) => {
+      const form = new FormData();
+      form.set("file", new File(["%PDF-1.4\n% retention test\n%%EOF\n"], "material.pdf", { type: "application/pdf" }));
+      return (await fetch(`/api/checkins/${cid}/attachments`, { method: "POST", body: form })).status;
+    }, checkinId);
+  assert((await upload(id)) === 201, "the PDF was not accepted");
+  const pdf = sql(`select storage_path from checkin_attachments where checkin_id = '${id}'`);
+  const hasFile = () => sql(`select count(*) from storage.objects where bucket_id = 'attachments' and name = '${pdf}'`) === "1";
+  assert(pdf && hasFile(), "the PDF is stored");
   const old = sql(`select (sp_today() - 31)::text`);
   sql(`delete from checkins c using auth.users u where u.id = c.user_id and u.email = 'ana@pacto.test' and c.day = '${old}' and c.goal = '${goal}' and c.id <> '${id}'`);
   sql(`update checkins set day = '${old}' where id = '${id}'`);
@@ -202,10 +216,28 @@ await step("a proof older than 30 days keeps only its thumbnail, and the proof p
   assert(r.trimmed >= 1, `trimmed ${JSON.stringify(r)}`);
   assert(!has(photo), "the full photo is still stored");
   assert(has(thumb), "the thumbnail was deleted");
-  const p = await loginAs(browser, "ana@pacto.test");
+  assert(r.attachmentsExpired >= 1, `attachments ${JSON.stringify(r)}`);
+  assert(!hasFile(), "the PDF is still stored");
+  assert(sql(`select expired_at is not null from checkin_attachments where checkin_id = '${id}'`) === "t", "the attachment row was not stamped");
   await p.goto(`${APP}/checkin/${id}`);
   await p.getByTestId("photo-trimmed").waitFor();
   assert(await p.locator("figure img").first().evaluate((img) => img.complete && img.naturalWidth > 0), "no image shown");
+  // The block stays with the name and says the file is gone; no download, no form to send it again.
+  const block = p.getByTestId("checkin-attachments");
+  await block.getByText("material.pdf").waitFor();
+  await block.getByTestId("attachment-expired").waitFor();
+  assert((await block.getByRole("link", { name: /Baixar PDF/ }).count()) === 0, "a download link for a deleted file");
+  assert((await block.locator("form").count()) === 0, "the owner can upload the expired file again");
+  assert((await upload(id)) === 409, "a second file on the same proof");
+  // An old study proof with no file cannot get one either: it would be deleted the next night.
+  const other = sql(`select c.id from checkins c join auth.users u on u.id = c.user_id where u.email = 'ana@pacto.test'
+    and c.goal = 'study' and c.id <> '${id}' and not exists (select 1 from checkin_attachments a where a.checkin_id = c.id) limit 1`);
+  if (other) {
+    const day = sql(`select day from checkins where id = '${other}'`);
+    sql(`update checkins set day = sp_today() - 40 where id = '${other}'`);
+    assert((await upload(other)) === 400, "an old proof accepted a file");
+    sql(`update checkins set day = '${day}' where id = '${other}'`);
+  }
   await p.context().close();
 });
 

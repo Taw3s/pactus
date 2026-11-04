@@ -70,10 +70,13 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const accuserMember = dispute?.author_id ? byId.get(dispute.author_id) : undefined;
   const photoPaths = [checkin.photo_path, ...(checkin.extra_photos ?? [])];
   const urls = await signUrls(supabase, [...photoPaths, thumbPath(checkin.photo_path), owner?.avatar_path, accuserMember?.avatar_path, ...jurors.map((m) => m.avatar_path)]);
-  const { data: attachmentRows } = await supabase.from("checkin_attachments").select("id,kind,storage_path,display_name,size_bytes").eq("checkin_id", id);
+  const { data: attachmentRows } = await supabase.from("checkin_attachments").select("id,kind,storage_path,display_name,size_bytes,expired_at").eq("checkin_id", id);
   const attachments = await Promise.all((attachmentRows ?? []).map(async (item) => {
-    const { data } = await supabase.storage.from("attachments").createSignedUrl(item.storage_path, 60 * 60, { download: item.display_name });
-    return { kind: item.kind as "study_pdf" | "project_zip", display_name: item.display_name, size_bytes: item.size_bytes, url: data?.signedUrl ?? null };
+    // After KEEP_FULL_DAYS the file is gone (0030): no link to sign.
+    const expired = !!item.expired_at;
+    const { data } = expired ? { data: null } : await supabase.storage.from("attachments").createSignedUrl(item.storage_path, 60 * 60, { download: item.display_name });
+    const kind = item.kind as "study_pdf" | "project_zip";
+    return { kind, display_name: item.display_name, size_bytes: item.size_bytes, expired, url: data?.signedUrl ?? null };
   }));
   const fullPhotos = photoPaths.map((p) => urls.get(p)).filter((u): u is string => !!u);
   // After KEEP_FULL_DAYS only the first photo's thumbnail is kept (media-retention.ts).
@@ -190,7 +193,14 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
           <p className="whitespace-pre-wrap break-words">{checkin.summary}</p>
         </section>
       )}
-      <CheckinAttachments checkinId={checkin.id} goal={checkin.goal} isOwner={isOwner} attachments={attachments} />
+      <CheckinAttachments
+        checkinId={checkin.id}
+        goal={checkin.goal}
+        // Past KEEP_FULL_DAYS the server refuses new files (they would be deleted the next night).
+        canAdd={isOwner && checkin.day >= addDays(spToday(), -KEEP_FULL_DAYS)}
+        keepDays={KEEP_FULL_DAYS}
+        attachments={attachments}
+      />
       <div className="mb-4">
         <AiPanel
           checkinId={checkin.id}

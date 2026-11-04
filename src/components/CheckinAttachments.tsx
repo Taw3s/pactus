@@ -6,7 +6,7 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { MAX_ATTACHMENT_BYTES, validateAttachment, type AttachmentKind } from "@/lib/attachments";
 import type { Goal } from "@/lib/types";
 
-type SavedAttachment = { kind: AttachmentKind; display_name: string; size_bytes: number; url: string | null };
+type SavedAttachment = { kind: AttachmentKind; display_name: string; size_bytes: number; expired: boolean; url: string | null };
 
 const kindFor = (goal: Goal): AttachmentKind | null => goal === "study" ? "study_pdf" : goal === "project" ? "project_zip" : null;
 export const attachmentSize = (size: number) => size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
@@ -21,7 +21,14 @@ export const attachmentCopy = {
   tooBig: "O arquivo deve ter até 10 MB.",
 };
 
-export function CheckinAttachments({ checkinId, goal, isOwner, attachments }: { checkinId: string; goal: Goal; isOwner: boolean; attachments: SavedAttachment[] }) {
+export function CheckinAttachments({ checkinId, goal, canAdd, keepDays, attachments }: {
+  checkinId: string;
+  goal: Goal;
+  /** The owner, while the proof is young enough to keep a file. */
+  canAdd: boolean;
+  keepDays: number;
+  attachments: SavedAttachment[];
+}) {
   const router = useRouter();
   const kind = kindFor(goal);
   const [file, setFile] = useState<File | null>(null);
@@ -67,7 +74,7 @@ export function CheckinAttachments({ checkinId, goal, isOwner, attachments }: { 
   }
 
   // Nothing to show to the group without a file; only the owner gets the form to add one later.
-  if (!kind || (!saved && !isOwner)) return null;
+  if (!kind || (!saved && !canAdd)) return null;
   return (
     <section className="card mb-4" aria-labelledby="anexos-title" data-testid="checkin-attachments">
       <h2 id="anexos-title" className="mb-2 text-sm font-semibold leading-5">
@@ -81,7 +88,11 @@ export function CheckinAttachments({ checkinId, goal, isOwner, attachments }: { 
               {ext(kind)} · {attachmentSize(saved.size_bytes)}
             </span>
           </p>
-          {saved.url ? (
+          {saved.expired ? (
+            <p className="text-sm leading-5 text-muted" data-testid="attachment-expired">
+              Prova com mais de {keepDays} dias: o arquivo não fica mais guardado.
+            </p>
+          ) : saved.url ? (
             <a href={saved.url} download={saved.display_name} rel="noreferrer" className="btn-secondary min-h-11 shrink-0">
               <Download size={18} aria-hidden />
               Baixar {ext(kind)}

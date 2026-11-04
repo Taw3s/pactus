@@ -25,7 +25,7 @@ O Pacto tem duas camadas:
 - [x] **Palavras "se mexendo" no teste de digitação** (feedback do grupo, 26/10): a partir da 40ª palavra a tela apagava a mais antiga e todas as quebras de linha mudavam. Corrigido no PR seguinte ao #26.
 - [x] **Não dava para voltar e corrigir uma palavra** (feedback do grupo): agora Backspace numa palavra vazia volta para a anterior, se ela estiver errada (como no Monkeytype). No celular depende do teclado mandar o evento de apagar; conferir no Android e no iPhone.
 - [x] **Leitura "pendente" que não deixava enviar** (Daniel, 26/10): o envio tinha funcionado, mas a tela não atualizou; o segundo envio dava "já enviada". Agora o app atualiza a tela em vez de mostrar erro.
-- [ ] **Excluir a conta ainda usa `prompt()` nativo** (digitar EXCLUIR). A rodada 4 trocou só remover, sair e receber pelo diálogo novo; levar a exclusão para o `ConfirmDialog` exige brief do Astra.
+- [x] **Excluir a conta usava `prompt()` nativo**: desde a rodada 5 usa o `ConfirmDialog` `danger` com o campo "Digite EXCLUIR para confirmar".
 - [ ] **E2E do botão do Google pode falhar por corrida** (`e2e_k`): conta o botão logo após o `goto`, antes da hidratação. Passou no CI até aqui; se falhar, trocar `count()` por `waitFor()`.
 - [ ] Ouvir o grupo sobre o que mais está "horrível" no teste de digitação depois dessas correções (pedir prints ou vídeo).
 
@@ -115,15 +115,16 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 
 ## Anexos e PR #63 (GXDZ1)
 
-- [ ] **Integração do #63** (PR #71): anexos PDF/ZIP, link do GitHub obrigatório em projeto e sons na digitação ligados por padrão com botão para desligar (decisões do dono em 03/11), ajustes de layout e memória das fotos. Migration renumerada para 0028: rodar depois do merge.
-- [ ] **Retenção de 30 dias para PDF/ZIP** e **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1 (as 0027/0028 dele colidem com as nossas). Quando ele der push, entram como 0029/0030.
-- [ ] Cota de armazenamento: cada prova de estudo ou projeto pode ter até 10 MB sem prazo para sair; o plano grátis do Supabase tem 1 GB. A retenção resolve.
+- [x] **Integração do #63** (PR #71, mergeado; 0028 rodada): anexos PDF/ZIP, link do GitHub obrigatório em projeto e sons na digitação ligados por padrão com botão para desligar (decisões do dono em 03/11), ajustes de layout e memória das fotos. Migration renumerada para 0028: rodar depois do merge.
+- [x] **Retenção de 30 dias para PDF/ZIP** (0030): feita aqui, sem esperar a versão do GXDZ1; o arquivo sai, o nome fica e a prova diz que ele não está mais guardado.
+- [ ] **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1. Quando ele der push, conferir contra o catálogo do servidor (0022) e numerar a partir da 0031.
+- [x] Cota de armazenamento: com a 0030, cada pessoa ocupa no máximo ~30 dias de anexos (até 10 MB por prova de estudo ou projeto). Acompanhar o uso do Storage no painel do Supabase.
 
 ## Sessão de design do Astra (03/11/2026)
 
 - [x] Bloco 1 (#71): textos e estados de anexos e som.
-- [x] Bloco 3, autoria dos selos (#72); cena de entrada com **Q1 = C** (PR aberto, migration 0029) (uma vez por pessoa e grupo, em todos os aparelhos): migration, política e texto dentro do `FirstSteps`.
-- [x] Bloco 2, Perfil como arquivo no celular (PR aberto); desktop pendente: o desktop em duas colunas (contêiner de 1120 px) volta para o Astra, porque o app inteiro usa uma coluna de até 640 px.
+- [x] Bloco 3, autoria dos selos (#72); cena de entrada com **Q1 = C** (#75, 0029 rodada) (uma vez por pessoa e grupo, em todos os aparelhos): migration, política e texto dentro do `FirstSteps`.
+- [x] Bloco 2, Perfil como arquivo no celular (#73); desktop pendente: o desktop em duas colunas (contêiner de 1120 px) volta para o Astra, porque o app inteiro usa uma coluna de até 640 px.
 - **Q2 = A:** a coleção fica em 18; peruca, toga e os outros conceitos ficam reservados.
 - **Q3 = A:** sem anistia no beta.
 - Bloco 5 ("Novo na coleção") espera o contrato do servidor; bloco 7 (auditoria visual) espera capturas.
