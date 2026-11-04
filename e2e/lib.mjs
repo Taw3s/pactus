@@ -3,9 +3,10 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium, devices } from "playwright";
 
-export const DIR = path.dirname(new URL(import.meta.url).pathname);
+export const DIR = path.dirname(fileURLToPath(import.meta.url));
 export const FIXTURE = path.join(DIR, "fixtures", "big.png");
 export const APP = process.env.APP_URL || "http://localhost:3000";
 export const APP_DIR = process.env.APP_DIR || path.join(DIR, "..");

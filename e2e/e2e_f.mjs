@@ -11,14 +11,15 @@ const pts = async (p, name) => Number(await p.locator(`[data-member="${name}"] [
 const ana = await as("ana@pacto.test");
 await step("Ana registers a project (optional card, title required)", async () => {
   const card = ana.locator("[data-goal=project]");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   const btn = card.getByRole("button", { name: "Registrar projeto" });
   assert(await btn.isDisabled(), "needs title");
   await card.getByTestId("title").fill("Calculadora em Python");
+  await card.getByTestId("project-url").fill("https://github.com/Taw3s/pactus");
   await btn.click();
   await ana.locator("[data-goal=project][data-state=done]").waitFor();
   await ana.locator("[data-goal=project]").getByText("Calculadora em Python").waitFor();
-  assert((await ana.locator("[data-goal=project] input[type=file]").count()) === 0, "second project form still shown");
+  assert((await ana.locator("[data-goal=project]").getByTestId("attachment-input").count()) === 0, "second project form still shown");
   await ana.screenshot({ path: `${SHOTS}/f1-hoje-projeto.png`, fullPage: true });
 });
 
@@ -73,7 +74,7 @@ await step("check-ins on the day off are allowed and score, without obligations"
   assert((await eva.getByTestId("progress").count()) === 0, "no obligation scoreboard on day off");
   assert((await eva.getByTestId("deadline").count()) === 0, "no countdown on day off");
   const card = eva.locator("[data-goal=reading]");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await card.getByTestId("pages").fill("12");
   await card.getByRole("button", { name: "Enviar prova" }).click();
   await eva.locator("[data-goal=reading][data-state=done]").waitFor();

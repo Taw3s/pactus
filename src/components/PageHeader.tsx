@@ -17,7 +17,7 @@ export function PageHeader({ title, subtitle, right, backFallback }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="pixel break-words text-[32px] font-bold uppercase leading-9">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
+          {subtitle && <p className="mt-1 break-words text-sm text-muted">{subtitle}</p>}
         </div>
         {(right || !backFallback) && (
           <div className="flex shrink-0 items-center gap-2">
@@ -27,7 +27,7 @@ export function PageHeader({ title, subtitle, right, backFallback }: Props) {
         )}
       </div>
       {/* Below 640 px the actions get their own row: beside the title they squeezed it letter by letter ("PER / FIL"). */}
-      {right && <div className="mt-2 flex items-center gap-2 sm:hidden">{right}</div>}
+      {right && <div className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">{right}</div>}
     </header>
   );
 }

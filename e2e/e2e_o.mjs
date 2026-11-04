@@ -112,8 +112,8 @@ await step("'Continuar depois' folds the card (focus on it) and this device reme
 await step("the first proof comes from the server: a project does not count, a reading does", async () => {
   const insert = (goal, extra) =>
     sql(`alter table checkins disable trigger user;
-      insert into checkins (user_id, group_id, day, goal, photo_path, ${extra.cols})
-      select m.user_id, m.group_id, sp_today(), '${goal}', m.group_id || '/' || m.user_id || '/e2e-${goal}.jpg', ${extra.vals}
+      insert into checkins (user_id, group_id, day, goal, photo_path, ${goal === "project" ? "project_url, " : ""}${extra.cols})
+      select m.user_id, m.group_id, sp_today(), '${goal}', m.group_id || '/' || m.user_id || '/e2e-${goal}.jpg', ${goal === "project" ? "'https://github.com/Taw3s/pactus', " : ""}${extra.vals}
       from members m where m.display_name = '${OWNER.name}';
       alter table checkins enable trigger user;`);
   insert("project", { cols: "title, minutes", vals: "'Meu projeto', 30" });

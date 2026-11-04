@@ -113,6 +113,12 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - [ ] **"Novo na coleção" / "Mais um para a coleção"** (fase futura, precisa de migration): a `open_chest` teria de devolver, na mesma transação que grava, a ordem da abertura daquele item para a pessoa (1 = primeira cópia) e a quantidade confirmada, serializando por pessoa (`pg_advisory_xact_lock`) para dois baús diferentes abertos ao mesmo tempo não dizerem "novo" os dois. Testar: dois baús simultâneos com o mesmo item, resposta perdida e reconsulta. Até lá, texto neutro.
 - Fora desta rodada: favoritos no perfil (exige tabela, posse e RLS), categorias na interface, roupas no juiz.
 
+## Anexos e PR #63 (GXDZ1)
+
+- [ ] **Integração do #63** (PR #71): anexos PDF/ZIP, link do GitHub obrigatório em projeto e sons na digitação ligados por padrão com botão para desligar (decisões do dono em 03/11), ajustes de layout e memória das fotos. Migration renumerada para 0028: rodar depois do merge.
+- [ ] **Retenção de 30 dias para PDF/ZIP** e **13 textos de Bash em português e 13 em inglês**: existem só no computador do GXDZ1 (as 0027/0028 dele colidem com as nossas). Quando ele der push, entram como 0029/0030.
+- [ ] Cota de armazenamento: cada prova de estudo ou projeto pode ter até 10 MB sem prazo para sair; o plano grátis do Supabase tem 1 GB. A retenção resolve.
+
 ## Decisões em aberto
 
 - **Auditoria de segurança, rodada 1 (29/10):** 6 falhas confirmadas corrigidas no PR da 0026. Ficam como pistas a validar no painel: Confirm email, inscrições push sem limite por pessoa, Storage sem limite total por membro (e órfãos de avatar/prova recusada), laço da limpeza se o `list()` do Storage casar prefixo sem diferenciar maiúsculas, limpezas do cron depois do loop de lembretes, nome de arquivo com `..`. Adiado: ranking/baús quando o tribunal muda depois, backups do Supabase, configurações reais do Storage, vazamento entre sites (COOP/CORP). Melhorias anotadas: fixar actions por SHA, `contents: write` só no passo de publicar, troca de senha, entrar no grupo só com e-mail confirmado, hosts exatos do push, nomes de foto no formato do `mediaPath`.

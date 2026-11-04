@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- local previews and signed URLs */
 import { Camera, Check, ChevronRight, Clock, Keyboard, Loader, Plus, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AiBadge, TribunalBadge } from "@/components/StatusBadges";
@@ -11,17 +12,24 @@ import type { Verdict } from "@/lib/ai-review";
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { TypingCard, type TypingScore } from "@/components/TypingCard";
-import { TypingTest, type TypingResult } from "@/components/TypingTest";
+import type { TypingResult } from "@/components/TypingTest";
 import { DEVICE_LABEL } from "@/lib/typing";
-import { compressImage, mediaPath, THUMB_SIDE, thumbPath } from "@/lib/image";
+import { compressProofPhotos, mediaPath, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
 import { promptOfDay } from "@/lib/study-prompts";
 import { createClient } from "@/lib/supabase/client";
+import { normalizeGitHubRepoUrl, validateAttachment } from "@/lib/attachments";
+import { attachmentCopy, attachmentSize } from "@/components/CheckinAttachments";
 import { checkinNumbers, goalMeta, GOALS, MAX_EXTRA_SESSIONS, MAX_PHOTOS, MIN_EXTRA_MINUTES, MIN_STUDY_MINUTES, MIN_SUMMARY, PROJECT, type DisputeStatus, type Goal } from "@/lib/types";
 
 /** The proof this page just sent ("extra" for an extra session): its row plays the sheet animation once. */
 let justSent: string | null = null;
+
+// Completed days do not need to download the interactive typing board.
+const TypingTest = dynamic(() => import("@/components/TypingTest").then((m) => m.TypingTest), {
+  loading: () => <p role="status" className="min-h-12 text-sm text-muted">Carregando teste…</p>,
+});
 
 export interface DoneGoal {
   id: string;
@@ -307,6 +315,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const [minutes, setMinutes] = useState("");
   const [pages, setPages] = useState("");
   const [title, setTitle] = useState("");
+  const [projectUrl, setProjectUrl] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
@@ -314,12 +324,15 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const minutesOk = goal !== "study" || Number(minutes) >= minMinutes;
   const pagesOk = goal !== "reading" || Number(pages) >= 1;
   const titleOk = goal !== "project" || title.trim().length >= 3;
+  const normalizedProjectUrl = goal === "project" ? normalizeGitHubRepoUrl(projectUrl) : null;
+  const projectUrlOk = goal !== "project" || !!normalizedProjectUrl;
   const summaryOk = goal !== "study" || extra || summary.trim().length >= MIN_SUMMARY;
-  const ready = shots.length > 0 && minutesOk && pagesOk && titleOk && summaryOk;
+  const ready = shots.length > 0 && minutesOk && pagesOk && titleOk && projectUrlOk && summaryOk;
 
   // What is still missing, in words, next to the disabled button.
   const missing = [
     !titleOk && "dê um nome ao projeto",
+    !projectUrlOk && "informe o repositório no GitHub",
     shots.length === 0 && "adicione a foto",
     goal === "study" && !minutesOk && `informe pelo menos ${minMinutes} min`,
     goal === "reading" && !pagesOk && "informe as páginas lidas",
@@ -364,6 +377,21 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
     setError("");
   }
 
+  async function pickAttachment(file: File | undefined) {
+    if (!file) return;
+    const kind = goal === "study" ? "study_pdf" : goal === "project" ? "project_zip" : null;
+    if (!kind) return;
+    const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+    const validation = validateAttachment(kind, file.name, file.size, header);
+    if (!validation.ok) {
+      setError(validation.reason === "size" ? attachmentCopy.tooBig : attachmentCopy.wrongType(kind));
+      setAttachment(null);
+      return;
+    }
+    setError("");
+    setAttachment(file);
+  }
+
   async function submit() {
     if (!shots.length || !ready) return;
     setBusy(true);
@@ -372,8 +400,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       const supabase = createClient();
       const media = supabase.storage.from("media");
       const paths = shots.map(() => mediaPath(groupId, userId, goal));
-      const blobs = await Promise.all(shots.map((s) => compressImage(s.file)));
-      const thumb = await compressImage(shots[0].file, THUMB_SIDE);
+      const { photos: blobs, thumb } = await compressProofPhotos(shots.map((s) => s.file));
       // The thumbnail only speeds up lists; if it fails, lists fall back to the full photo.
       const [ups] = await Promise.all([
         Promise.all(paths.map((p, n) => media.upload(p, blobs[n], { contentType: "image/jpeg", upsert: false }))),
@@ -381,10 +408,11 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       ]);
       if (ups.some((u) => u.error)) throw new Error(`${shots.length > 1 ? "Uma das fotos" : "A foto"} não subiu. Seus dados continuam aqui: tente de novo.`);
       const [path, ...extraPhotos] = paths;
+      let savedCheckinId: string | null = null;
       const dates = (await Promise.all(shots.map((s) => (s.takenAt !== undefined ? s.takenAt : photoTakenAt(s.file))))).filter((d): d is Date => !!d);
       const oldest = dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : null;
       // The database sets the day (São Paulo) and the owner; the client only sends the content.
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from("checkins")
         .insert({
           goal,
@@ -394,10 +422,12 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           minutes: goal === "study" ? Number(minutes) : null,
           pages: goal === "reading" ? Number(pages) : null,
           title: goal === "project" ? title.trim() : null,
+          ...(goal === "project" ? { project_url: normalizedProjectUrl } : {}),
           ...(extra ? { extra: true } : {}),
           ...(extraPhotos.length ? { extra_photos: extraPhotos } : {}),
           ...(oldest ? { photo_taken_at: oldest.toISOString() } : {}),
-        });
+        }).select("id").single();
+      if (!error) savedCheckinId = inserted?.id ?? null;
       // Already sent (the first send went through but its answer never arrived, or this page is
       // older than the proof): show the proof instead of an error.
       if (error?.code === "23505" && goal !== "project" && !extra) {
@@ -408,17 +438,15 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       }
       // The proof may be saved even though its answer never arrived (the phone switched networks or
       // left the app mid-request): the photo path is unique to this send, so look for it first.
+      let recovered = false;
       if (error && !["23505", "P0001"].includes(error.code)) {
         const { data: saved } = await supabase.from("checkins").select("id").eq("photo_path", path).maybeSingle();
         if (saved) {
-          justSent = extra ? "extra" : goal;
-          setBusy(false);
-          router.refresh();
-          onDone?.();
-          return;
+          savedCheckinId = saved.id;
+          recovered = true;
         }
       }
-      if (error) {
+      if (error && !recovered) {
         throw new Error(
           error.code === "23505"
             ? goal === "project"
@@ -433,6 +461,12 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
                   : // The code tells a dropped connection ("rede") from a server refusal in a friend's screenshot.
                     `Não foi possível enviar (código ${error.code || "rede"}). Seus dados continuam aqui: tente de novo.`,
         );
+      }
+      if (attachment && savedCheckinId) {
+        const form = new FormData();
+        form.set("file", attachment);
+        const response = await fetch(`/api/checkins/${savedCheckinId}/attachments`, { method: "POST", body: form });
+        if (!response.ok && response.status !== 409) throw new Error("A prova foi salva, mas não foi possível enviar o arquivo. Tente novamente na página da prova.");
       }
       // The AI judge is called by <PendingReviews> once the page shows the new proof.
       // The server may nudge the group (this person closed the day / weekly challenge done).
@@ -477,7 +511,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       </div>
 
       {goal === "project" && (
-        <div className="mb-3">
+        <div className="mb-3 space-y-2">
           <label className="label" htmlFor={fieldId("name")}>
             Nome do projeto
           </label>
@@ -490,6 +524,71 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
             onChange={(e) => setTitle(e.target.value)}
             data-testid="title"
           />
+          <label className="label" htmlFor={fieldId("github")}>
+            Repositório no GitHub
+          </label>
+          <p id={fieldId("github-help")} className="text-sm leading-5 text-muted">
+            Cole o link do repositório deste projeto.
+          </p>
+          <input
+            id={fieldId("github")}
+            type="url"
+            inputMode="url"
+            className="input"
+            placeholder="https://github.com/usuario/projeto"
+            value={projectUrl}
+            onChange={(e) => setProjectUrl(e.target.value)}
+            aria-invalid={!!projectUrl.trim() && !normalizedProjectUrl}
+            aria-describedby={`${fieldId("github-help")}${projectUrl.trim() && !normalizedProjectUrl ? ` ${fieldId("github-error")}` : ""}`}
+            data-testid="project-url"
+          />
+          {projectUrl.trim() && !normalizedProjectUrl && (
+            <p id={fieldId("github-error")} className="text-sm leading-5 text-warn">
+              Use um link de repositório do GitHub, como https://github.com/usuario/projeto.
+            </p>
+          )}
+        </div>
+      )}
+
+      {(goal === "study" || goal === "project") && (
+        <div className="mt-3 space-y-2">
+          <p className="text-sm font-semibold leading-5">{attachmentCopy.title(goal === "study" ? "study_pdf" : "project_zip")} (opcional)</p>
+          <p id={fieldId("attach-help")} className="text-sm leading-5 text-muted">
+            {attachmentCopy.help(goal === "study" ? "study_pdf" : "project_zip")}
+          </p>
+          <div className="flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
+            <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3">
+              <Plus size={18} aria-hidden />
+              <span className="min-w-0 flex-1 break-all">
+                {attachment ? (
+                  <>
+                    <span className="text-fg">{attachment.name}</span>
+                    <span className="block">
+                      Arquivo selecionado · {goal === "study" ? "PDF" : "ZIP"} · {attachmentSize(attachment.size)}
+                    </span>
+                  </>
+                ) : (
+                  attachmentCopy.add(goal === "study" ? "study_pdf" : "project_zip")
+                )}
+              </span>
+              <input
+                type="file"
+                accept={goal === "study" ? ".pdf,application/pdf" : ".zip,application/zip,application/x-zip-compressed"}
+                className="sr-only"
+                aria-describedby={fieldId("attach-help")}
+                data-testid="attachment-input"
+                onChange={(e) => {
+                  void pickAttachment(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {attachment && (
+              <button type="button" className="min-h-11 shrink-0 underline" onClick={() => setAttachment(null)}>
+                Remover arquivo
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -501,7 +600,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
             Tirar ou escolher foto da prova
           </span>
           <span className="pb-8 pt-1 text-xs">Até {MAX_PHOTOS} fotos{goal === "reading" ? " (ex.: página inicial e final)" : ""}</span>
-          <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
+          <input type="file" accept="image/*" multiple className="sr-only" data-testid="proof-photo-input" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
         </label>
       ) : (
         <ul className="grid grid-cols-2 gap-2" data-testid="photo-previews">
@@ -526,7 +625,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
                 <span className="tabular text-xs">
                   {shots.length} de {MAX_PHOTOS}
                 </span>
-                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
+                <input type="file" accept="image/*" multiple className="sr-only" data-testid="proof-photo-input" onChange={(e) => (pick(e.target.files), (e.target.value = ""))} />
               </label>
             </li>
           )}
@@ -607,7 +706,7 @@ function NumberField(props: {
   const invalid = !props.ok && !!props.value;
   return (
     <div className="flex items-center justify-between gap-3">
-      <label htmlFor={props.id} className={`text-base leading-5 ${invalid ? "text-warn" : "text-fg"}`}>
+      <label htmlFor={props.id} className={`min-w-0 flex-1 break-words text-base leading-5 ${invalid ? "text-warn" : "text-fg"}`}>
         {props.label}
         <span className="block text-sm text-muted">Mínimo {props.min}</span>
       </label>
@@ -618,7 +717,7 @@ function NumberField(props: {
         min={props.min}
         max={props.max}
         aria-invalid={invalid}
-        className="input tabular w-24 text-right"
+        className="input tabular w-24 shrink-0 text-right"
         value={props.value}
         onChange={(e) => props.onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
         data-testid={props.testId}

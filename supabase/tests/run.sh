@@ -65,3 +65,13 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0027_collection_18.sql
 "${PSQL[@]}" -f ../migrations/0027_collection_18.sql
 "${PSQL[@]}" -f collection_18_test.sql
+# Production already has this text field outside the checked-in migration history.
+"${PSQL[@]}" -c "alter table public.checkins add column project_url text"
+"${PSQL[@]}" -f ../migrations/0028_checkin_attachments.sql
+# Reapplying must be safe if an earlier SQL Editor run stopped after a partial change.
+"${PSQL[@]}" -f ../migrations/0028_checkin_attachments.sql
+# Production state on 03/11/2026: the first version ran and project_requires_github_url was dropped by hand.
+"${PSQL[@]}" -c "alter table public.checkins drop constraint project_requires_github_url"
+"${PSQL[@]}" -f ../migrations/0028_checkin_attachments.sql
+"${PSQL[@]}" -c 'do $$ begin assert exists (select 1 from pg_constraint where conname = '"'"'project_requires_github_url'"'"'), '"'"'0028 recreates the dropped constraint'"'"'; end $$'
+"${PSQL[@]}" -f attachments_test.sql

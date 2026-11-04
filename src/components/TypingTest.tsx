@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Check, Keyboard, Loader, Shuffle } from "lucide-react";
+import { BookOpen, Check, Keyboard, Loader, Shuffle, Volume2, VolumeX } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { countRun, DEVICE_LABEL, deviceKind, makeWords, typingLabel, type TypingLang } from "@/lib/typing";
@@ -58,9 +58,14 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   const test = useRef<{ id: string; seconds: number; started: number; device: "pc" | "mobile"; minutes: Minutes; text: TypingText | null; start: number } | null>(null);
   const [typingLang, setTypingLang] = useState<TypingLang>("pt");
   const [focused, setFocused] = useState(false);
+  const [sounds, setSounds] = useState(true);
+  // Known only in the browser; until then assume audio works, so the server render matches.
+  const [audioOk, setAudioOk] = useState(true);
+  useEffect(() => setAudioOk("AudioContext" in window), []);
   const run = useRef({ committed: [] as string[], current: "", words: [] as string[] });
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const audio = useRef<AudioContext | null>(null);
 
   useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
 
@@ -71,6 +76,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       if (saved.mode === "text" || saved.mode === "words") setMode(saved.mode);
       if (saved.lang === "pt" || saved.lang === "en") setLang(saved.lang);
       if (saved.minutes === 1 || saved.minutes === 5) setMinutes(saved.minutes);
+      if (typeof saved.sounds === "boolean") setSounds(saved.sounds);
       const pt = saved.texts?.pt;
       const en = saved.texts?.en;
       setTexts({
@@ -97,7 +103,7 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
     setMinutes(len);
     setTexts(ts);
     try {
-      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, minutes: len, texts: ts }));
+      localStorage.setItem(PREF, JSON.stringify({ mode: m, lang: l, minutes: len, texts: ts, sounds }));
     } catch {}
   }
 
@@ -109,6 +115,12 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
   async function start() {
     setError("");
     setPhase("starting");
+    if (sounds && typeof window !== "undefined" && "AudioContext" in window) {
+      try {
+        audio.current ??= new AudioContext();
+        await audio.current.resume();
+      } catch { /* audio is optional */ }
+    }
     const device = deviceKind();
     let text: TypingText | null = null;
     if (mode === "text") {
@@ -198,8 +210,48 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       setCurrent("");
       return;
     }
+    if (sounds && value.length > run.current.current.length) {
+      const target = run.current.words[run.current.committed.length] ?? "";
+      const previous = run.current.current.length;
+      for (let i = previous; i < value.length; i++) playKeyTone(value[i] === target[i]);
+    }
     run.current.current = value;
     setCurrent(value);
+  }
+
+  // On by default (owner's decision, 03/11/2026); one tap turns it off, also mid-test, and the choice is kept.
+  async function toggleSounds() {
+    const enabled = !sounds;
+    setSounds(enabled);
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREF) ?? "{}");
+      localStorage.setItem(PREF, JSON.stringify({ ...saved, sounds: enabled }));
+    } catch {}
+    if (enabled && "AudioContext" in window) {
+      try {
+        audio.current ??= new AudioContext();
+        await audio.current.resume();
+      } catch { /* audio is optional */ }
+    }
+    // Mid-test the button must not steal the keyboard from the board.
+    if (phase === "running") input.current?.focus();
+  }
+
+  function playKeyTone(correct: boolean) {
+    try {
+      const ctx = audio.current;
+      if (!ctx || ctx.state !== "running") return;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = correct ? 660 : 190;
+      gain.gain.setValueAtTime(0.018, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.05);
+    } catch { /* audio is optional */ }
   }
 
   /**
@@ -231,6 +283,18 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
 
   const at = committed.length;
 
+  const soundButton = (
+    <button
+      type="button"
+      className="btn-secondary !min-h-11 shrink-0 !px-3 text-sm"
+      aria-pressed={sounds}
+      onClick={toggleSounds}
+      data-testid="typing-sounds"
+    >
+      {sounds ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
+      {sounds ? "Som ligado" : "Som desligado"}
+    </button>
+  );
   return (
     <div className="space-y-3" data-testid="typing-test" data-phase={phase}>
       {phase === "idle" || phase === "starting" ? (
@@ -247,6 +311,15 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               onChange={(l) => choose({ lang: l })}
               testid="typing-lang"
             />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-muted">Sons ao digitar</span>
+              {soundButton}
+            </div>
+            <p className="text-sm leading-5 text-muted">
+              {audioOk ? "Você pode desligar o som antes ou durante o teste." : "O som não está disponível neste navegador. Você pode continuar o teste."}
+            </p>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">Duração</span>
@@ -309,7 +382,10 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
               </p>
               {title && <p className="truncate text-sm text-muted">{title}</p>}
             </div>
-            <p className="tabular shrink-0 text-sm text-muted">{committed.length} palavras</p>
+            <div className="flex shrink-0 items-center gap-2">
+              <p className="tabular text-sm text-muted">{committed.length} palavras</p>
+              {soundButton}
+            </div>
           </div>
           <Board words={words} committed={committed} current={current} lang={typingLang} focused={focused} running={phase === "running"}>
             <input

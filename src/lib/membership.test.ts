@@ -4,12 +4,13 @@ vi.mock("server-only", () => ({}));
 import { removeGroupMedia, removeUserMedia, retryPendingMediaCleanup } from "./membership";
 
 const list = vi.fn(), remove = vi.fn();
+const attachmentList = vi.fn(), attachmentRemove = vi.fn();
 const acknowledge = vi.fn(), jobs = vi.fn();
 const admin = {
-  storage: { from: () => ({ list, remove }) },
+  storage: { from: (bucket: string) => bucket === "media" ? ({ list, remove }) : ({ list: attachmentList, remove: attachmentRemove }) },
   from: () => ({ delete: () => ({ eq: acknowledge, like: acknowledge }), select: () => ({ order: () => ({ limit: jobs }) }) }),
 } as unknown as SupabaseClient;
-beforeEach(() => { vi.resetAllMocks(); remove.mockResolvedValue({ error: null }); acknowledge.mockResolvedValue({ error: null }); });
+beforeEach(() => { vi.resetAllMocks(); remove.mockResolvedValue({ error: null }); attachmentRemove.mockResolvedValue({ error: null }); attachmentList.mockResolvedValue({ data: [], error: null }); acknowledge.mockResolvedValue({ error: null }); });
 
 describe("private media deletion", () => {
   it("removes nested files as well as flat photos", async () => {
@@ -22,6 +23,13 @@ describe("private media deletion", () => {
     await removeUserMedia(admin, "g", "u");
     expect(remove.mock.calls.flat(2)).toEqual(expect.arrayContaining(["g/u/flat.jpg", "g/u/nested/deeper/private.jpg"]));
     expect(remove.mock.calls.flat(2)).not.toContain("g/u/nested");
+  });
+
+  it("also deletes private attachments when a member leaves", async () => {
+    list.mockResolvedValue({ data: [], error: null });
+    attachmentList.mockResolvedValue({ data: [{ id: "pdf", name: "proof.pdf" }], error: null });
+    await removeUserMedia(admin, "g", "u");
+    expect(attachmentRemove).toHaveBeenCalledWith(["g/u/proof.pdf"]);
   });
 
   it("deletes all group pages, including a member beyond the first page", async () => {

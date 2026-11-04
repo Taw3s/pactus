@@ -26,7 +26,7 @@ await step("study needs photo + a 40-char answer to the question of the day befo
   const card = p.locator("[data-goal=study]");
   const btn = card.getByRole("button", { name: "Enviar prova" });
   assert(await btn.isDisabled(), "disabled without photo");
-  await card.locator("input[type=file]").setInputFiles(FIXTURE);
+  await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await card.locator("textarea").fill("curto demais");
   assert(await btn.isDisabled(), "disabled with short summary");
   await card.getByText("12 de 40").waitFor();
@@ -63,12 +63,24 @@ await step("typing + reading complete the day", async () => {
   // Typing is a test inside the app: no photo, no form.
   const typing = p.locator("[data-goal=typing][data-state=pending]");
   assert((await typing.locator("input[type=file]").count()) === 0, "typing still asks for a photo");
+  // Sound is on by default; one tap turns it off and the choice survives a reload.
+  // The board loads on demand: wait for the button to answer instead of reading it right after the click.
+  const sound = typing.getByTestId("typing-sounds");
+  await typing.locator('[data-testid="typing-sounds"][aria-pressed="true"]').waitFor();
+  const off = typing.locator('[data-testid="typing-sounds"][aria-pressed="false"]');
+  for (let i = 0; i < 5 && !(await off.count()); i++) {
+    await sound.click();
+    await off.waitFor({ timeout: 2000 }).catch(() => {});
+  }
+  assert((await off.count()) === 1 && (await off.innerText()).toLowerCase().includes("som desligado"), "sound turns off");
+  await p.reload();
+  await typing.locator('[data-testid="typing-sounds"][aria-pressed="false"]').waitFor();
   await typingTest(p, typing);
   await p.locator("[data-goal=typing][data-state=done]").waitFor();
   for (const goal of ["reading"]) {
     const card = p.locator(`[data-goal=${goal}]`);
     assert((await card.locator("textarea").count()) === 0, "no summary field");
-    await card.locator("input[type=file]").setInputFiles(FIXTURE);
+    await card.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
     if (goal === "reading") {
       assert(await card.getByRole("button", { name: "Enviar prova" }).isDisabled(), "reading needs pages");
       await card.getByTestId("pages").fill("23");
@@ -94,7 +106,7 @@ await step("typing + reading complete the day", async () => {
 await step("after reload: proofs shown, no way to edit", async () => {
   await p.reload();
   assert((await p.locator("[data-state=done]").count()) === 3, "3 done");
-  assert((await p.locator("input[type=file]").count()) === 1, "only the optional project upload remains");
+  assert((await p.getByTestId("attachment-input").count()) === 1, "only the optional project upload remains");
   await p.locator("[data-goal=study]").getByText("95 min").waitFor();
   await p.locator("[data-goal=reading]").getByText("23 páginas").waitFor();
   assert((await p.locator("[data-goal=study] img:not(.sprite)").evaluate((img) => img.naturalWidth)) > 0, "signed image loads");

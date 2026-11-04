@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <b>Provas:</b> as fotos que você envia (até quatro por prova), os minutos de estudo, as páginas lidas, a pergunta do dia e a sua resposta sobre o estudo, o nome do
-          projeto, o dia e a hora do envio e a data que o arquivo da foto informa (só a data, para mostrar ao grupo quando a foto é antiga).
+          projeto, o link do repositório GitHub informado, PDFs de estudo e arquivos ZIP opcionais de projeto (até 10 MB cada), o dia e a hora do envio e a data que o arquivo da foto informa (só a data, para mostrar ao grupo quando a foto é antiga).
         </li>
         <li>
           <b>Teste de digitação:</b> os resultados (palavras por minuto, precisão), o texto e o idioma escolhidos, se foi no computador ou no
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          <b>Supabase:</b> banco de dados, arquivos (as fotos) e login.
+          <b>Supabase:</b> banco de dados, arquivos (fotos, PDFs e ZIPs privados) e login. Os anexos não são executados pelo app; integrantes do mesmo grupo podem abri-los por links temporários.
         </li>
         <li>
           <b>Vercel:</b> hospedagem do app.
@@ -105,6 +105,7 @@ export default function PrivacyPage() {
           As fotos das provas ficam guardadas em tamanho original por {KEEP_FULL_DAYS} dias. Depois disso, só fica uma versão reduzida da
           primeira foto.
         </li>
+        <li>PDFs e ZIPs permanecem enquanto a prova existir no grupo; ao sair ou ser removido do grupo, os arquivos associados à sua conta são apagados junto.</li>
         <li>
           Quando você <b>sai do grupo</b> ou é removido, suas provas, fotos, dívidas e testes saem junto. Ficam no histórico do grupo, sem
           ligação com a sua conta, os pagamentos que você recebeu (com o seu nome, para o recibo de quem pagou continuar valendo), as
