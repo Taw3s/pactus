@@ -75,3 +75,6 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0028_checkin_attachments.sql
 "${PSQL[@]}" -c 'do $$ begin assert exists (select 1 from pg_constraint where conname = '"'"'project_requires_github_url'"'"'), '"'"'0028 recreates the dropped constraint'"'"'; end $$'
 "${PSQL[@]}" -f attachments_test.sql
+"${PSQL[@]}" -f ../migrations/0029_welcome_seen.sql
+"${PSQL[@]}" -f ../migrations/0029_welcome_seen.sql
+"${PSQL[@]}" -f welcome_test.sql
