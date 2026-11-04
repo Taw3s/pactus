@@ -3,7 +3,6 @@
 import { AlertTriangle, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { msUntilEndOfDay } from "@/lib/dates";
-import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { GOALS, type DailyGoal } from "@/lib/types";
 import { Sprite, type SpriteName } from "./Sprite";
 import { VerifiedSeal } from "./VerifiedSeal";
