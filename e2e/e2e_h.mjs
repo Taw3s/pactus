@@ -77,7 +77,11 @@ await step("desktop (1920 px): side navigation + group column, axe clean; phones
   const box = await nav.boundingBox();
   assert(box && box.x === 0 && box.height >= 1000 && box.width < 300, `side nav box ${JSON.stringify(box)}`);
   const side = d.getByTestId("group-sidebar");
-  await side.getByText("Grupo hoje").waitFor();
+  // One title over the three blocks, the tribunal first; the column scrolls with the page (not sticky).
+  await side.getByRole("heading", { level: 2, name: "O grupo hoje" }).waitFor();
+  const blocks = await side.getByRole("heading", { level: 3 }).allTextContents();
+  assert(blocks.map((b) => b.trim()).join("|") === "Tribunal|Progresso|Ranking", `blocks: ${blocks.join("|")}`);
+  assert((await side.evaluate((el) => getComputedStyle(el).position)) !== "sticky", "the group column is sticky");
   await side.locator('a[href^="/historico/"]').first().waitFor();
   assert((await side.locator('a[href^="/historico/"]').count()) === 6, "6 members in the group column");
   await side.getByText(/Ranking/).waitFor();

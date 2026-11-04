@@ -11,7 +11,7 @@ const DESKTOP = "(min-width: 75rem)";
 const PODIUM = ["text-gold", "text-silver", "text-bronze"];
 
 /**
- * Desktop-only group column for "Hoje" (tribunal, group today, monthly ranking).
+ * Desktop-only group column for "Hoje", under one title: tribunal, the group's progress today, monthly ranking.
  * Loads in the browser and only when the screen is wide: phones never fetch it.
  */
 export function GroupSidebar() {
@@ -44,11 +44,15 @@ export function GroupSidebar() {
   }, []);
 
   return (
-    <aside aria-label="O grupo hoje" className="hidden space-y-4 desk:sticky desk:top-10 desk:block" data-testid="group-sidebar">
+    // Not sticky (Astra brief of 04/11): a column taller than the window would hide its end; it scrolls with the page.
+    <aside aria-labelledby="side-title" className="hidden space-y-4 desk:block" data-testid="group-sidebar">
+      <h2 id="side-title" className="pixel text-2xl uppercase leading-7">
+        O grupo hoje
+      </h2>
       <section className="card" aria-labelledby="side-tribunal">
-        <h2 id="side-tribunal" className="pixel flex items-center gap-2 text-xl uppercase leading-6">
+        <h3 id="side-tribunal" className="pixel flex items-center gap-2 text-xl uppercase leading-6">
           <Sprite name="judgeBench" /> Tribunal
-        </h2>
+        </h3>
         {!data ? (
           <Placeholder failed={failed} />
         ) : data.tribunals.length === 0 ? (
@@ -71,9 +75,9 @@ export function GroupSidebar() {
 
       <section className="card" aria-labelledby="side-today">
         <div className="flex items-center justify-between">
-          <h2 id="side-today" className="pixel text-xl uppercase leading-6">
-            Grupo hoje
-          </h2>
+          <h3 id="side-today" className="pixel text-xl uppercase leading-6">
+            Progresso
+          </h3>
           <Link href="/feed" className="flex min-h-11 items-center gap-1 text-sm text-muted hover:text-fg">
             Feed <ChevronRight size={16} aria-hidden />
           </Link>
@@ -115,9 +119,9 @@ export function GroupSidebar() {
 
       <section className="card" aria-labelledby="side-ranking">
         <div className="flex items-center justify-between">
-          <h2 id="side-ranking" className="pixel flex items-center gap-2 text-xl uppercase leading-6">
+          <h3 id="side-ranking" className="pixel flex items-center gap-2 text-xl uppercase leading-6">
             <Sprite name="trophy" /> Ranking
-          </h2>
+          </h3>
           <Link href="/ranking" className="flex min-h-11 items-center gap-1 text-sm text-muted hover:text-fg">
             {data?.month ?? "Mês"} <ChevronRight size={16} aria-hidden />
           </Link>
