@@ -120,7 +120,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const unreviewed = mine.filter((c) => !reviewOf.get(c.id)).map((c) => c.id);
 
   return (
-    <div data-wide className="desk:grid desk:grid-cols-[minmax(0,1fr)_380px] desk:items-start desk:gap-10">
+    <div data-wide className="desk:grid desk:grid-cols-[minmax(0,1fr)_380px] desk:items-start desk:gap-6">
       <div className="min-w-0">
         <PendingReviews ids={unreviewed} />
         <PageHeader title="Hoje" subtitle={`${formatDayPt(today)} · Olá, ${me.display_name}`} />
