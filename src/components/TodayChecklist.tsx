@@ -13,7 +13,7 @@ import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { Sprite } from "@/components/Sprite";
 import { TypingCard, type TypingScore } from "@/components/TypingCard";
 import type { TypingResult } from "@/components/TypingTest";
-import { DEVICE_LABEL } from "@/lib/typing";
+import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 import { compressProofPhotos, mediaPath, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
@@ -52,8 +52,11 @@ interface Props {
   done: DoneGoal[];
   /** Extra study sessions sent today. */
   extras: DoneGoal[];
-  /** Today's typing tests: how many were used and the best result. */
-  typing: { used: number; best: string | null; bestScore: TypingScore | null };
+  /**
+   * Today's typing tests: how many were used, the best result and a result the server confirmed that no
+   * proof uses yet (`day`: the day the page was drawn, to tell a failure from the turn of the day).
+   */
+  typing: { used: number; best: string | null; bestScore: TypingScore | null; unsent: TypingResult | null; day: string };
 }
 
 type FormMode = "first" | "retake" | "extra";
@@ -132,20 +135,29 @@ function ExtraSessions({ extras, groupId, userId }: { extras: DoneGoal[]; groupI
 /**
  * Typing: the test inside the app is the proof. The first finished test sends the goal (with a
  * picture of the result card for lists and the tribunal); the other attempts can only raise the
- * day's best, which is what scores.
+ * day's best, which is what scores. A result the server confirmed whose proof did not go (failure,
+ * answer lost, reload, another tab) is sent again as it is: never another test, never another attempt.
  */
 function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupId: string; userId: string; typing: Props["typing"] }) {
   const router = useRouter();
   const [again, setAgain] = useState(false);
   const [error, setError] = useState("");
   const [moved, setMoved] = useState("");
+  // The result whose proof failed here, until the page knows about it from the server.
+  const [failed, setFailed] = useState<TypingResult | null>(null);
   const left = Math.max(0, 3 - typing.used);
   const retake = done?.dispute === "upheld";
   const needsProof = !done || retake;
+  const unsent = failed ?? typing.unsent;
+  // Once the server shows the goal sent (an answer lost after the proof was saved), the local copy is spent.
+  useEffect(() => {
+    if (!needsProof) setFailed(null);
+  }, [needsProof]);
 
   async function sendProof(r: TypingResult) {
     setError("");
-    setMoved(r.moved ?? "");
+    if (r.moved) setMoved(r.moved);
+    let outcome: "sent" | "failed" | "late" = "failed";
     try {
       const card = await resultCard(r);
       const supabase = createClient();
@@ -157,10 +169,23 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
       ]);
       if (up.error) throw new Error();
       const { error } = await supabase.from("checkins").insert({ goal: "typing", photo_path: path, typing_test_id: r.testId });
-      if (error) throw new Error();
-      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
+      // 23505: this test or today's goal already has a proof (another tab, or an earlier answer that was lost).
+      if (!error || error.code === "23505") outcome = "sent";
+      else if (error.message.includes("finished test from today")) outcome = "late";
     } catch {
-      setError("O resultado foi salvo, mas a meta não foi enviada. Faça outro teste para tentar de novo.");
+      /* the network failed: the result stays on the server, ready to send again */
+    }
+    // The database dates a proof when it arrives: after midnight, yesterday's test no longer counts for today.
+    if (outcome === "failed" && spToday() !== typing.day) outcome = "late";
+    if (outcome === "sent") {
+      setFailed(null);
+      fetch("/api/progress", { method: "POST", keepalive: true }).catch(() => {});
+    } else if (outcome === "late") {
+      setFailed(null);
+      setError("O dia virou antes de a meta ser enviada. O teste de ontem não vale para hoje.");
+    } else {
+      setFailed(r);
+      setError("A meta não foi enviada. Tente de novo: o resultado continua salvo.");
     }
     router.refresh();
   }
@@ -180,7 +205,11 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
               <p className="text-sm text-muted">{retake ? "O grupo condenou a prova. Faça um teste novo até 23:59." : "Teste de 1 minuto aqui no app"}</p>
             </div>
           </div>
-          <TypingTest attemptsLeft={left} onResult={sendProof} />
+          {unsent ? (
+            <UnsentTyping result={unsent} onSend={() => sendProof(unsent)} />
+          ) : (
+            <TypingTest attemptsLeft={left} onResult={sendProof} onUnconfirmed={() => router.refresh()} />
+          )}
           {error && (
             <p role="alert" className="mt-2 text-sm text-fail">
               {error}
@@ -209,6 +238,7 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
               setAgain(false);
               router.refresh();
             }}
+            onUnconfirmed={() => router.refresh()}
           />
         </section>
       ) : (
@@ -218,6 +248,34 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
           </button>
         )
       )}
+    </div>
+  );
+}
+
+/** A result the server confirmed, waiting for its proof: sending it again takes no test and no attempt. */
+function UnsentTyping({ result, onSend }: { result: TypingResult; onSend: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  async function send() {
+    setBusy(true);
+    try {
+      await onSend();
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-3" data-testid="typing-unsent">
+      <div>
+        <p className="text-sm text-muted">Resultado confirmado</p>
+        <p className="pixel tabular text-2xl uppercase leading-7">
+          {typingLabel(result)} <span className="text-base text-muted">· {DEVICE_LABEL[result.device]}</span>
+        </p>
+      </div>
+      <p className="text-sm text-muted">A meta ainda não foi enviada. Envie este resultado: não precisa fazer outro teste, e nenhuma tentativa é gasta.</p>
+      <button className="btn-primary w-full" onClick={send} disabled={busy} aria-busy={busy}>
+        {busy ? <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" /> : <Check size={18} aria-hidden />}
+        {busy ? "Enviando…" : "Enviar resultado"}
+      </button>
     </div>
   );
 }

@@ -19,6 +19,7 @@ O Pacto tem duas camadas:
 
 ## Bugs para corrigir
 
+- [x] **Meta de digitação perdida depois do teste confirmado** (P100-1, 05/11): se a prova falhava (rede, resposta perdida) depois de o servidor confirmar o teste, a Hoje mandava "Faça outro teste", gastando tentativa; na última, o dia virava dívida. Agora a Hoje mostra o resultado confirmado com "Enviar resultado" (sem teste nem tentativa nova), também depois de recarregar e em outra aba; a resposta perdida do próprio teste é relida do servidor. Virada do dia: o banco data a prova na chegada, então o teste de ontem não envia a meta de hoje (a tela diz isso). Fica para decidir: um teste confirmado antes das 23:59 cuja prova só chegou depois deveria valer para o dia dele? Exige migration e muda o prazo; não foi feito.
 - [x] **`error.message.includes` sem proteção** (05/11): um erro do Supabase sem `message` (falha de rede, resposta vazia) quebrava o tratamento e travava o botão em "enviando". Agora `error.message?.includes` em todo o app.
 
 - [x] **Varredura responsiva (27/10):** nenhuma tela rolava para os lados, mas nomes longos viravam "…" (Hoje, ranking, pódio, tribunal, jurados) e três alvos de toque tinham menos de 44 px (nome no Feed, "Como a pontuação funciona", seta do mês em 320 px). Corrigido.

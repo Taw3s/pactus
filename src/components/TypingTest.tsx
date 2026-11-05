@@ -38,7 +38,16 @@ const ERRORS: [string, string][] = [
  * English. While typing, the text itself is the field: letters light up as they are typed and a
  * caret follows them (as on Monkeytype); a transparent input over it receives the keys.
  */
-export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; onResult: (r: TypingResult) => void | Promise<void> }) {
+export function TypingTest({
+  attemptsLeft,
+  onResult,
+  onUnconfirmed,
+}: {
+  attemptsLeft: number;
+  onResult: (r: TypingResult) => void | Promise<void>;
+  /** The result could not be confirmed (network): the server may still have it, so the page asks again. */
+  onUnconfirmed?: () => void;
+}) {
   const [phase, setPhase] = useState<"idle" | "starting" | "running" | "sending" | "done">("idle");
   const [words, setWords] = useState<string[]>([]);
   const [committed, setCommitted] = useState<string[]>([]);
@@ -179,10 +188,17 @@ export function TypingTest({ attemptsLeft, onResult }: { attemptsLeft: number; o
       p_words: words,
       p_text_words: place?.total ?? null,
     });
-    const row = Array.isArray(data) ? data[0] : null;
-    if (error || !row) {
-      setError(ERRORS.find(([k]) => error?.message.includes(k))?.[1] ?? "Não foi possível salvar o resultado.");
+    let row = Array.isArray(data) ? data[0] : null;
+    const known = ERRORS.find(([k]) => error?.message.includes(k))?.[1];
+    if (!row && !known) {
+      // The answer may have been lost after the server saved the result: read it back instead of losing the attempt.
+      const { data: saved } = await createClient().from("typing_tests").select("wpm, accuracy, score, finished_at").eq("id", t.id).maybeSingle();
+      if (saved?.finished_at && saved.score !== null) row = saved;
+    }
+    if (!row) {
+      setError(known ?? "Não foi possível confirmar o resultado. Se o servidor o recebeu, ele aparece aqui para enviar.");
       setPhase("idle");
+      if (!known) onUnconfirmed?.();
       return;
     }
     const r: TypingResult = { testId: t.id, wpm: Number(row.wpm), accuracy: Number(row.accuracy), score: Number(row.score), device: t.device, minutes: t.minutes };
