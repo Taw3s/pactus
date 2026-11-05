@@ -35,44 +35,56 @@ await step("a closed tribunal is not re-enacted: verdict at once, the judge stil
   assert(frames.length === 1 && frames[0] === "gavel8", `a closed session moved: ${frames.join(",")}`);
   // The crowd stays in a closed session too, still (Astra, Q4 = A): scenery, never a reaction to the verdict.
   assert((await eva.getByTestId("court-crowd").count()) === 1, "no crowd on a closed tribunal");
+  const closed = await sceneFor(eva, 1000);
+  assert(closed.seen.every((k) => k === "gavel8|0"), `the crowd moved in a closed session: ${closed.seen.join(" ")}`);
 });
 
 // The tribunal the AI opened in stage g (Caio's study) is still open here.
 const open = sql(`select r.checkin_id from public.dispute_results r where r.status = 'open' order by r.closes_at desc limit 1`);
 const openUrl = `${APP}/checkin/${open}`;
 
-/** The judge's frames over `ms`, from right after navigation. The crowd is static until its settling movement is approved. */
+/**
+ * The scene over `ms`, from right after navigation: "<judge frame>|<people out of their rest pose>", plus every row that
+ * was ever out of rest as a whole (the crowd moves in small groups, never a full row at once).
+ */
 async function sceneFor(page, ms) {
   return page.evaluate(async (ms) => {
     const seen = [];
+    const wholeRows = new Set();
     const end = performance.now() + ms;
     while (performance.now() < end) {
       const q = (s) => document.querySelector(`[data-testid="dispute"] ${s}`);
-      const k = `${q("[data-judge]")?.getAttribute("data-frame")}`;
+      const moving = document.querySelectorAll('[data-testid="court-crowd"] [data-pose]:not([data-pose="rest"])').length;
+      document.querySelectorAll('[data-testid="court-crowd"] [class*="crowd-r"]').forEach((row, i) => {
+        const people = row.querySelectorAll("[data-pose]");
+        if (people.length && [...people].every((p) => p.getAttribute("data-pose") !== "rest")) wholeRows.add(i);
+      });
+      const k = `${q("[data-judge]")?.getAttribute("data-frame")}|${moving}`;
       if (seen.at(-1) !== k) seen.push(k);
       await new Promise((r) => setTimeout(r, 15));
     }
-    return seen;
+    return { seen, wholeRows: [...wholeRows] };
   }, ms);
 }
 
-await step("an open tribunal opens with one strike, once, in front of the crowd; voting works from the start", async () => {
+await step("an open tribunal opens with one strike while small groups of the crowd settle, once; voting works from the start", async () => {
   assert(open, "an open tribunal from stage g");
   const p = await loginAs(browser, "eva@pacto.test");
   await p.goto(openUrl, { waitUntil: "commit" });
   await p.getByTestId("dispute").waitFor();
   // The controls (or Eva's recorded vote) are there before the scene ends.
   await p.getByTestId("vote-form").or(p.getByText(/^Seu voto:/)).first().waitFor({ timeout: 1000 });
-  const scene = await sceneFor(p, 2500);
-  const judge = scene;
+  const { seen: scene, wholeRows } = await sceneFor(p, 2500);
+  const judge = scene.map((k) => k.split("|")[0]);
   assert(judge.includes("gavel5"), `no strike: ${scene.join(" ")}`);
-  assert(judge.filter((f) => f === "gavel5").length === 1, `struck more than once: ${scene.join(" ")}`);
-  assert(scene.at(-1) === "idle1", `does not end at rest: ${scene.join(" ")}`);
-  assert((await p.getByTestId("court-crowd").count()) === 1, "no crowd on an open tribunal");
+  assert(judge.filter((f, i) => f === "gavel5" && judge[i - 1] !== "gavel5").length === 1, `struck more than once: ${scene.join(" ")}`);
+  assert(scene.at(-1) === "idle1|0", `does not end at rest and settled: ${scene.join(" ")}`);
+  assert(scene.some((k) => !k.endsWith("|0")), `the crowd never moved: ${scene.join(" ")}`);
+  assert(wholeRows.length === 0, `a whole row moved at once: rows ${wholeRows.join(",")}`);
   await p.reload();
   await p.getByTestId("dispute").waitFor();
   const again = await sceneFor(p, 1500);
-  assert(again.every((k) => k === "idle1"), `replayed: ${again.join(" ")}`);
+  assert(again.seen.every((k) => k === "idle1|0"), `replayed: ${again.seen.join(" ")}`);
   await p.context().close();
 });
 
@@ -106,11 +118,11 @@ await step("reduced motion: the judge never changes frame", async () => {
   await p.getByTestId("verdict").waitFor();
   const frames = await framesFor(p, 1500);
   assert(frames.length === 1 && frames[0] === "gavel8", `frames with reduced motion: ${frames.join(",")}`);
-  // An open session with reduced motion: the final pose at once.
+  // An open session with reduced motion: the final pose at once, the crowd settled.
   await p.goto(openUrl);
   await p.getByTestId("dispute").waitFor();
-  const scene = await sceneFor(p, 1500);
-  assert(scene.length === 1 && scene[0] === "idle1", `scene with reduced motion: ${scene.join(" ")}`);
+  const { seen: scene } = await sceneFor(p, 1500);
+  assert(scene.length === 1 && scene[0] === "idle1|0", `scene with reduced motion: ${scene.join(" ")}`);
   await ctx.close();
 });
 

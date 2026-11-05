@@ -22,9 +22,16 @@ const VARIANTS = [
   { cloth: MOSS, hair: HAIR.dark, skin: TAN, wide: 0.92, tall: 1.02, turn: 0.05, bun: false },
 ];
 
-/** One seated person from behind, waist up (faces -z, towards the judge). */
-function person({ cloth, hair, skin, wide, tall, turn, bun }) {
-  const g = new THREE.Group();
+/**
+ * One seated person from behind, waist up (faces -z, towards the judge). `pose` shifts the body for the settling movement:
+ * `lean` tilts the torso sideways, `rise` lifts it a little off the seat, `look` turns the head further. Rest is all zero.
+ */
+function person({ cloth, hair, skin, wide, tall, turn, bun }, { lean = 0, rise = 0, look = 0 } = {}) {
+  const root = new THREE.Group();
+  const g = new THREE.Group(); // the body: it leans and rises; the frame below stays put, so every pose shares the camera
+  g.position.y = rise;
+  g.rotation.z = lean;
+  root.add(g);
   const add = (geo, c, x, y, z, parent = g) => {
     const m = new THREE.Mesh(geo, mat(c));
     m.position.set(x, y, z);
@@ -44,7 +51,7 @@ function person({ cloth, hair, skin, wide, tall, turn, bun }) {
   add(boxG(0.12, 0.08, 0.12), skin, 0, 0.56 * tall, 0);
   const head = new THREE.Group();
   head.position.set(0, 0.74 * tall, 0);
-  head.rotation.y = turn;
+  head.rotation.y = turn + look;
   g.add(head);
   add(new THREE.IcosahedronGeometry(0.2, 0), skin, 0, 0, 0, head);
   const back = add(new THREE.IcosahedronGeometry(0.207, 0), hair, 0, 0.035, 0.035, head);
@@ -55,12 +62,24 @@ function person({ cloth, hair, skin, wide, tall, turn, bun }) {
   // invisible frame: same box for every variant, so the scale and the baseline match across the crowd
   const frame = new THREE.Mesh(boxG(0.82, 1.06, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
   frame.position.set(0, 0.53, 0);
-  g.add(frame);
-  g.userData.shadowRadius = 0.001; // the bench in front hides the waist: no blob shadow
-  g.userData.shadowCenter = new THREE.Vector3(0, 0, 0);
+  root.add(frame);
+  root.userData.shadowRadius = 0.001; // the bench in front hides the waist: no blob shadow
+  root.userData.shadowCenter = new THREE.Vector3(0, 0, 0);
   // Seen from the room, behind and a little above, like the rest of the scene.
-  g.userData.camDir = new THREE.Vector3(0, 0.45, 1.25);
-  return g;
+  root.userData.camDir = new THREE.Vector3(0, 0.45, 1.25);
+  return root;
 }
 
-export const CROWD = Object.fromEntries(VARIANTS.map((v, i) => [`crowd${i + 1}`, () => person(v)]));
+// Settling movement (Astra brief of 04/11): `a` = shifting in the seat (leaning, a little up, looking aside), `b` = almost
+// settled (a small counter-lean). Rest is the plain sprite. Odd variants lean the other way, so neighbours never mirror.
+const POSES = {
+  a: (i) => ({ lean: (i % 2 ? -1 : 1) * 0.12, rise: 0.05, look: (i % 2 ? 1 : -1) * 0.35 }),
+  b: (i) => ({ lean: (i % 2 ? 1 : -1) * 0.05, rise: 0.015, look: (i % 2 ? 1 : -1) * 0.12 }),
+};
+
+export const CROWD = Object.fromEntries(
+  VARIANTS.flatMap((v, i) => [
+    [`crowd${i + 1}`, () => person(v)],
+    ...Object.entries(POSES).map(([k, pose]) => [`crowd${i + 1}${k}`, () => person(v, pose(i))]),
+  ]),
+);
