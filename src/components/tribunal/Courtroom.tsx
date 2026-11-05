@@ -91,7 +91,7 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         </div>
         {/* the crowd starts at the bench's top: its back rows flank the bench, whose centre, the judge's head and gavel stay clear */}
         <div className="relative z-10 -mt-[66px] desk:-mt-[75px]">
-          <CourtCrowd />
+          <CourtCrowd cue={open ? `session:${me.id}:${disputeId}` : undefined} />
         </div>
         <div className="relative z-10 mx-auto mt-2 flex max-w-xs justify-center pb-3">
           <JudgeBubble tail="up">{line}</JudgeBubble>
