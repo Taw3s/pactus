@@ -19,6 +19,8 @@ O Pacto tem duas camadas:
 
 ## Bugs para corrigir
 
+- [ ] **`error.message.includes` sem proteção** (achado em 05/11, PR da urna): um erro do Supabase sem `message` (falha de rede, resposta vazia) quebra o tratamento e deixa o botão travado em "enviando". Corrigido no `VoteForm`; falta em `TodayChecklist.tsx`, `DisputeActions.tsx` e `join/page.tsx` (usar `error.message?.includes`).
+
 - [x] **Varredura responsiva (27/10):** nenhuma tela rolava para os lados, mas nomes longos viravam "…" (Hoje, ranking, pódio, tribunal, jurados) e três alvos de toque tinham menos de 44 px (nome no Feed, "Como a pontuação funciona", seta do mês em 320 px). Corrigido.
 - [x] **Números ilegíveis (beta, 27/10):** na fonte pixel o 5 parecia S e o 3 parecia 8 (ranking, placar, código de convite). Corrigido: os algarismos usam a Inter, as letras continuam pixel.
 - [x] **Imagem da prova de digitação não mudava ao refazer o teste** (PR #26): Hoje, Feed e página da prova desenham o cartão do melhor teste do dia. Falta: o tribunal ainda mostra a imagem guardada.
@@ -129,11 +131,11 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 ## Tribunal vivo (brief do Astra de 04/11/2026)
 
 - [x] PR 1: entrada do tribunal (uma batida de abertura, uma vez por pessoa e tribunal) e plateia genérica de costas; tribunal encerrado parado. Q1 = A e Q2 = A aplicadas pela recomendação; o dono pode reverter.
-- [ ] PR 2 (depois do merge do PR 1): cédula entrando na urna (320 ms, 4 quadros, só após confirmação do servidor; nada em voto já registrado ou repetido) e batida única na transição ao vivo para encerrado (até 600 ms, resultado em texto antes do fim). Se voto e encerramento chegarem juntos, só o encerramento anima. Arte nova: urna e cédula em `tools/lowpoly`.
+- [x] PR 2 (05/11): cédula entrando na urna (320 ms, 4 quadros, só após confirmação do servidor) e batida única na transição ao vivo para encerrado (~520 ms). Voto e encerramento juntos: só o encerramento anima. Arte em `tools/lowpoly/ballot.js`; prancha 48/96/144 para o Astra.
 - [ ] Reserva, um PR por item e só com pedido: aba vinho da prova levantando (240 ms), juiz olhando a pasta enquanto a IA analisa (ciclo de 1,8 s só com processamento confirmado), canto do recibo dobrando no recebimento, juiz se recostando na folga.
 - [x] Salão cheio (ajuste final do Astra de 04/11): cinco fileiras de costas no lugar da plateia de dois bancos, também no tribunal encerrado (Q4 = A); estático.
 - [x] Movimento da multidão (05/11): pequenos grupos se ajeitam com atrasos diferentes junto com a batida, tudo parado até 1,2 s; uma vez por pessoa e tribunal, nunca com movimento reduzido.
-- [ ] PR 2: **Q3 = A** (04/11), sem polling: a batida de encerramento só aparece quando o voto da própria pessoa encerra o tribunal.
+- [x] **Q3 = A** (04/11), sem polling: a batida de encerramento só aparece quando o voto da própria pessoa encerra o tribunal.
 - [ ] O carimbo "Condenado/Absolvido" ainda marca a pessoa (pendência antiga do Astra).
 
 ## Sessão de design do Astra (03/11/2026)
