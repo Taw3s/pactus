@@ -71,11 +71,14 @@ const watchCourt = (p) =>
   p.evaluate(() => {
     window.__ballot = [];
     window.__judge = [];
+    window.__verdictJudge = [];
     const note = () => {
       const b = document.querySelector('[data-testid="ballot-box"] img')?.getAttribute("data-frame");
       if (b && window.__ballot.at(-1) !== b) window.__ballot.push(b);
       const j = document.querySelector('[data-testid="dispute"] [data-judge]')?.getAttribute("data-frame");
       if (j && window.__judge.at(-1) !== j) window.__judge.push(j);
+      const v = document.querySelector('[data-testid="verdict"] [data-judge]')?.getAttribute("data-frame");
+      if (v && window.__verdictJudge.at(-1) !== v) window.__verdictJudge.push(v);
     };
     new MutationObserver(note).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-frame", "src"] });
   });
@@ -162,11 +165,14 @@ await step("Davi votes guilty — majority reached: one closing strike (no ballo
   await vote(p, "Anular a prova", "Concordo com a Ana");
   await p.getByTestId("verdict").getByText("Condenado").waitFor();
   await p.waitForTimeout(900);
-  // Vote and closing together: only the closing moves. The judge looks at the result, strikes once, stays closed.
-  const judge = await p.evaluate(() => window.__judge);
+  // Vote and closing together: only the closing moves. The judge next to the verdict (where the voter is looking; the
+  // bench is scrolled away) looks at the result, strikes once and stays closed; the bench does not strike again.
+  const judge = await p.evaluate(() => window.__verdictJudge);
+  const bench = await p.evaluate(() => window.__judge);
   assert((await p.evaluate(() => window.__ballot.length)) === 0, "a ballot dropped on the closing vote");
   assert(judge.includes("think1") && judge.filter((f) => f === "gavel5").length === 1, `closing strike: ${judge.join(",")}`);
   assert(judge.at(-1) === "gavel8", `does not end on the closed pose: ${judge.join(",")}`);
+  assert(!bench.includes("gavel5"), `the bench struck on closing: ${bench.join(",")}`);
   await p.getByText("esta prova não conta").waitFor();
   await p.waitForTimeout(1300); // let the gavel finish for the screenshot
   await p.screenshot({ path: `${SHOTS}/c2-tribunal.png`, fullPage: true });

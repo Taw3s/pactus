@@ -4,7 +4,7 @@ import { Gavel, Loader, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { VOTED_EVENT } from "./BallotBox";
+import { VOTED_EVENT } from "./VoteArea";
 
 const ERRORS: Record<string, string> = {
   "dispute closed": "A votação já foi encerrada.",
