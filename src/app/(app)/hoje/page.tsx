@@ -11,7 +11,7 @@ import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/da
 import { isDebtItem } from "@/lib/debt-items";
 import { currentStreak, dayOffOn, itemsOn, STREAK_MILESTONES } from "@/lib/ledger";
 import { photoIsOlder } from "@/lib/photo-date";
-import { typingLabel, DEVICE_LABEL } from "@/lib/typing";
+import { typingLabel, unsentTypingTest, DEVICE_LABEL, type FinishedTyping } from "@/lib/typing";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     getMembers(supabase),
     supabase.from("chest_openings").select("kind, period, item_id, collectibles(rarity)").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
-    supabase.from("typing_tests").select("wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
+    supabase.from("typing_tests").select("id, wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
     supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", me.user_id).in("goal", GOALS.map((g) => g.id)),
     supabase.from("groups").select("invite_code, name").maybeSingle<{ invite_code: string; name: string }>(),
@@ -146,7 +146,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
           userId={me.user_id}
           done={mine.filter((c) => !c.extra && latest(c.goal) === c).map(toDone)}
           extras={mine.filter((c) => c.extra).map(toDone)}
-          typing={typingToday(typingRows ?? [])}
+          typing={typingToday(typingRows ?? [], mine, latest("typing"), statusOf, today)}
         />
         {!dayComplete && <div className="mt-8">{chestsPanel}</div>}
       </div>
@@ -155,15 +155,22 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   );
 }
 
-/** Attempts used today and the best finished one ("72 WPM · 96% · PC"). */
-function typingToday(
-  rows: { wpm: number | null; accuracy: number | null; score: number | null; device: "pc" | "mobile"; minutes: number; finished_at: string | null }[],
-) {
+/**
+ * Attempts used today, the best finished one ("72 WPM · 96% · PC") and a test the server confirmed but
+ * no proof uses yet (the proof failed or its answer was lost): it sends the goal without another test.
+ */
+function typingToday(rows: FinishedTyping[], mine: Checkin[], proof: Checkin | undefined, statusOf: Map<string, DisputeStatus>, today: string) {
   const best = rows.filter((r) => r.finished_at && r.score !== null).sort((a, b) => Number(b.score) - Number(a.score))[0];
+  const condemned = proof && statusOf.get(proof.id) === "upheld" ? proof.created_at : null;
+  const unsent = !proof || condemned ? unsentTypingTest(rows, mine.map((c) => c.typing_test_id), condemned) : null;
   return {
     used: rows.length,
     best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy!, minutes: best.minutes })} · ${DEVICE_LABEL[best.device]}` : null,
     // Drawn in place of the stored picture, which shows only the first test.
     bestScore: best ? { wpm: Number(best.wpm), accuracy: Number(best.accuracy), device: best.device, minutes: Number(best.minutes) } : null,
+    unsent: unsent
+      ? { testId: unsent.id, wpm: Number(unsent.wpm), accuracy: Number(unsent.accuracy), score: Number(unsent.score), device: unsent.device, minutes: (Number(unsent.minutes) === 5 ? 5 : 1) as 1 | 5 }
+      : null,
+    day: today,
   };
 }
