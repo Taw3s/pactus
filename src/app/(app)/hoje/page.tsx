@@ -12,6 +12,7 @@ import { isDebtItem } from "@/lib/debt-items";
 import { currentStreak, dayOffOn, itemsOn, STREAK_MILESTONES } from "@/lib/ledger";
 import { photoIsOlder } from "@/lib/photo-date";
 import { typingLabel, unsentTypingTest, DEVICE_LABEL, type FinishedTyping } from "@/lib/typing";
+import { scoringTypingTests } from "@/lib/ranking";
 import { GOALS, type Checkin, type DailyGoal, type DisputeStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -160,7 +161,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
  * no proof uses yet (the proof failed or its answer was lost): it sends the goal without another test.
  */
 function typingToday(rows: FinishedTyping[], mine: Checkin[], proof: Checkin | undefined, statusOf: Map<string, DisputeStatus>, today: string) {
-  const best = rows.filter((r) => r.finished_at && r.score !== null).sort((a, b) => Number(b.score) - Number(a.score))[0];
+  // Same cut as the ranking: after a retake, the tests judged with the condemned proof are not the day's best.
+  const judged = mine.filter((c) => c.goal === "typing" && !c.extra && statusOf.get(c.id) === "upheld");
+  const finished = rows.filter((r) => r.finished_at && r.score !== null).map((r) => ({ ...r, user_id: "me", day: today, finished_at: r.finished_at! }));
+  const best = scoringTypingTests(finished, judged.map((c) => ({ user_id: "me", day: today, created_at: c.created_at })))
+    .sort((a, b) => Number(b.score) - Number(a.score))[0];
   const condemned = proof && statusOf.get(proof.id) === "upheld" ? proof.created_at : null;
   const unsent = !proof || condemned ? unsentTypingTest(rows, mine.map((c) => c.typing_test_id), condemned) : null;
   return {

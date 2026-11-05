@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { podium, positions, scoreMonth, SCORING, typingBestByDay, type RankingCheckin, type Score } from "./ranking";
+import { podium, positions, scoreMonth, SCORING, scoringTypingTests, typingBestByDay, type RankingCheckin, type Score } from "./ranking";
 
 const c = (over: Partial<RankingCheckin>): RankingCheckin => ({
   user_id: "ana",
@@ -105,5 +105,29 @@ describe("typingBestByDay", () => {
     const best = typingBestByDay([t(200, "2026-10-29T11:00:00Z"), t(15, "2026-10-29T15:00:00Z")], condemned);
     expect(best.get("a|2026-10-29")).toBe(15);
     expect(typingBestByDay([t(200, "2026-10-29T11:00:00Z")], condemned).has("a|2026-10-29")).toBe(false);
+  });
+});
+
+describe("scoringTypingTests", () => {
+  const t = (id: string, user_id: string, finished_at: string) => ({ id, user_id, day: "2026-10-29", finished_at });
+  it("keeps every test without a condemned typing proof", () => {
+    expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], []).map((x) => x.id)).toEqual(["1"]);
+  });
+  it("after a retake, drops the tests judged with the condemned proof, for that person only", () => {
+    const tests = [t("1", "a", "2026-10-29T10:00:00Z"), t("2", "a", "2026-10-29T12:00:00Z"), t("3", "b", "2026-10-29T10:00:00Z")];
+    const condemned = [{ user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:00:00Z" }];
+    expect(scoringTypingTests(tests, condemned).map((x) => x.id)).toEqual(["2", "3"]);
+  });
+  it("a second condemnation moves the cut to the later proof", () => {
+    const tests = [t("1", "a", "2026-10-29T12:00:00Z"), t("2", "a", "2026-10-29T15:00:00Z")];
+    const condemned = [
+      { user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:00:00Z" },
+      { user_id: "a", day: "2026-10-29", created_at: "2026-10-29T13:00:00Z" },
+    ];
+    expect(scoringTypingTests(tests, condemned).map((x) => x.id)).toEqual(["2"]);
+  });
+  it("a condemnation on another day cuts nothing today", () => {
+    const condemned = [{ user_id: "a", day: "2026-10-28", created_at: "2026-10-28T23:00:00Z" }];
+    expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], condemned)).toHaveLength(1);
   });
 });
