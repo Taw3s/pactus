@@ -19,20 +19,21 @@ export function MenuPicker({ value, onChange, disabled = false }: { value: DebtI
       <ul className="grid grid-cols-4 gap-2" aria-label="Itens da dívida (escolha 1 ou 2)">
         {DEBT_ITEMS.map((item) => {
           const on = value.includes(item);
+          const off = disabled || (!on && value.length >= 2);
           return (
             <li key={item}>
               <button
                 type="button"
                 aria-pressed={on}
-                disabled={disabled || (!on && value.length >= 2)}
+                disabled={off}
                 onClick={() => toggle(item)}
                 data-item={item}
-                className={`relative flex min-h-24 w-full flex-col items-center justify-center gap-1 rounded-sm border-2 p-1 text-center text-xs font-semibold leading-tight disabled:opacity-50 ${
-                  on ? "border-accent bg-raised text-accent" : "border-bevel-dark bg-bg text-fg hover:bg-raised"
+                className={`relative flex min-h-24 w-full flex-col items-center justify-center gap-1 rounded-sm border-2 p-1 text-center text-xs font-semibold leading-tight disabled:cursor-not-allowed ${
+                  on ? "border-accent bg-raised text-accent" : "border-bevel-dark bg-bg text-fg enabled:hover:bg-raised disabled:text-muted"
                 }`}
               >
                 {on && <Check size={14} strokeWidth={3} aria-hidden className="absolute right-1 top-1" />}
-                <Sprite name={DEBT_ITEM[item].sprite} />
+                <Sprite name={DEBT_ITEM[item].sprite} dim={off && !on} />
                 {DEBT_ITEM[item].label}
               </button>
             </li>
