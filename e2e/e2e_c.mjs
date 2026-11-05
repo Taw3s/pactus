@@ -128,7 +128,10 @@ await step("a vote needs guilty/innocent AND a reason; a failed vote drops no ba
   await p.fill("#vote-reason", "O relógio da foto marca 23h de ontem");
   await watchCourt(p);
   // The server refuses once: an error, no ballot.
-  await p.route("**/rest/v1/dispute_votes*", (r) => (r.request().method() === "POST" ? r.fulfill({ status: 500, body: "{}" }) : r.continue()));
+  await p.route("**/rest/v1/dispute_votes*", (r) =>
+    r.request().method() === "POST"
+      ? r.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ code: "XX000", message: "simulated failure" }) })
+      : r.continue());
   await p.getByRole("button", { name: "Confirmar voto" }).click();
   await p.getByText("Não foi possível votar. Tente de novo.").waitFor();
   await p.waitForTimeout(400);
