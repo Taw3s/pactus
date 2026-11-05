@@ -51,6 +51,9 @@ export default function PrivacyPage() {
       <p>
         No próprio aparelho, o navegador guarda marcações de tela que não saem dele nem vão para o servidor, como o andamento dos primeiros passos
         na tela Hoje (se você copiou o link de convite, se marcou que entendeu o combinado e se recolheu o cartão), separado por conta e por grupo.
+        Também guarda o rascunho de uma prova ainda não enviada (resposta à pergunta do dia, minutos, páginas, nome e link do projeto, nunca fotos
+        nem arquivos), para ele não se perder se a página recarregar. O rascunho vale só para a sua conta, o seu grupo e o dia em que foi escrito:
+        sai quando a prova é enviada, no dia seguinte, ao sair da conta, ao sair do grupo e ao excluir a conta.
         Limpar os dados do site no navegador apaga essas marcações. O link de convite leva só o código do grupo, nunca o seu e-mail ou a sua conta.
       </p>
 

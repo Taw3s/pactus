@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { clearDrafts } from "@/lib/drafts";
 import { authErrorPt } from "@/lib/auth-errors";
 import { confirmUrl } from "@/lib/site";
 import { AuthShell, Notice } from "@/components/AuthShell";
@@ -58,6 +59,7 @@ function JoinForm() {
       // Only a definite "this account/session does not exist" logs out (never a network hiccup).
       const gone = error && (["user_not_found", "session_not_found", "bad_jwt"].includes(error.code ?? "") || error.name === "AuthSessionMissingError");
       if (gone) {
+        clearDrafts();
         await supabase.auth.signOut({ scope: "local" });
         router.replace("/login?error=session");
         return;
@@ -102,6 +104,7 @@ function JoinForm() {
       }
       if (error && (error.code === "23503" || error.message?.includes("not authenticated"))) {
         // The account behind this session no longer exists.
+        clearDrafts();
         await supabase.auth.signOut({ scope: "local" });
         router.replace("/login?error=session");
         return;

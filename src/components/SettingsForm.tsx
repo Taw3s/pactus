@@ -5,6 +5,7 @@ import { Camera, Loader, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/client";
+import { clearDrafts } from "@/lib/drafts";
 import { formatDayPt, WEEKDAYS_PT } from "@/lib/dates";
 import { PushToggle } from "./PushToggle";
 import { compressImage, mediaPath } from "@/lib/image";
@@ -73,6 +74,8 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
     } catch {
       // Best effort: never block logging out.
     }
+    // Drafts of the proof forms stay on this device only while this account is logged in.
+    clearDrafts();
     await supabase.auth.signOut();
     router.replace("/login");
     router.refresh();
