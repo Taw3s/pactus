@@ -177,7 +177,8 @@ Preparado no repositório privado, para abrir num repositório público **novo**
 - [x] Varredura de segredos no histórico inteiro (245 commits, 89 branches): nenhuma chave nos formatos de Supabase, Google, Resend, Sentry, GitHub, Stripe, Slack ou PEM; o único `.env` já commitado é o `.env.example`. (O `gitleaks` não pôde ser baixado na sessão; a varredura foi feita por padrões no `git log -p`.)
 - [x] Revisão: RLS ligado nas 24 tabelas, `security definer` com `search_path`, views com `security_invoker`, `service_role` só no servidor, correções da auditoria de 29/10 presentes. CI sem segredos e sem `pull_request_target`.
 - [x] Nomes de pessoas do beta tirados deste arquivo; README reescrito; `SECURITY.md`; licença AGPL-3.0 declarada no README e no `package.json`.
-- [ ] Dono: pedir o "ok" do GXDZ1 para publicar o código dos anexos sob a AGPL.
+- [x] "Ok" do GXDZ1 para publicar o código dos anexos sob a AGPL (05/11, por mensagem ao dono).
 - [ ] Dono: criar o repositório público novo a partir do `main`, adicionar o `LICENSE` pelo modelo do GitHub ("Add file → Create new file → LICENSE → Choose a license template → GNU AGPLv3") e ligar "Private vulnerability reporting" (Settings → Security).
 - [ ] Dono: nos commits do repositório novo, usar o e-mail `noreply` do GitHub, não o pessoal.
+- **Q5 = A** (decisão do dono em 05/11): o desenvolvimento continua neste repositório privado (Vercel, CI e PRs sem mudança). O público é uma cópia: criado pelo template do GitHub ("Template repository" ligado só durante a criação; o repositório gerado começa com um commit, sem o histórico) e atualizado de tempos em tempos do mesmo jeito ou por um PR de sincronização. Antes de cada atualização, conferir que nada de nomes do beta, números de retenção ou e-mail pessoal entrou nos arquivos.
 
