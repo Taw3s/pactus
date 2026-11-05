@@ -178,7 +178,8 @@ Preparado no repositório privado, para abrir num repositório público **novo**
 - [x] Revisão: RLS ligado nas 24 tabelas, `security definer` com `search_path`, views com `security_invoker`, `service_role` só no servidor, correções da auditoria de 29/10 presentes. CI sem segredos e sem `pull_request_target`.
 - [x] Nomes de pessoas do beta tirados deste arquivo; README reescrito; `SECURITY.md`; licença AGPL-3.0 declarada no README e no `package.json`.
 - [x] "Ok" do GXDZ1 para publicar o código dos anexos sob a AGPL (05/11, por mensagem ao dono).
-- [ ] Dono: criar o repositório público novo a partir do `main`, adicionar o `LICENSE` pelo modelo do GitHub ("Add file → Create new file → LICENSE → Choose a license template → GNU AGPLv3") e ligar "Private vulnerability reporting" (Settings → Security).
-- [ ] Dono: nos commits do repositório novo, usar o e-mail `noreply` do GitHub, não o pessoal.
+- [x] Repositório público `Taw3s/pacto` criado em 05/11 pelo template, a partir do `main` de depois do #83 (sem a tecla do #84, que entra na próxima atualização). Histórico só com os commits do dono; `LICENSE` com a **AGPL v3** (a primeira tentativa entrou com a GPL v3 por engano e foi trocada no mesmo dia).
+- [ ] Dono: conferir se "Private vulnerability reporting" ficou ligado em `Taw3s/pacto` (Settings → Advanced Security); a sessão não consegue ler essa configuração.
+- [x] Commits do repositório novo com o e-mail `noreply` do GitHub, não o pessoal.
 - **Q5 = A** (decisão do dono em 05/11): o desenvolvimento continua neste repositório privado (Vercel, CI e PRs sem mudança). O público é uma cópia: criado pelo template do GitHub ("Template repository" ligado só durante a criação; o repositório gerado começa com um commit, sem o histórico) e atualizado de tempos em tempos do mesmo jeito ou por um PR de sincronização. Antes de cada atualização, conferir que nada de nomes do beta, números de retenção ou e-mail pessoal entrou nos arquivos.
 
