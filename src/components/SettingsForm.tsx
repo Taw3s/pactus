@@ -96,7 +96,7 @@ export function SettingsForm({ groupId, userId, name: initialName, avatarUrl, da
         </h2>
         <div className="flex items-center gap-4">
           <Avatar name={name || "?"} url={avatarUrl} size={64} />
-          <label className="btn-secondary cursor-pointer">
+          <label className="btn-secondary file-focus cursor-pointer">
             {busy === "avatar" ? <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" /> : <Camera size={18} aria-hidden />}
             {busy === "avatar" ? "Enviando…" : "Trocar foto"}
             <input type="file" accept="image/*" className="sr-only" data-testid="avatar" onChange={(e) => saveAvatar(e.target.files?.[0])} />

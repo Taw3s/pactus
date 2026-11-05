@@ -148,6 +148,13 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - Bloco 5 ("Novo na coleção") espera o contrato do servidor; bloco 7 (auditoria visual) espera capturas.
 - A comentar com o Astra: o carimbo "Condenado"/"Absolvido" do tribunal marca a pessoa, e o brief diz para nunca carimbar usuário.
 
+## Acabamento dos controles (05/11/2026)
+
+- [x] Auditoria de botões, campos e estados na Hoje e em Configurações: pressão imediata, desabilitado sem deslocamento, movimento reduzido sem deslocamento, foco visível nos seletores de arquivo e cardápio sem esmaecer o botão inteiro (detalhes no `CLAUDE.md`). Sem dependência nova.
+- [ ] **Dias de folga como radiogroup de verdade** (achado, não corrigido): hoje são 7 paradas de Tab sem navegação por setas. Decidir se vira um grupo com uma parada e setas (muda o uso por teclado).
+- [ ] Verificar em aparelho real (toque) a sensação da pressão imediata; o teste foi com mouse em Chromium.
+- Bibliotecas do brief (shadcn, Aceternity, Magic UI, Motion, AutoAnimate, Tremor, Drei etc.) foram só estudadas: **nenhuma foi instalada**.
+
 ## Decisões em aberto
 
 - **Auditoria de segurança, rodada 1 (29/10):** 6 falhas confirmadas corrigidas no PR da 0026. Ficam como pistas a validar no painel: Confirm email, inscrições push sem limite por pessoa, Storage sem limite total por membro (e órfãos de avatar/prova recusada), laço da limpeza se o `list()` do Storage casar prefixo sem diferenciar maiúsculas, limpezas do cron depois do loop de lembretes, nome de arquivo com `..`. Adiado: ranking/baús quando o tribunal muda depois, backups do Supabase, configurações reais do Storage, vazamento entre sites (COOP/CORP). Melhorias anotadas: fixar actions por SHA, `contents: write` só no passo de publicar, troca de senha, entrar no grupo só com e-mail confirmado, hosts exatos do push, nomes de foto no formato do `mediaPath`.

@@ -557,7 +557,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           <p id={fieldId("attach-help")} className="text-sm leading-5 text-muted">
             {attachmentCopy.help(goal === "study" ? "study_pdf" : "project_zip")}
           </p>
-          <div className="flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
+          <div className="file-focus flex min-h-14 items-center gap-3 rounded-sm border-2 border-dashed border-control bg-bg px-3 text-sm text-muted hover:text-fg">
             <label className="flex min-h-14 min-w-0 flex-1 cursor-pointer items-center gap-3">
               <Plus size={18} aria-hidden />
               <span className="min-w-0 flex-1 break-all">
@@ -595,7 +595,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
 
       {/* No `capture` attribute: phones offer both camera and gallery. Several photos at once are fine. */}
       {shots.length === 0 ? (
-        <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
+        <label className="file-focus flex min-h-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted transition-colors duration-150 hover:text-fg">
           <span className="flex items-center gap-2 pt-8 font-medium">
             <Camera size={20} aria-hidden />
             Tirar ou escolher foto da prova
@@ -620,7 +620,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           ))}
           {shots.length < MAX_PHOTOS && (
             <li>
-              <label className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted hover:text-fg">
+              <label className="file-focus flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-control bg-bg text-sm text-muted hover:text-fg">
                 <Plus size={20} aria-hidden />
                 Mais uma foto
                 <span className="tabular text-xs">
