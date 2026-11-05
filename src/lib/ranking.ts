@@ -90,30 +90,40 @@ export function scoreMonth(
   );
 }
 
-/** Competition ranking: ties share a position (1, 1, 3...). */
 /**
- * Best typing score per "user|day". A typing proof the tribunal annulled showed the day's best test at
+ * The typing tests that can still score: a typing proof the tribunal annulled showed the day's best test at
  * that moment, so every test finished up to the condemned proof was judged and does not count after a retake.
+ * The same cut is used by the ranking, Hoje, the Feed, the proof page and the result sent again (P100-1).
  */
-export function typingBestByDay(
-  tests: { user_id: string; day: ISODate; score: number; finished_at: string }[],
+export function scoringTypingTests<T extends { user_id: string; day: ISODate; finished_at: string }>(
+  tests: T[],
   condemned: { user_id: string; day: ISODate; created_at: string }[],
-): Map<string, number> {
+): T[] {
   const cut = new Map<string, string>();
   for (const c of condemned) {
     const k = `${c.user_id}|${c.day}`;
     if (!cut.has(k) || c.created_at > cut.get(k)!) cut.set(k, c.created_at);
   }
+  return tests.filter((t) => {
+    const until = cut.get(`${t.user_id}|${t.day}`);
+    return !until || t.finished_at > until;
+  });
+}
+
+/** Best typing score per "user|day", among the tests that can still score (`scoringTypingTests`). */
+export function typingBestByDay(
+  tests: { user_id: string; day: ISODate; score: number; finished_at: string }[],
+  condemned: { user_id: string; day: ISODate; created_at: string }[],
+): Map<string, number> {
   const best = new Map<string, number>();
-  for (const t of tests) {
+  for (const t of scoringTypingTests(tests, condemned)) {
     const k = `${t.user_id}|${t.day}`;
-    const until = cut.get(k);
-    if (until && t.finished_at <= until) continue;
     best.set(k, Math.max(best.get(k) ?? 0, Number(t.score)));
   }
   return best;
 }
 
+/** Competition ranking: ties share a position (1, 1, 3...). */
 export function positions(scores: Score[]): number[] {
   const out: number[] = [];
   scores.forEach((s, i) => out.push(i > 0 && s.points === scores[i - 1].points ? out[i - 1] : i + 1));

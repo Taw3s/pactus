@@ -62,6 +62,28 @@ await step("the retake counts: typing is done again and the tribunal links to th
   await davi.getByText("Digitação (refeita)").waitFor();
 });
 
+await step("after the retake, Hoje and the Feed show the retake's best test, as the ranking and the proof page score it", async () => {
+  // The test judged with the condemned proof becomes the day's highest: it must not come back as the day's best.
+  sql(`update public.typing_tests t set wpm = 199, accuracy = 1, score = 199 from public.checkins c
+       where c.photo_path = '${firstTyping}' and t.id = c.typing_test_id`);
+  const retakeWpm = Math.round(Number(sql(`select t.wpm from public.typing_tests t join public.checkins c on t.id = c.typing_test_id
+       where c.user_id = '${daviId}' and c.goal = 'typing' and c.retake_of is not null and c.day = public.sp_today()`)));
+  assert(retakeWpm !== 199, "the retake test must differ from the judged one");
+  await davi.goto(`${APP}/hoje`);
+  const row = davi.locator("[data-goal=typing][data-state=done]");
+  await row.getByText(`${retakeWpm} WPM`, { exact: false }).first().waitFor();
+  assert((await row.getByText("199 WPM", { exact: false }).count()) === 0, "Hoje shows the judged test");
+  const card = await row.getByTestId("typing-card").getAttribute("aria-label");
+  assert(card?.includes(`${retakeWpm} WPM`), `Hoje card: ${card}`);
+  await davi.goto(`${APP}/feed`);
+  const tile = await davi.locator('[data-member="Davi"] [data-testid=typing-card]').getAttribute("aria-label");
+  assert(tile?.includes(`${retakeWpm} WPM`) && !tile.includes("199 WPM"), `Feed tile: ${tile}`);
+  const retakeId = sql(`select id from public.checkins where user_id = '${daviId}' and goal = 'typing' and retake_of is not null and day = public.sp_today()`);
+  await davi.goto(`${APP}/checkin/${retakeId}`);
+  const page = await davi.getByTestId("typing-card").first().getAttribute("aria-label");
+  assert(page?.includes(`${retakeWpm} WPM`), `proof page: ${page}`);
+});
+
 await step("a second retake of a proof that stands is refused", async () => {
   await davi.goto(`${APP}/hoje`);
   assert((await davi.locator("[data-goal=typing][data-state=retake]").count()) === 0, "no retake form for a valid proof");
