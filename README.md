@@ -1,26 +1,12 @@
 # Pacto
 
-App web (PWA) para um grupo de amigos controlar um desafio diário de estudo.
+PWA de compromisso diário para grupos de amigos. Todo dia cada pessoa cumpre três metas com prova (**estudo**, **digitação** e **leitura**, mais um projeto opcional) até 23:59 de São Paulo. Dia descumprido vira dívida com o grupo (um cardápio que o grupo escolhe, padrão 1 Coca + 1 salgado). Qualquer prova pode ir a **tribunal**, e o grupo vota. Há um juiz IA que confere as fotos (só informa, nunca decide), ranking mensal, sequência, baús com uma coleção de objetos e avisos push.
 
-Todo dia, cada pessoa cumpre **3 metas**, cada uma com foto de prova:
+Em produção em <https://www.pactus.dev.br>, em beta fechado com um grupo de amigos (trilha de programação).
 
-| Meta | Tempo | Extra |
-|---|---|---|
-| 📚 Estudo | 60 min | resumo de no mínimo 40 caracteres |
-| ⌨️ Digitação | 5 min | — |
-| 📖 Leitura | 15 min | — |
+**Stack:** Next.js 15 (App Router, React 19) + TypeScript + Tailwind 4 + Supabase (Postgres com RLS, Auth, Storage) + Vercel. Sprites low poly gerados por código em `tools/lowpoly` (three.js); vídeo de apresentação em `tools/video` (Remotion).
 
-- O dia só conta como cumprido se as 3 metas tiverem check-in até **23:59 (America/Sao_Paulo)**.
-- **Escala 6x1:** cada pessoa escolhe 1 dia de folga por semana (padrão: domingo).
-- **Penalidade:** cada dia descumprido vale 1 Coca-Cola + 1 salgado, devidos **ao grupo**. Quem recebe marca como pago.
-- **Prazo de pagamento:** último dia do mês. Depois disso a dívida aparece como **atrasada**, mas continua valendo.
-- **Tribunal:** qualquer membro pode contestar um check-in; o grupo vota (regras abaixo).
-- **Números:** o estudo registra os minutos (mínimo 60) e a leitura, as páginas.
-- **Projetos:** opcional, 1 por dia, com nome e foto. Vale pouco no ranking para ninguém "rushar".
-- **Folga:** nada é obrigatório, mas check-ins enviados na folga contam pontos no ranking.
-- **Ranking mensal:** dia cumprido 20 pts · estudo 1 pt/min (até 240 min/dia) · leitura 2 pts/página (até 50/dia) · projeto 10 pts. Check-in anulado pelo tribunal não pontua. A tabela fica em `src/lib/ranking.ts` (`SCORING`).
-
-Stack: Next.js 15 (App Router) + TypeScript + Tailwind 4 + Supabase (Auth, Postgres, Storage com RLS) + Vercel.
+> **Feito com assistência de IA.** A maior parte do código foi escrita com o Claude Code, sob a direção e a revisão do autor, que define o produto, as regras e as prioridades, opera a produção e roda o beta. O design segue briefs de uma segunda IA. As notas de trabalho com a IA estão em [`CLAUDE.md`](CLAUDE.md) e o registro de decisões e pendências, em [`docs/ideias.md`](docs/ideias.md).
 
 ---
 
@@ -37,62 +23,23 @@ npm run dev                  # http://localhost:3000
 Testes:
 
 ```bash
-npm test          # regras de data, dívidas e streak (Vitest)
-npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+ instalado; não roda como root)
+npm test            # unitários (Vitest)
+npm run lint && npm run typecheck
+npm run test:db     # SQL + RLS num Postgres descartável (Postgres 15+ instalado; não roda como root)
 ```
+
+O E2E (`e2e/run.sh`, Playwright + axe) sobe um Supabase local descartável, com Gemini e push simulados: veja [`e2e/README.md`](e2e/README.md). O CI roda tudo isso em cada PR.
 
 ---
 
 ## 2. Criar o projeto no Supabase
 
-1. Crie um projeto em <https://supabase.com/dashboard>. Qualquer região serve; `South America (São Paulo)` é a mais próxima.
-2. **SQL Editor → New query:** cole todo o conteúdo de [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) e clique em **Run**. Isso cria:
-   - as tabelas `groups`, `members`, `day_off_changes`, `checkins`, `disputes`, `dispute_votes` e `payments`;
-   - as views `dispute_results` (veredito do tribunal) e `completed_days` (dias com as 3 metas válidas);
-   - os triggers de regra de negócio, as funções `join_group`, `check_invite_code` e `set_day_off`;
-   - as políticas RLS de todas as tabelas;
-   - o bucket privado `media` no Storage, com as políticas de upload e leitura.
-   Em seguida, cada um numa aba nova e nesta ordem, rode também:
-   - [`supabase/migrations/0002_security_fixes.sql`](supabase/migrations/0002_security_fixes.sql) — correções da auditoria de segurança;
-   - [`supabase/migrations/0003_ranking_projects.sql`](supabase/migrations/0003_ranking_projects.sql) — minutos, páginas, projetos e ranking;
-   - [`supabase/migrations/0004_ai_reviews.sql`](supabase/migrations/0004_ai_reviews.sql) — parecer da IA sobre as fotos.
-   - `0005_ai_judge.sql` — tribunal iniciado pela análise da foto;
-   - `0006_chests_push.sql` — baús e notificações;
-   - `0007_retake_extra_study.sql` — provas refeitas e sessões extras;
-   - `0008_extra_photos.sql` — várias fotos por prova;
-   - `0009_photo_date_reactions.sql` — data da foto e reações;
-   - `0010_typing_test.sql` — digitação dentro do app;
-   - `0011_typing_texts.sql` — progresso nos textos;
-   - `0012_typing_english.sql` — textos em inglês;
-   - `0013_typing_five_minutes.sql` — duração de cinco minutos;
-   - `0014_ai_review_limits.sql` — limites de chamadas à IA;
-   - `0015_create_challenge_debt_menu.sql` — criação de grupos e cardápio;
-   - `0016_leave_remove_delete.sql` — saída, remoção e exclusão de conta;
-   - `0017_study_prompt.sql` — pergunta do dia e avaliação da resposta;
-   - `0018_membership_log.sql` — histórico de passagens pelo grupo (retenção);
-   - `0019_concurrent_attempt_limits.sql` — cotas protegidas contra concorrência;
-   - `0020_debt_menu_rpc_privacy.sql` — privacidade do cardápio entre grupos;
-   - `0021_retry_media_cleanup.sql` — limpeza de fotos com repetição após falha;
-   - `0022_typing_progress_integrity.sql` — catálogo de textos e versões do progresso;
-   - `0023_atomic_membership_and_proofs.sql` — permissões e limite de sessões extras em operações simultâneas.
-   - `0024_bound_membership_cleanup.sql` — vincula a alteração ao grupo cujas fotos o servidor pode apagar.
-
-   Esses arquivos ficam em `supabase/migrations`. **Aplique as migrações necessárias antes de publicar o código correspondente.**
-   Em particular, a tela com a pergunta do dia precisa da 0017; só atualizar o site não cria as colunas no banco.
-   As migrações do patch de segurança são 0019–0024. Em versões antigas deste patch elas tinham outros números (0017–0023): não aplique os nomes antigos.
-
-   **Rode cada arquivo uma vez só, nessa ordem.** Quem já rodou os anteriores só roda os que faltam.
-3. **Crie o grupo e o código de convite** (mesmo SQL Editor):
-
-   ```sql
-   insert into public.groups (name, invite_code)
-   values ('Pacto', 'TROQUE-ESTE-CODIGO');   -- maiúsculas, 6+ caracteres, difícil de adivinhar
-   ```
-
-4. **Authentication → URL Configuration**
+1. Crie um projeto em <https://supabase.com/dashboard>. `South America (São Paulo)` é a região mais próxima.
+2. **SQL Editor:** rode **todos** os arquivos de [`supabase/migrations`](supabase/migrations), um de cada vez e **em ordem** (`0001_init.sql`, `0002_…` e assim por diante). Cada um confere se o anterior foi rodado. Eles criam tabelas, views, gatilhos com as regras de negócio, RPCs, políticas RLS e os buckets privados do Storage. O primeiro grupo é criado pelo próprio app ("Criar um desafio").
+3. **Authentication → URL Configuration**
    - **Site URL:** a URL da Vercel (ex.: `https://pacto-xyz.vercel.app`). Antes do deploy, use `http://localhost:3000`.
    - **Redirect URLs:** adicione `http://localhost:3000/**` e `https://SEU-APP.vercel.app/**`.
-5. **Authentication → Email Templates.** Troque o link destes dois templates. Assim o link funciona mesmo se for aberto num navegador diferente do que pediu:
+4. **Authentication → Email Templates.** Troque o link destes dois templates. Assim o link funciona mesmo se for aberto num navegador diferente do que pediu:
    - **Magic Link:**
      ```html
      <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/hoje">Entrar no Pacto</a></p>
@@ -102,13 +49,13 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
      <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/hoje">Confirmar e-mail</a></p>
      ```
    A rota `/auth/confirm` aceita os dois formatos: esse (`token_hash`) e o padrão do Supabase (`?code=`).
-6. **Limite de e-mails.** O SMTP embutido do Supabase tem um limite baixo de envios por hora. Duas saídas:
+5. **Limite de e-mails.** O SMTP embutido do Supabase tem um limite baixo de envios por hora. Duas saídas:
    - recomendar que todos entrem **com senha**, que não gasta e-mail no login; ou
    - configurar um SMTP próprio em **Authentication → SMTP Settings** (Resend, Brevo etc.).
 
    **Não desligue Confirm email** (*Authentication → Providers → Email*). Sem ele, qualquer pessoa cria uma conta com o e-mail de outra e uma senha
    que só ela sabe; quando o dono do e-mail entra depois (link ou Google), cai na mesma conta e a senha do outro continua valendo.
-7. **Project Settings → API:** copie a `Project URL` e a chave `anon` (ou *publishable*) para o `.env.local`.
+6. **Project Settings → API:** copie a `Project URL` e a chave `anon` (ou *publishable*) para o `.env.local`.
 
 > **Não desligue "Allow new users to sign up".** A entrada por convite usa o cadastro normal do Supabase: o código vai nos metadados e um trigger cria o membro. Quem criar conta sem código válido fica sem acesso a nada (RLS) e cai na tela de pedir código.
 
@@ -116,24 +63,15 @@ npm run test:db   # SQL + RLS num Postgres descartável (precisa de Postgres 15+
 
 ## 3. Deploy na Vercel
 
-1. Suba a pasta para um repositório no GitHub (o `.gitignore` já exclui `.env.local`).
-2. Em <https://vercel.com/new>, importe o repositório. O framework é detectado como Next.js; não mude nada.
-3. Em **Environment Variables**, adicione:
-
-   | Nome | Valor |
-   |---|---|
-   | `NEXT_PUBLIC_SUPABASE_URL` | Project URL do Supabase |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave anon/publishable |
-   | `NEXT_PUBLIC_SITE_URL` | `https://SEU-APP.vercel.app` |
-
-4. Clique em **Deploy**. Depois volte ao Supabase (passo 2.4) e coloque a URL final em *Site URL* e *Redirect URLs*.
-
-Sem GitHub, dá para usar a CLI na pasta do projeto: `npx vercel` e, depois, `npx vercel --prod`. Configure as mesmas variáveis no painel.
+1. Importe o repositório em <https://vercel.com/new> (o framework é detectado como Next.js).
+2. Em **Environment Variables**, preencha as variáveis de [`.env.example`](.env.example). O mínimo é `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `NEXT_PUBLIC_SITE_URL`. Variáveis com valor só ASCII visível (a Vercel recusa acentos em valores usados como cabeçalho).
+3. `CRON_SECRET` (segredo aleatório, em Production e Preview) libera os agendamentos de [`vercel.json`](vercel.json): lembretes diários, limpeza das fotos e anexos com mais de 30 dias e o resumo semanal. Sem ele, as rotas `/api/cron/*` respondem 401.
+4. Depois do primeiro deploy, coloque a URL final em *Site URL* e *Redirect URLs* do Supabase.
 
 ### IA nas fotos (opcional, Gemini)
 
 Depois de cada check-in, o servidor manda a foto e o que foi declarado para o Gemini, que descreve o que vê.
-O app mostra **🤖 conferido** quando bate, **🤖 ⚠️ conferir** quando diverge (ex.: cronômetro com 45 min e 240 min declarados) e nada quando a foto é inconclusiva.
+O app mostra "IA conferiu" quando bate, "IA diverge" quando não bate (ex.: cronômetro com 45 min e 240 min declarados) e "IA indisponível" quando não deu para conferir.
 **A IA nunca anula check-in nem cria dívida:** quem decide continua sendo o tribunal.
 
 Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **Redeploy**:
@@ -147,7 +85,7 @@ Para ligar, adicione na Vercel (*Settings → Environment Variables*) e faça **
 Os endpoints agendados de lembrete/resumo exigem também `CRON_SECRET`, um segredo aleatório configurado somente no servidor. Sem ele, recusam a execução com 401; esse comportamento é intencional.
 
 > Essas duas chaves são **segredos de servidor**: nunca use o prefixo `NEXT_PUBLIC_` nelas e nunca as coloque no código.
-> No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. O grupo concordou com isso.
+> No plano gratuito da API, o Google pode usar o conteúdo enviado (fotos e resumos) para melhorar os produtos dele. A política de privacidade diz isso; se você rodar uma cópia, avise o seu grupo.
 
 ### Login com Google (opcional)
 
@@ -162,6 +100,10 @@ O botão "Entrar com Google" só aparece com `NEXT_PUBLIC_GOOGLE_LOGIN=1`. O Goo
 3. **Supabase** → *Authentication* → *URL Configuration*: o endereço da Vercel com `/**` precisa estar nos *Redirect URLs*.
 4. **Vercel** → *Environment Variables*: `NEXT_PUBLIC_GOOGLE_LOGIN` = `1`, depois **Redeploy**.
 
+### Aviso de erros (opcional, Sentry)
+
+Com `NEXT_PUBLIC_SENTRY_DSN`, o app manda só erros, sem tracing, replay nem dados pessoais (configuração em `src/lib/sentry.ts`). Vazio, fica desligado.
+
 ### Instalar no celular
 
 - **iPhone (Safari):** botão Compartilhar → *Adicionar à Tela de Início*.
@@ -173,15 +115,8 @@ O botão "Entrar com Google" só aparece com `NEXT_PUBLIC_GOOGLE_LOGIN=1`. O Goo
 
 ## 4. Decisões de arquitetura
 
-### Sem cron: tudo é calculado na hora
-Dias descumpridos, dívidas e streaks **não são gravados**. A cada carregamento, o servidor (Server Components) lê os check-ins, as trocas de folga e os pagamentos e calcula tudo em [`src/lib/ledger.ts`](src/lib/ledger.ts):
-
-- Um dia D é **descumprido** se D é anterior a hoje (SP), D é igual ou posterior à data de entrada da pessoa, não era a folga dela naquele dia e não existem as 3 metas válidas.
-- **Hoje nunca é dívida**: ele só fecha depois das 23:59.
-- A dívida é a lista de dias descumpridos × {Coca, salgado}, menos o que está na tabela `payments`.
-- Para 6 pessoas são poucos milhares de linhas por ano. As consultas são paginadas (`fetchAll`), para não esbarrar no limite de 1000 linhas do PostgREST.
-
-Vantagens: não depende de job agendado, não fica dado inconsistente se um job falhar, e qualquer regra corrigida vale para o passado. O trigger de `payments` repete a regra de "dia descumprido" no SQL, para impedir que alguém marque como pago um dia que não deve. **Se mudar a regra num lugar, mude no outro.**
+### Dívidas e sequências calculadas na hora
+Dias descumpridos, dívidas e sequências **não são gravados**: o servidor calcula a cada carregamento em [`src/lib/ledger.ts`](src/lib/ledger.ts), a partir das provas, das folgas e dos pagamentos. Nenhuma tarefa agendada pode deixar o saldo errado, e uma regra corrigida vale para o passado. O gatilho de `payments` repete a regra de "dia descumprido" no SQL para impedir pagar um dia que não é devido: **mudou num lugar, mude no outro.** Os agendamentos da Vercel só mandam lembretes e apagam mídia antiga.
 
 ### Fuso horário
 - Todo "dia" é uma data `YYYY-MM-DD` em **America/Sao_Paulo**: `sp_today()` no Postgres e `spToday()` em [`src/lib/dates.ts`](src/lib/dates.ts), via `Intl`. Nunca UTC puro.
@@ -189,9 +124,7 @@ Vantagens: não depende de job agendado, não fica dado inconsistente se um job 
 - Um envio que chegar ao servidor depois de 00:00 conta para o novo dia.
 
 ### Provas imutáveis
-- `checkins` só tem permissão de `INSERT` (por coluna: `goal`, `photo_path`, `summary`). Não há `UPDATE` nem `DELETE`.
-- No Storage só existe política de upload, sem sobrescrever (`upsert: false`) nem apagar.
-- O caminho da foto precisa ser `<group_id>/<user_id>/…`, conferido pelo RLS do Storage e pelo trigger.
+Provas não se editam: `checkins` só tem `INSERT` para o usuário, e o caminho de cada arquivo (`<grupo>/<pessoa>/…`) é conferido pelo RLS do Storage e por gatilho. O RLS está ligado em todas as tabelas; funções `security definer` fixam o `search_path`; views usam `security_invoker`.
 
 ### Fotos
 Comprimidas no navegador antes do upload ([`src/lib/image.ts`](src/lib/image.ts)): lado maior de no máximo 1600 px, JPEG com qualidade 0,8, respeitando a rotação EXIF. Fotos de perfil ficam em 512 px. O bucket aceita só `image/jpeg` até 5 MB. As fotos podem vir da câmera ou da galeria.
@@ -208,43 +141,21 @@ Comprimidas no navegador antes do upload ([`src/lib/image.ts`](src/lib/image.ts)
 ### Folga
 As trocas ficam em `day_off_changes` com `effective_from = próxima segunda-feira`, uma escolha por semana (trocar de novo na mesma semana só substitui a escolha). Assim toda semana de segunda a domingo tem exatamente 1 folga, e trocar nunca muda dias passados.
 
-### Notificações push
-Fora do MVP de propósito (no iPhone, push exige o app instalado). A estrutura está pronta: veja [`src/lib/push/README.md`](src/lib/push/README.md) e os handlers comentados em [`public/sw.js`](public/sw.js).
+### Juiz IA
+O Gemini descreve a foto e compara com o que foi declarado. A leitura só informa: nunca anula prova, nunca cria dívida e nunca vota. Cada chamada passa por uma cota diária no banco (`claim_ai_review`).
 
 ---
 
-## 5. Estrutura
+## 5. Segurança e privacidade
 
-```
-src/
-  app/
-    (auth)/login, (auth)/join     login (senha | link mágico) e entrada com convite
-    auth/confirm/route.ts         recebe links de e-mail (token_hash ou code)
-    (app)/hoje                    checklist do dia + contagem até 23:59
-    (app)/feed                    check-ins do dia de todos + tribunal em andamento
-    (app)/checkin/[id]            prova, contestação, resposta e votação
-    (app)/dividas                 saldo por pessoa + "Recebi"
-    (app)/historico/[userId]      calendário mensal + streak
-    (app)/config                  folga, nome, foto, sair
-    manifest.ts                   manifest do PWA
-  components/                     UI (client components para mutações)
-  lib/
-    dates.ts                      tudo de fuso SP
-    ledger.ts                     dias, streak e dívidas (funções puras, testadas)
-    data.ts                       leitura no servidor (RLS + paginação + URLs assinadas)
-    image.ts                      compressão no cliente
-    supabase/                     clients browser/server/middleware
-    push/README.md                como ligar push depois
-  middleware.ts                   renova a sessão e protege as rotas
-supabase/
-  migrations/0001_init.sql        schema + RLS + storage (rodar no SQL Editor)
-  tests/                          testes de SQL/RLS em Postgres local
-public/sw.js, public/icons/       PWA
-```
+- Falhas de segurança: veja [`SECURITY.md`](SECURITY.md). Não abra issue pública.
+- A política de privacidade (`/privacidade`) descreve o que o código guarda e manda para fora (LGPD). Quem rodar uma cópia é o controlador dos dados dessa cópia e precisa preencher `NEXT_PUBLIC_CONTROLLER_NAME` e `NEXT_PUBLIC_CONTACT_EMAIL`.
+- Nenhum segredo vai para o repositório: use `.env.local` e o painel da Vercel. `service_role` só no servidor, nunca com prefixo `NEXT_PUBLIC_`.
 
-## 6. Limitações conhecidas do MVP
+## 6. Licença e créditos
 
-- Marcar "Recebi" não tem desfazer. Há uma confirmação antes, e a correção se faz pelo SQL Editor.
-- Se uma foto subir e o check-in falhar (por exemplo, sem internet no meio), o arquivo fica órfão no Storage. É raro e o impacto é desprezível.
-- Se alguém sair do grupo, o número de votantes muda nas votações em aberto.
-- Não há tela de administração: o grupo e o código de convite são criados no SQL Editor.
+Código sob **GNU AGPL-3.0** (`AGPL-3.0-only`): quem modificar o Pacto e oferecer a versão modificada pela rede precisa publicar o código dela. Os sprites de `public/lowpoly` e os ícones são gerados pelo código deste repositório e seguem a mesma licença.
+
+Terceiros: fontes Inter e Pixelify Sans (SIL Open Font License 1.1, instaladas pelo npm); o vídeo em `tools/video` usa o Remotion, que tem licença própria (grátis para pessoas e empresas pequenas; veja <https://www.remotion.dev/license>).
+
+Contribuições: anexos de PDF e ZIP nas provas por [GXDZ1](https://github.com/GXDZ1).

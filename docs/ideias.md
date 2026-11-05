@@ -20,11 +20,11 @@ O Pacto tem duas camadas:
 ## Bugs para corrigir
 
 - [x] **Varredura responsiva (27/10):** nenhuma tela rolava para os lados, mas nomes longos viravam "…" (Hoje, ranking, pódio, tribunal, jurados) e três alvos de toque tinham menos de 44 px (nome no Feed, "Como a pontuação funciona", seta do mês em 320 px). Corrigido.
-- [x] **Números ilegíveis (Daniel, 27/10):** na fonte pixel o 5 parecia S e o 3 parecia 8 (ranking, placar, código de convite). Corrigido: os algarismos usam a Inter, as letras continuam pixel.
+- [x] **Números ilegíveis (beta, 27/10):** na fonte pixel o 5 parecia S e o 3 parecia 8 (ranking, placar, código de convite). Corrigido: os algarismos usam a Inter, as letras continuam pixel.
 - [x] **Imagem da prova de digitação não mudava ao refazer o teste** (PR #26): Hoje, Feed e página da prova desenham o cartão do melhor teste do dia. Falta: o tribunal ainda mostra a imagem guardada.
 - [x] **Palavras "se mexendo" no teste de digitação** (feedback do grupo, 26/10): a partir da 40ª palavra a tela apagava a mais antiga e todas as quebras de linha mudavam. Corrigido no PR seguinte ao #26.
 - [x] **Não dava para voltar e corrigir uma palavra** (feedback do grupo): agora Backspace numa palavra vazia volta para a anterior, se ela estiver errada (como no Monkeytype). No celular depende do teclado mandar o evento de apagar; conferir no Android e no iPhone.
-- [x] **Leitura "pendente" que não deixava enviar** (Daniel, 26/10): o envio tinha funcionado, mas a tela não atualizou; o segundo envio dava "já enviada". Agora o app atualiza a tela em vez de mostrar erro.
+- [x] **Leitura "pendente" que não deixava enviar** (beta, 26/10): o envio tinha funcionado, mas a tela não atualizou; o segundo envio dava "já enviada". Agora o app atualiza a tela em vez de mostrar erro.
 - [x] **Excluir a conta usava `prompt()` nativo**: desde a rodada 5 usa o `ConfirmDialog` `danger` com o campo "Digite EXCLUIR para confirmar".
 - [ ] **E2E do botão do Google pode falhar por corrida** (`e2e_k`): conta o botão logo após o `goto`, antes da hidratação. Passou no CI até aqui; se falhar, trocar `count()` por `waitFor()`.
 - [ ] Ouvir o grupo sobre o que mais está "horrível" no teste de digitação depois dessas correções (pedir prints ou vídeo).
@@ -68,8 +68,8 @@ Plano (27/10): desconhecidos usando de graça na web → medir retenção 4–8 
 
 ### Programação (pedidos do grupo, 27/10)
 
-- **Treino de linguagens (Lucas):** questõezinhas simples em várias linguagens, "igual ao LeetCode". Sem compilador dá para começar com questões de múltipla escolha, "qual a saída deste código" e lacunas de sintaxe, com respostas conferidas pelo servidor. Rodar código de verdade pede um executor isolado (Judge0, Piston), com custo e risco de segurança: só depois que a versão sem execução provar que o grupo usa.
-- **Digitação de código (Lustosa):** digitar código em vez de prosa. Contraria a decisão "só prosa": símbolos são difíceis no teclado do celular. Saída possível: um modo "Código" só no PC, com recordes próprios (o recorde já é separado por modo). Decidir antes de fazer.
+- **Treino de linguagens (pedido do beta):** questõezinhas simples em várias linguagens, "igual ao LeetCode". Sem compilador dá para começar com questões de múltipla escolha, "qual a saída deste código" e lacunas de sintaxe, com respostas conferidas pelo servidor. Rodar código de verdade pede um executor isolado (Judge0, Piston), com custo e risco de segurança: só depois que a versão sem execução provar que o grupo usa.
+- **Digitação de código (pedido do beta):** digitar código em vez de prosa. Contraria a decisão "só prosa": símbolos são difíceis no teclado do celular. Saída possível: um modo "Código" só no PC, com recordes próprios (o recorde já é separado por modo). Decidir antes de fazer.
 
 ### Mecânicas que servem para várias trilhas
 
@@ -169,3 +169,15 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - Textos de digitação: só prosa, sem símbolos de código.
 - Astra é o diretor de design: ideias visuais passam por ele.
 - Prova de estudo (27/10, migration 0017): o resumo responde a uma pergunta do dia, sorteada por pessoa e dia (a mesma o dia todo). O juiz IA avalia a resposta (específica, vaga, fora do tema), mas isso só informa o grupo: o veredito e a acusação continuam vindo da foto.
+
+## Código aberto (05/11/2026)
+
+Preparado no repositório privado, para abrir num repositório público **novo** (um commit só, sem o histórico: o histórico antigo tem nomes de pessoas do beta, o e-mail pessoal nos commits e `node_modules` de um branch antigo).
+
+- [x] Varredura de segredos no histórico inteiro (245 commits, 89 branches): nenhuma chave nos formatos de Supabase, Google, Resend, Sentry, GitHub, Stripe, Slack ou PEM; o único `.env` já commitado é o `.env.example`. (O `gitleaks` não pôde ser baixado na sessão; a varredura foi feita por padrões no `git log -p`.)
+- [x] Revisão: RLS ligado nas 24 tabelas, `security definer` com `search_path`, views com `security_invoker`, `service_role` só no servidor, correções da auditoria de 29/10 presentes. CI sem segredos e sem `pull_request_target`.
+- [x] Nomes de pessoas do beta tirados deste arquivo; README reescrito; `SECURITY.md`; licença AGPL-3.0 declarada no README e no `package.json`.
+- [ ] Dono: pedir o "ok" do GXDZ1 para publicar o código dos anexos sob a AGPL.
+- [ ] Dono: criar o repositório público novo a partir do `main`, adicionar o `LICENSE` pelo modelo do GitHub ("Add file → Create new file → LICENSE → Choose a license template → GNU AGPLv3") e ligar "Private vulnerability reporting" (Settings → Security).
+- [ ] Dono: nos commits do repositório novo, usar o e-mail `noreply` do GitHub, não o pessoal.
+
