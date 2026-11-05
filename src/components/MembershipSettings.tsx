@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SUPPORT_URL } from "@/lib/support";
+import { clearDrafts } from "@/lib/drafts";
 
 interface Props {
   isOwner: boolean;
@@ -70,8 +71,11 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
     setError("");
     if (asking.kind === "delete") {
       const res = await fetch("/api/account", { method: "DELETE", signal: AbortSignal.timeout(30_000) }).catch(() => null);
-      // Keeps "Excluindo…" until the login page shows up.
-      if (res?.ok) return router.replace("/login");
+      // Keeps "Excluindo…" until the login page shows up. No draft of the deleted account stays on the device.
+      if (res?.ok) {
+        clearDrafts();
+        return router.replace("/login");
+      }
       setSending(false);
       // The server may have done part of it (left the group) before failing; trying again is safe: it only finishes what is left.
       setError("Não foi possível confirmar a conclusão da exclusão. Parte da operação pode ter sido realizada.");
@@ -93,8 +97,11 @@ export function MembershipSettings({ isOwner, groupName, others }: Props) {
       else setError("Não foi possível confirmar a remoção. Confira sua conexão e tente novamente.");
     } else {
       const { outcome: r } = await post({ action: "leave" });
-      // Keeps "Saindo…" until the next page shows up.
-      if (r === "ok") return router.replace("/join?step=code");
+      // Keeps "Saindo…" until the next page shows up. The drafts were of the group just left.
+      if (r === "ok") {
+        clearDrafts();
+        return router.replace("/join?step=code");
+      }
       setSending(false);
       if (r === "gone") setGone(true);
       else setError("Não foi possível confirmar sua saída. Confira sua conexão e tente novamente.");

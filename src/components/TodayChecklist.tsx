@@ -17,6 +17,7 @@ import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
 import { compressProofPhotos, mediaPath, thumbPath } from "@/lib/image";
 import { photoAgeLabel, photoTakenAt } from "@/lib/photo-date";
 import { spToday } from "@/lib/dates";
+import { clearDraft, hasDraft, loadDraft, saveDraft, type DraftMode } from "@/lib/drafts";
 import { promptOfDay } from "@/lib/study-prompts";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeGitHubRepoUrl, validateAttachment } from "@/lib/attachments";
@@ -59,12 +60,18 @@ interface Props {
   typing: { used: number; best: string | null; bestScore: TypingScore | null; unsent: TypingResult | null; day: string };
 }
 
-type FormMode = "first" | "retake" | "extra";
+type FormMode = DraftMode;
 
 export function TodayChecklist({ groupId, userId, done, extras, typing }: Props) {
   const doneBy = new Map(done.map((d) => [d.goal, d]));
   const project = doneBy.get("project");
   const anyDone = GOALS.some((g) => doneBy.has(g.id));
+  // A goal the server shows as sent (here, in another tab or on another device) has no draft left to recover.
+  const sent = done.filter((d) => d.dispute !== "upheld").map((d) => d.goal).join();
+  useEffect(() => {
+    const day = spToday();
+    for (const goal of sent ? sent.split(",") : []) for (const mode of ["first", "retake"] as const) clearDraft({ userId, groupId, day, goal: goal as Goal, mode });
+  }, [sent, userId, groupId]);
   return (
     <>
       <section aria-labelledby="metas" className="mb-8">
@@ -114,6 +121,12 @@ export function TodayChecklist({ groupId, userId, done, extras, typing }: Props)
 function ExtraSessions({ extras, groupId, userId }: { extras: DoneGoal[]; groupId: string; userId: string }) {
   const [open, setOpen] = useState(false);
   const left = MAX_EXTRA_SESSIONS - extras.length;
+  // An extra session half written before a reload opens again with what was typed; with the limit reached it can never go.
+  useEffect(() => {
+    const scope = { userId, groupId, day: spToday(), goal: "study", mode: "extra" } as const;
+    if (left <= 0) clearDraft(scope);
+    else if (hasDraft(scope, null)) setOpen(true);
+  }, [left, userId, groupId]);
   return (
     <div data-testid="extra-sessions" className="space-y-2">
       {extras.map((e) => (
@@ -380,6 +393,36 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
+  // What was typed is kept on this device until the proof is confirmed (src/lib/drafts.ts); photos and files are not.
+  const [day] = useState(spToday);
+  const scope = { userId, groupId, day, goal, mode };
+  const prompt = question?.id ?? null;
+  const [restored, setRestored] = useState(false);
+  const loaded = useRef(false);
+  const spent = useRef(false);
+  useEffect(() => {
+    if (!loaded.current) {
+      // First run, after hydration: bring the draft back (the server never sees it, so it cannot render it).
+      loaded.current = true;
+      const d = loadDraft(scope, prompt);
+      if (d) {
+        if (d.summary) setSummary(d.summary);
+        if (d.minutes) setMinutes(d.minutes);
+        if (d.pages) setPages(d.pages);
+        if (d.title) setTitle(d.title);
+        if (d.projectUrl) setProjectUrl(d.projectUrl);
+        setRestored(true);
+      }
+      return;
+    }
+    if (!spent.current) saveDraft(scope, { summary, minutes, pages, title, projectUrl }, prompt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the scope is fixed for the form's life; only the fields change
+  }, [summary, minutes, pages, title, projectUrl]);
+  function draftSpent() {
+    spent.current = true;
+    clearDraft(scope);
+  }
+
   const minutesOk = goal !== "study" || Number(minutes) >= minMinutes;
   const pagesOk = goal !== "reading" || Number(pages) >= 1;
   const titleOk = goal !== "project" || title.trim().length >= 3;
@@ -490,6 +533,7 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
       // Already sent (the first send went through but its answer never arrived, or this page is
       // older than the proof): show the proof instead of an error.
       if (error?.code === "23505" && goal !== "project" && !extra) {
+        draftSpent();
         setBusy(false);
         router.refresh();
         onDone?.();
@@ -505,6 +549,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           recovered = true;
         }
       }
+      // The project of the day is already registered: this draft can never be sent.
+      if (error?.code === "23505") draftSpent();
       if (error && !recovered) {
         throw new Error(
           error.code === "23505"
@@ -521,6 +567,8 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
                     `Não foi possível enviar (código ${error.code || "rede"}). Seus dados continuam aqui: tente de novo.`,
         );
       }
+      // The proof is saved: from here on a failure (the attachment) never brings the text back.
+      draftSpent();
       if (attachment && savedCheckinId) {
         const form = new FormData();
         form.set("file", attachment);
@@ -568,6 +616,13 @@ function GoalForm({ goal, groupId, userId, mode = "first", onDone }: { goal: Goa
           </p>
         </div>
       </div>
+
+      {restored && shots.length === 0 && (
+        <p role="status" className="mb-3 text-sm text-muted" data-testid="draft-restored">
+          Recuperamos o que você tinha escrito neste aparelho.{" "}
+          {goal === "study" || goal === "project" ? "Fotos e arquivos precisam ser escolhidos de novo." : "As fotos precisam ser escolhidas de novo."}
+        </p>
+      )}
 
       {goal === "project" && (
         <div className="mb-3 space-y-2">
