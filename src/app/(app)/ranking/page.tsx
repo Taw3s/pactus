@@ -228,6 +228,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
             <li>Digitação: o melhor teste do dia vale WPM × precisão em pontos (60 WPM com 95% = 57), até {SCORING.maxTypingPointsPerDay} por dia</li>
             <li>Projeto: {SCORING.perProject} pts, 1 por dia</li>
             <li>Prova anulada pelo Tribunal não pontua. Provas enviadas na folga pontuam normalmente.</li>
+            <li>Sessões extras de estudo só pontuam enquanto a prova principal de estudo do dia valer (a original ou a refeita).</li>
           </ul>
         </details>
       </div>
