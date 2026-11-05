@@ -41,7 +41,7 @@ await step("what was typed in study, reading and project comes back after a relo
   rita = await newChallenge("Rita");
   const p = rita.page;
   const study = form(p, "study");
-  await study.getByTestId("minutes").fill("50");
+  await study.getByTestId("minutes").fill("75");
   await study.locator("textarea").fill(ANSWER);
   await study.getByTestId("proof-photo-input").setInputFiles(FIXTURE);
   await form(p, "reading").getByTestId("pages").fill("17");
@@ -49,7 +49,7 @@ await step("what was typed in study, reading and project comes back after a relo
   await form(p, "project").getByTestId("project-url").fill("https://github.com/rita/calculadora");
   await p.reload();
   await study.getByTestId("draft-restored").waitFor();
-  assert((await study.getByTestId("minutes").inputValue()) === "50", "minutes not restored");
+  assert((await study.getByTestId("minutes").inputValue()) === "75", "minutes not restored");
   assert((await study.locator("textarea").inputValue()) === ANSWER, "answer not restored");
   assert((await study.getByTestId("photo-previews").count()) === 0, "a photo came back");
   assert((await form(p, "reading").getByTestId("pages").inputValue()) === "17", "pages not restored");
