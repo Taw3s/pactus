@@ -7,6 +7,7 @@ import { PhotoViewer } from "../PhotoViewer";
 import { Sprite } from "../Sprite";
 import { CourtBench } from "./CourtBench";
 import { CourtCrowd } from "./CourtCrowd";
+import { BallotBox } from "./BallotBox";
 import { JuryBench } from "./JuryBench";
 import { VoteForm } from "./VoteForm";
 import type { Verdict } from "@/lib/ai-review";
@@ -212,6 +213,8 @@ export function Courtroom({ disputeId, result, groupName, defendant, defendantAv
         ) : me.canVote ? (
           <VoteForm disputeId={disputeId} defendant={defendant.display_name} />
         ) : null}
+        {/* outside the branches above, so it stays mounted while the vote form gives way to "Seu voto" */}
+        {(me.canVote || me.vote) && <BallotBox disputeId={disputeId} open={open} hasVote={!!me.vote} />}
       </div>
     </section>
   );

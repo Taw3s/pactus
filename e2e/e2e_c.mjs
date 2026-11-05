@@ -65,6 +65,21 @@ await step("owner cannot dispute own check-in (no form)", async () => {
 });
 
 let url;
+
+/** Records, from now on, every frame the ballot box shows and every judge frame on the bench (window.__ballot, window.__judge). */
+const watchCourt = (p) =>
+  p.evaluate(() => {
+    window.__ballot = [];
+    window.__judge = [];
+    const note = () => {
+      const b = document.querySelector('[data-testid="ballot-box"] img')?.getAttribute("data-frame");
+      if (b && window.__ballot.at(-1) !== b) window.__ballot.push(b);
+      const j = document.querySelector('[data-testid="dispute"] [data-judge]')?.getAttribute("data-frame");
+      if (j && window.__judge.at(-1) !== j) window.__judge.push(j);
+    };
+    new MutationObserver(note).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-frame", "src"] });
+  });
+
 async function vote(p, choice, reason) {
   await p.waitForLoadState("networkidle");
   await p.getByTestId("vote-form").getByRole("button", { name: new RegExp(`^${choice}`) }).click();
@@ -104,24 +119,51 @@ await step("Bia (defendant) sees tribunal in feed, defends once, cannot vote", a
   await biaP.locator("section:has(#defesa) p", { hasText: "É de hoje, olha o relógio no canto" }).waitFor();
 });
 
-await step("a vote needs guilty/innocent AND a reason", async () => {
+await step("a vote needs guilty/innocent AND a reason; a failed vote drops no ballot, a confirmed one drops it once", async () => {
   const p = await as("caio@pacto.test");
   await p.goto(url);
   await p.waitForLoadState("networkidle");
   await p.getByTestId("vote-form").getByRole("button", { name: /^Anular a prova/ }).click();
   assert(await p.getByRole("button", { name: "Confirmar voto" }).isDisabled(), "vote without reason enabled");
   await p.fill("#vote-reason", "O relógio da foto marca 23h de ontem");
+  await watchCourt(p);
+  // The server refuses once: an error, no ballot.
+  await p.route("**/rest/v1/dispute_votes*", (r) => (r.request().method() === "POST" ? r.fulfill({ status: 500, body: "{}" }) : r.continue()));
+  await p.getByRole("button", { name: "Confirmar voto" }).click();
+  await p.getByText("Não foi possível votar. Tente de novo.").waitFor();
+  await p.waitForTimeout(400);
+  assert((await p.evaluate(() => window.__ballot.length)) === 0, "a ballot dropped on a failed vote");
+  await p.unroute("**/rest/v1/dispute_votes*");
+  // Confirmed: the ballot drops once (4 frames, ending in the closed box) and the vote is said to be recorded.
   await p.getByRole("button", { name: "Confirmar voto" }).click();
   await p.getByText("Seu voto: anular a prova").waitFor();
+  await p.getByTestId("ballot-box").getByText("Seu voto foi registrado.").waitFor();
+  await p.waitForTimeout(500);
+  const frames = await p.evaluate(() => window.__ballot);
+  assert(frames.join(",") === "ballot1,ballot2,ballot3,ballotBox", `ballot frames: ${frames.join(",")}`);
   assert((await p.getByTestId("guilty-count").innerText()) === "2", "2 guilty");
   await p.getByText("Em votação").waitFor();
+  // A later visit: the recorded vote, no ballot dropping again.
+  await p.reload();
+  await p.getByText("Seu voto: anular a prova").waitFor();
+  await p.waitForTimeout(500);
+  assert((await p.getByTestId("ballot-box").count()) === 0, "the ballot dropped again after reload");
 });
 
-await step("Davi votes guilty — majority reached: gavel + CONDENADO, proof annulled", async () => {
+await step("Davi votes guilty — majority reached: one closing strike (no ballot) + CONDENADO, proof annulled", async () => {
   const p = await as("davi@pacto.test");
   await p.goto(url);
+  await p.waitForLoadState("networkidle");
+  await p.waitForTimeout(1300); // the opening strike is over
+  await watchCourt(p);
   await vote(p, "Anular a prova", "Concordo com a Ana");
   await p.getByTestId("verdict").getByText("Condenado").waitFor();
+  await p.waitForTimeout(900);
+  // Vote and closing together: only the closing moves. The judge looks at the result, strikes once, stays closed.
+  const judge = await p.evaluate(() => window.__judge);
+  assert((await p.evaluate(() => window.__ballot.length)) === 0, "a ballot dropped on the closing vote");
+  assert(judge.includes("think1") && judge.filter((f) => f === "gavel5").length === 1, `closing strike: ${judge.join(",")}`);
+  assert(judge.at(-1) === "gavel8", `does not end on the closed pose: ${judge.join(",")}`);
   await p.getByText("esta prova não conta").waitFor();
   await p.waitForTimeout(1300); // let the gavel finish for the screenshot
   await p.screenshot({ path: `${SHOTS}/c2-tribunal.png`, fullPage: true });
