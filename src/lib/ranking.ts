@@ -24,6 +24,8 @@ export interface RankingCheckin {
   minutes: number | null;
   pages: number | null;
   annulled: boolean;
+  /** An extra study session: it scores only while the day's main study proof counts. */
+  extra?: boolean;
 }
 
 export interface Score {
@@ -49,11 +51,16 @@ export function scoreMonth(
     userIds.map((id) => [id, { userId: id, points: 0, studyMinutes: 0, pages: 0, projects: 0, completedDays: 0 }]),
   );
 
+  // Extra sessions add to the study of the day, never replace it: they score only while a main study proof of that
+  // day counts (the first one, or a valid retake of an annulled one). Annulled or not, every proof stays in the history.
+  const mainStudy = new Set(checkins.filter((c) => c.goal === "study" && !c.extra && !c.annulled).map((c) => `${c.user_id}|${c.day}`));
+
   // Study minutes and pages are capped per person and day (a day may hold several sessions).
   const perDay = new Map<string, { minutes: number; pages: number; typing: boolean }>();
   for (const c of checkins) {
     const s = scores.get(c.user_id);
     if (!s || c.annulled) continue;
+    if (c.extra && !mainStudy.has(`${c.user_id}|${c.day}`)) continue;
     if (c.goal === "project") {
       s.projects += 1;
       s.points += SCORING.perProject;

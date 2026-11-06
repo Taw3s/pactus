@@ -117,7 +117,7 @@ export async function getMonthScores(supabase: SupabaseClient, membersPromise: P
   const [members, checkins, upheld, completed, typing] = await Promise.all([
     membersPromise,
     fetchAll<Omit<RankingCheckin, "annulled"> & { id: string; created_at: string }>((a, b) =>
-      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages, created_at").gte("day", from).lte("day", to).order("id").range(a, b),
+      supabase.from("checkins").select("id, user_id, day, goal, minutes, pages, extra, created_at").gte("day", from).lte("day", to).order("id").range(a, b),
     ),
     fetchAll<{ checkin_id: string }>((a, b) =>
       supabase.from("dispute_results").select("checkin_id").eq("status", "upheld").order("checkin_id").range(a, b),

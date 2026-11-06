@@ -105,5 +105,55 @@ await step("extra study sessions add minutes, need the study proof and show in t
   await davi.locator('[data-member="Davi"]').getByText("60 min + 45 extra").waitFor();
 });
 
+const points = async () => {
+  await davi.goto(`${APP}/ranking`);
+  return Number(await davi.locator('[data-member="Davi"] [data-testid=points]').innerText());
+};
+const studyLine = async () => {
+  await davi.goto(`${APP}/feed`);
+  return davi.locator('[data-member="Davi"] li').filter({ hasText: "Estudo" }).first().innerText();
+};
+
+const dayDone = () => Number(sql(`select count(*) from public.completed_days where user_id = '${daviId}' and day = public.sp_today()`));
+let withExtras;
+await step("study annulled and not retaken: the day's extra sessions stop scoring but stay in the history", async () => {
+  withExtras = await points();
+  const doneBefore = dayDone();
+  const study = sql(`select photo_path from public.checkins where user_id = '${daviId}' and goal = 'study' and not extra and day = public.sp_today()`);
+  annul(study);
+  // The study minutes (60), the completed day (if it was) and now the extra session (45) leave the ranking.
+  const after = await points();
+  const lostDay = (doneBefore - dayDone()) * 20;
+  assert(after === withExtras - 60 - lostDay - 45, `points ${withExtras} -> ${after} (day ${lostDay})`);
+  const line = await studyLine();
+  assert(line.includes("60 min") && !line.includes("extra"), `feed: ${line}`);
+  assert(Number(sql(`select count(*) from public.checkins where user_id = '${daviId}' and extra and day = public.sp_today()`)) === 1, "the extra proof was removed");
+});
+
+await step("a valid retake of the study brings the valid extra sessions back", async () => {
+  await davi.goto(`${APP}/hoje`);
+  await send("study", "retake", async (card) => {
+    await card.getByTestId("minutes").fill("75");
+    await card.locator("textarea").fill("Refiz a prova com os exercícios de limites e derivadas resolvidos hoje.");
+  });
+  const after = await points();
+  assert(after === withExtras - 60 + 75, `points ${withExtras} -> ${after}`);
+  const line = await studyLine();
+  assert(line.includes("75 min + 45 extra"), `feed: ${line}`);
+});
+
+await step("an annulled extra session never scores, with the study valid", async () => {
+  const before = await points();
+  await davi.goto(`${APP}/hoje`);
+  await davi.getByRole("button", { name: "Sessão extra de estudo" }).click();
+  await send("study", "extra", async (card) => card.getByTestId("minutes").fill("30"));
+  assert((await points()) === before + 30, "the new extra session did not score");
+  const extraPath = sql(`select photo_path from public.checkins where user_id = '${daviId}' and extra and minutes = 30 and day = public.sp_today()`);
+  annul(extraPath);
+  assert((await points()) === before, "an annulled extra session still scores");
+  const line = await studyLine();
+  assert(line.includes("75 min + 45 extra"), `feed: ${line}`);
+});
+
 await browser.close();
 done();

@@ -64,10 +64,12 @@ export default async function FeedPage() {
     const project = all.findLast((c) => c.goal === "project");
     const valid = mine.filter((c) => resultByCheckin.get(c.id)?.status !== "upheld");
     const done = new Set(valid.map((c) => c.goal)).size;
-    // Valid extra study sessions, shown as "+N min" next to the study proof.
-    const extraMinutes = all
-      .filter((c) => c.extra && resultByCheckin.get(c.id)?.status !== "upheld")
-      .reduce((sum, c) => sum + (c.minutes ?? 0), 0);
+    // Valid extra study sessions, shown as "+N min" next to the study proof, only while the study proof counts
+    // (as in the ranking: an annulled study without a valid retake takes its extra sessions with it).
+    const studyCounts = valid.some((c) => c.goal === "study");
+    const extraMinutes = studyCounts
+      ? all.filter((c) => c.extra && resultByCheckin.get(c.id)?.status !== "upheld").reduce((sum, c) => sum + (c.minutes ?? 0), 0)
+      : 0;
     return { m, mine, project, done, extraMinutes, off: weekdayOf(today) === dayOffOn(changes, today) };
   });
   rows.sort((a, b) => b.done - a.done || b.mine.length - a.mine.length);

@@ -108,6 +108,56 @@ describe("typingBestByDay", () => {
   });
 });
 
+describe("extra study sessions follow the main study proof", () => {
+  const extra = (minutes: number, over: Partial<RankingCheckin> = {}) => c({ minutes, extra: true, ...over });
+
+  it("count while the main study proof counts", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 60 }), extra(45), extra(30)], []);
+    expect(ana.studyMinutes).toBe(135);
+    expect(ana.points).toBe(135);
+  });
+
+  it("annulled main proof and no retake: the day's extra sessions stop scoring", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 60, annulled: true }), extra(45), extra(30)], []);
+    expect(ana).toMatchObject({ studyMinutes: 0, points: 0 });
+  });
+
+  it("a valid retake brings the valid extra sessions back, under the same daily cap", () => {
+    const rows = [c({ minutes: 60, annulled: true }), extra(45), c({ minutes: 150 }), extra(90)];
+    const [ana] = scoreMonth(["ana"], rows, []);
+    expect(ana.studyMinutes).toBe(SCORING.maxStudyMinutesPerDay); // 45 + 150 + 90 = 285, capped at 240
+  });
+
+  it("an annulled retake leaves the extra sessions out again", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 60, annulled: true }), c({ minutes: 70, annulled: true }), extra(45)], []);
+    expect(ana.studyMinutes).toBe(0);
+  });
+
+  it("an annulled extra session never scores, even with the main proof valid", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 60 }), extra(45, { annulled: true }), extra(20)], []);
+    expect(ana.studyMinutes).toBe(80);
+  });
+
+  it("only the day of the annulled proof loses its extra sessions, and only for that person", () => {
+    const rows = [
+      c({ minutes: 60, annulled: true }),
+      extra(45),
+      c({ day: "2026-10-27", minutes: 60 }),
+      extra(45, { day: "2026-10-27" }),
+      c({ user_id: "bia", minutes: 60 }),
+      extra(45, { user_id: "bia" }),
+    ];
+    const [ana, bia] = ["ana", "bia"].map((id) => scoreMonth(["ana", "bia"], rows, []).find((s) => s.userId === id)!);
+    expect(ana.studyMinutes).toBe(105);
+    expect(bia.studyMinutes).toBe(105);
+  });
+
+  it("other goals of that day keep their own rules", () => {
+    const [ana] = scoreMonth(["ana"], [c({ minutes: 60, annulled: true }), extra(45), c({ goal: "reading", pages: 10 }), c({ goal: "project" })], []);
+    expect(ana.points).toBe(10 * SCORING.perPage + SCORING.perProject);
+  });
+});
+
 describe("scoringTypingTests", () => {
   const t = (id: string, user_id: string, finished_at: string) => ({ id, user_id, day: "2026-10-29", finished_at });
   it("keeps every test without a condemned typing proof", () => {

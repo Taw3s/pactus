@@ -70,7 +70,7 @@ export const GUIDE: GuideEntry[] = [
     q: "Estudei mais de uma vez. Dá para somar?",
     a: [
       `Sim. Depois da prova de estudo, use "Sessão extra de estudo": foto + pelo menos ${MIN_EXTRA_MINUTES} min, até ${MAX_EXTRA_SESSIONS} por dia.`,
-      "As sessões extras somam minutos no ranking, mas não substituem a prova principal.",
+      "As sessões extras somam minutos no ranking, mas não substituem a prova principal: elas só contam enquanto a prova principal de estudo do dia valer. Se o tribunal anular a prova principal e ela não for refeita, as sessões extras daquele dia deixam de somar (continuam no histórico). Refeita e valendo, elas voltam a contar.",
     ],
   },
   {
@@ -88,6 +88,7 @@ export const GUIDE: GuideEntry[] = [
     a: [
       "Fechou as três metas do dia: abre o baú do dia, com um item comum, raro ou lendário para a sua coleção.",
       "Desafio da semana: se todos que estavam no grupo na segunda fecharem 5 dias até domingo, cada um abre um baú raro ou melhor.",
+      "Baú aberto não volta: se depois o tribunal anular uma prova daquele dia ou daquela semana, o objeto continua na sua coleção. Pontos, sequência e dívida seguem a decisão do tribunal.",
     ],
   },
   {
