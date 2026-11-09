@@ -1,0 +1,63 @@
+# Daily copy of the production database (roles, schema, data), encrypted, kept as a private artifact of this
+# repository for 30 days. Photos and attachments (Supabase Storage) are NOT in it: see docs/backup.md.
+# Needs two repository secrets; without them the job says so and stops (e.g. in the public copy of the code):
+#   SUPABASE_DB_URL     Session pooler connection string (IPv4; the direct connection is IPv6 only)
+#   BACKUP_PASSPHRASE   long passphrase that encrypts the file (keep a copy outside GitHub)
+name: Backup
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # 03:17 in São Paulo, after the day closed and before anyone sends proofs
+  workflow_dispatch: # run it by hand before every migration
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Secrets present
+        id: ready
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::SUPABASE_DB_URL or BACKUP_PASSPHRASE is missing: no backup was made (docs/backup.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.ready.outputs.ok == 'true'
+      # Same pinned CLI as CI.
+      - uses: supabase/setup-cli@v1
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          version: 2.122.0
+      - name: Dump
+        if: steps.ready.outputs.ok == 'true'
+        run: tools/backup/dump.sh "$SUPABASE_DB_URL" "$RUNNER_TEMP/pacto-backup"
+      - name: Encrypt (AES-256, the clear files never leave the runner)
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          name="pacto-backup-$(date -u +%Y-%m-%d)"
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/$name.tar.gz" pacto-backup
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            -o "$RUNNER_TEMP/$name.tar.gz.gpg" "$RUNNER_TEMP/$name.tar.gz" <<< "$BACKUP_PASSPHRASE"
+          rm -rf "$RUNNER_TEMP/pacto-backup" "$RUNNER_TEMP/$name.tar.gz"
+          echo "BACKUP_FILE=$RUNNER_TEMP/$name.tar.gz.gpg" >> "$GITHUB_ENV"
+          echo "BACKUP_NAME=$name" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          name: ${{ env.BACKUP_NAME }}
+          path: ${{ env.BACKUP_FILE }}
+          if-no-files-found: error
+          retention-days: 30
