@@ -95,6 +95,11 @@ export default function PrivacyPage() {
           <b>Resend (e-mail):</b> envia os links de login e de confirmação. Recebe o seu e-mail e o conteúdo da mensagem (o link). Os
           envios saem por servidores em São Paulo.
         </li>
+        <li>
+          <b>GitHub (cópia de segurança):</b> uma vez por dia, uma cópia do banco de dados (contas, perfis, provas sem as fotos, testes, dívidas,
+          tribunal) é cifrada antes de sair e guardada como arquivo privado no GitHub, que não consegue lê-la. Ela só serve para recuperar o
+          app se o banco for perdido.
+        </li>
       </ul>
 
       <h2>Por que usamos (bases legais)</h2>
@@ -133,6 +138,11 @@ export default function PrivacyPage() {
           Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos do grupo em que você está (eles passam a dizer
           “ex-membro”) e o seu login é apagado. Recibos de grupos de que você já tinha saído continuam com o seu nome, sem ligação com a sua
           conta, como no item acima.
+        </li>
+        <li>
+          As <b>cópias de segurança</b> do banco são apagadas 30 dias depois de feitas. Por isso, o que você apaga ou leva ao sair ainda pode
+          existir numa cópia por até 30 dias, cifrada e sem uso, até ela expirar. Se uma cópia precisar ser usada para recuperar o app, o
+          grupo é avisado, e quem tiver saído ou excluído a conta depois da data da cópia pode pedir a exclusão de novo pelo contato abaixo.
         </li>
       </ul>
 

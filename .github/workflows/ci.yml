@@ -116,6 +116,20 @@ jobs:
         working-directory: e2e
         run: bash run.sh
 
+      # The copy is only worth something if it comes back: dump the database the suite just filled, start a fresh
+      # local project without our migrations (as a new Supabase project), restore and compare every row count.
+      - name: Backup round trip (dump, new empty project, restore, compare)
+        run: |
+          URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          tools/backup/dump.sh "$URL" "$RUNNER_TEMP/roundtrip"
+          pkill -f "next start" || true
+          supabase stop --no-backup
+          mkdir "$RUNNER_TEMP/migrations-aside"
+          mv supabase/migrations/*.sql "$RUNNER_TEMP/migrations-aside/"
+          supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+          mv "$RUNNER_TEMP/migrations-aside/"*.sql supabase/migrations/
+          tools/backup/restore.sh "$URL" "$RUNNER_TEMP/roundtrip"
+
       - name: Upload screenshots and logs
         if: always()
         uses: actions/upload-artifact@v4
