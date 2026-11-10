@@ -81,3 +81,8 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
 "${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
 "${PSQL[@]}" -f attachment_retention_test.sql
+# Differential test: the same histories through the database and through src/lib (see differential/README.md).
+# Last on purpose: clock.sql swaps now() for a test clock, which no test above may see.
+"${PSQL[@]}" -f differential/clock.sql
+"${PSQL[@]}" -f differential/harness.sql
+(cd ../.. && PACTO_DIFF_HOST="$DATA" PACTO_DIFF_PORT="$PORT" npx vitest run --config supabase/tests/differential/vitest.config.mts)

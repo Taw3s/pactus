@@ -153,6 +153,18 @@ Coleção de 8 para 18 objetos, em três PRs, um de cada vez:
 - Bloco 5 ("Novo na coleção") espera o contrato do servidor; bloco 7 (auditoria visual) espera capturas.
 - A comentar com o Astra: o carimbo "Condenado"/"Absolvido" do tribunal marca a pessoa, e o brief diz para nunca carimbar usuário.
 
+## Coerência das regras: banco × TypeScript (auditoria de 10/11/2026)
+
+Teste diferencial em `supabase/tests/differential` (roda em todo PR). Em 300 históricos aleatórios e 14 casos de borda, banco e app concordam em dívida, folga, cardápio, dia da entrada, sequência, dia completo, baús, sessão extra, tribunal, pontos e saída do grupo. O que apareceu, tudo na digitação anulada, **espera decisão do dono** (nada foi corrigido):
+
+- [ ] **Refazer com teste já julgado** (divergência demonstrada): depois da anulação, o banco aceita como prova nova qualquer teste do dia ainda sem prova, inclusive um terminado antes da prova anulada; o app nunca oferece esse teste e dá 0 ponto de digitação a ele. Pelo app não acontece; pela API, o dia fecha (sem dívida, +20, baú) com um teste que o tribunal julgou.
+- [ ] **Anulada com as 3 tentativas gastas** (demonstrada, regra escrita × comportamento): o guia promete refazer até 23:59, mas sem tentativa e sem resultado para enviar não há como; o dia vira dívida. Decidir: tentativa extra depois de uma anulação, ou o guia passa a dizer que não dá.
+- [ ] **Teste feito depois da prova e antes do veredito** (os dois lados concordam; a pergunta é a regra): a prova mostra o melhor teste do dia, então o tribunal pode ter julgado justamente esse teste, e ele serve para refazer e pontua. O corte hoje é a hora em que a prova foi enviada, não a hora do veredito.
+- [ ] **Desafio da semana e quem saiu** (os dois lados concordam; guia × código): o guia fala em "todos que estavam no grupo na segunda"; o código só conta quem ainda está. Quem sai ou é removido no meio da semana deixa de segurar o baú dos outros.
+- Medir em produção antes de decidir: `supabase/queries/digitacao_refeita.sql` (só leitura).
+- Suspeitas não reproduzidas: listas sem paginação na Hoje e no painel do grupo (`dispute_results`, `completed_days`, `day_off_changes`) param em 1000 linhas; relógio do servidor do app e do banco podem divergir por segundos na virada do dia.
+- Para a correção: tirar das páginas para `src/lib` os estados das metas da Hoje e a regra de quem acusa/vota (hoje o teste transcreve esses trechos).
+
 ## Acabamento dos controles (05/11/2026)
 
 - [x] Auditoria de botões, campos e estados na Hoje e em Configurações: pressão imediata, desabilitado sem deslocamento, movimento reduzido sem deslocamento, foco visível nos seletores de arquivo e cardápio sem esmaecer o botão inteiro (detalhes no `CLAUDE.md`). Sem dependência nova.
