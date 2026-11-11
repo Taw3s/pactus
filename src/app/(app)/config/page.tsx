@@ -1,3 +1,4 @@
+import { BetaFeedback } from "@/components/BetaFeedback";
 import { GroupSettings } from "@/components/GroupSettings";
 import { MembershipSettings } from "@/components/MembershipSettings";
 import { PageHeader } from "@/components/PageHeader";
@@ -48,6 +49,9 @@ export default async function SettingsPage() {
         nextWeek={nextMonday(today)}
         dayOffNextWeek={dayOffOn(changes ?? [], nextMonday(today))}
       />
+      <div className="mt-6">
+        <BetaFeedback />
+      </div>
       <MembershipSettings isOwner={group?.owner_id === me.user_id} groupName={group?.name ?? ""} others={others} />
     </>
   );
