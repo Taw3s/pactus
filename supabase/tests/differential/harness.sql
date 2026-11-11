@@ -34,12 +34,17 @@ create function diff.ranking(p_group uuid) returns jsonb language sql stable as 
     from c where goal = 'reading' and not annulled group by 1, 2
   ),
   project as (select user_id, day, (count(*) * 10)::numeric as pts from c where goal = 'project' and not annulled group by 1, 2),
-  cut as (select user_id, day, max(created_at) as at from c where goal = 'typing' and annulled group by 1, 2),
+  -- 0031: after an annulled typing proof, only tests started after the verdict count.
+  cut as (
+    select c.user_id, c.day, max(r.decided_at) as at
+    from c join public.dispute_results r on r.checkin_id = c.id
+    where c.goal = 'typing' and c.annulled group by 1, 2
+  ),
   typing as (
     select t.user_id, t.day, round(least(240, max(t.score))) as pts
     from public.typing_tests t left join cut k on k.user_id = t.user_id and k.day = t.day
     where t.user_id in (select user_id from m) and t.score is not null and t.finished_at is not null
-      and (k.at is null or t.finished_at > k.at)
+      and (k.at is null or t.started_at > k.at)
       and exists (select 1 from c where c.user_id = t.user_id and c.day = t.day and c.goal = 'typing' and not c.annulled)
     group by 1, 2
   ),
@@ -74,6 +79,7 @@ declare
   v_vote jsonb := '[]';
   v_chest jsonb := '[]';
   v_proof jsonb := '[]';
+  v_attempts jsonb := '[]';
   v_data jsonb;
 begin
   select array_agg(user_id order by user_id), min(joined_on) - 1 into v_members, v_from from public.members where group_id = v_group;
@@ -109,12 +115,26 @@ begin
           -- A refusal about the day itself is the same for every item: the other seven tries would only cost time.
           exit when v_out in ('day is not payable', 'day off', 'day was completed');
         end loop;
+        -- The extra Coca of an annulled "Nova tentativa" (0031), on top of the day's menu.
+        begin
+          insert into public.payments (debtor_id, day, item, penalty) values (v_m, v_day, 'coke', true);
+          raise exception sqlstate 'DF000';
+        exception
+          when sqlstate 'DF000' then v_out := 'ok';
+          when unique_violation then v_out := 'paid';
+          when others then v_out := sqlerrm;
+        end;
+        if v_out <> 'penalty not owed' then
+          v_pay := v_pay || jsonb_build_object('debtor', v_m, 'day', v_day, 'item', 'coke', 'penalty', true, 'out', v_out);
+        end if;
       end loop;
       perform set_config('role', 'none', true);
     end if;
 
     perform set_config('request.jwt.claim.sub', v_m::text, true);
     perform set_config('role', 'authenticated', true);
+    v_attempts := v_attempts || (select jsonb_build_object('user_id', v_m, 'used', a.used, 'special_available', a.special_available, 'special_used', a.special_used)
+                                 from public.my_typing_attempts() a);
     foreach v_item in array array['daily', 'weekly'] loop
       begin
         perform * from public.open_chest(v_item);
@@ -198,10 +218,12 @@ begin
     'debt_menus', (select coalesce(jsonb_agg(jsonb_build_object('effective_from', effective_from, 'items', items) order by effective_from), '[]') from public.debt_menus where group_id = v_group),
     'checkins', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'user_id', user_id, 'day', day, 'goal', goal, 'minutes', minutes, 'pages', pages,
         'extra', extra, 'retake_of', retake_of, 'created_at', created_at, 'typing_test_id', typing_test_id) order by created_at, id), '[]') from public.checkins where group_id = v_group),
-    'results', (select coalesce(jsonb_agg(jsonb_build_object('checkin_id', checkin_id, 'status', status, 'yes', yes, 'no', no, 'eligible', eligible) order by checkin_id), '[]') from public.dispute_results where group_id = v_group),
-    'payments', (select coalesce(jsonb_agg(jsonb_build_object('debtor_id', debtor_id, 'day', day, 'item', item, 'received_by', received_by, 'received_name', received_name, 'paid_at', paid_at) order by debtor_id, day, item), '[]') from public.payments where group_id = v_group),
+    'results', (select coalesce(jsonb_agg(jsonb_build_object('checkin_id', checkin_id, 'status', status, 'yes', yes, 'no', no, 'eligible', eligible, 'decided_at', decided_at) order by checkin_id), '[]') from public.dispute_results where group_id = v_group),
+    'payments', (select coalesce(jsonb_agg(jsonb_build_object('debtor_id', debtor_id, 'day', day, 'item', item, 'received_by', received_by, 'received_name', received_name, 'paid_at', paid_at, 'penalty', penalty) order by debtor_id, day, item, penalty), '[]') from public.payments where group_id = v_group),
+    'penalties', (select coalesce(jsonb_agg(jsonb_build_object('user_id', user_id, 'day', day) order by user_id, day), '[]') from public.typing_penalties where group_id = v_group),
+    'attempts', v_attempts,
     'typing', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'user_id', user_id, 'day', day, 'score', score, 'wpm', wpm, 'accuracy', accuracy, 'device', device, 'minutes', minutes,
-        'finished_at', finished_at) order by started_at, id), '[]') from public.typing_tests where group_id = v_group),
+        'started_at', started_at, 'finished_at', finished_at, 'special', special) order by started_at, id), '[]') from public.typing_tests where group_id = v_group),
     'chests', (select coalesce(jsonb_agg(jsonb_build_object('user_id', user_id, 'kind', kind, 'period', period) order by user_id, kind, period), '[]') from public.chest_openings where group_id = v_group),
     'completed', (select coalesce(jsonb_agg(jsonb_build_object('user_id', user_id, 'day', day) order by user_id, day), '[]') from public.completed_days where user_id = any (v_members)),
     'weekly', (select coalesce(jsonb_agg(jsonb_build_object('user_id', w.user_id, 'done_days', w.done_days) order by w.user_id), '[]') from public.weekly_progress(v_group, date_trunc('week', v_today)::date) w),

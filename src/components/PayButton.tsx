@@ -7,17 +7,17 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { createClient } from "@/lib/supabase/client";
 import { DEBT_ITEM, itemCount, type DebtItem } from "@/lib/debt-items";
 
-type Props = { debtorId: string; debtorName: string; day: string; dayLabel: string; item: DebtItem };
+type Props = { debtorId: string; debtorName: string; day: string; dayLabel: string; item: DebtItem; penalty?: boolean };
 
 /** Id of the receipt that replaces this button once the payment exists (focus lands there). */
-export const receiptId = (debtorId: string, day: string, item: DebtItem) => `receipt-${debtorId}-${day}-${item}`;
+export const receiptId = (debtorId: string, day: string, item: DebtItem, penalty = false) => `receipt-${debtorId}-${day}-${item}${penalty ? "-penalty" : ""}`;
 
 /**
  * The receiver marks a single item of a missed day as paid, after confirming in a dialog. There is
  * no undo (payments have no update/delete grant), so the dialog says so. When the answer is lost,
  * the button checks whether the payment exists before saying it failed or inserting again.
  */
-export function PayButton({ debtorId, debtorName, day, dayLabel, item }: Props) {
+export function PayButton({ debtorId, debtorName, day, dayLabel, item, penalty = false }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -29,7 +29,7 @@ export function PayButton({ debtorId, debtorName, day, dayLabel, item }: Props) 
   const [refreshing, startRefresh] = useTransition();
   const [closing, setClosing] = useState(false);
   const [, m, d] = day.split("-");
-  const what = itemCount(item, 1);
+  const what = penalty ? `${itemCount(item, 1)} de punição` : itemCount(item, 1);
 
   useEffect(() => {
     if (closing && !refreshing) {
@@ -51,6 +51,7 @@ export function PayButton({ debtorId, debtorName, day, dayLabel, item }: Props) 
       .eq("debtor_id", debtorId)
       .eq("day", day)
       .eq("item", item)
+      .eq("penalty", penalty)
       .abortSignal(AbortSignal.timeout(15_000))
       .maybeSingle();
     return error ? null : !!data;
@@ -65,7 +66,7 @@ export function PayButton({ debtorId, debtorName, day, dayLabel, item }: Props) 
       if (found) return done();
       if (found === null) return fail();
     }
-    const { error } = await createClient().from("payments").insert({ debtor_id: debtorId, day, item }).abortSignal(AbortSignal.timeout(20_000));
+    const { error } = await createClient().from("payments").insert(penalty ? { debtor_id: debtorId, day, item, penalty: true } : { debtor_id: debtorId, day, item }).abortSignal(AbortSignal.timeout(20_000));
     if (!error) return done();
     if (error.code === "23505") return stop("paid");
     // Raised by payments_before_insert or refused by RLS: the debt is no longer payable by me.
@@ -123,7 +124,7 @@ export function PayButton({ debtorId, debtorName, day, dayLabel, item }: Props) 
         }
         onConfirm={pay}
         onCancel={() => setOpen(false)}
-        fallbackFocus={() => document.getElementById(receiptId(debtorId, day, item))}
+        fallbackFocus={() => document.getElementById(receiptId(debtorId, day, item, penalty))}
       >
         <div className="flex items-start gap-3 rounded-sm border-2 border-bevel-dark bg-paper p-3 text-on-paper" data-testid="pay-summary">
           <Sprite name={DEBT_ITEM[item].sprite} />

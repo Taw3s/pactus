@@ -18,7 +18,7 @@ export type Ev =
   | { t: "vote"; by: number; of: number; goal: Goal; extra?: boolean; upheld: boolean }
   | { t: "dayoff"; u: number; weekday: number }
   | { t: "menu"; items: string[] } // by the owner
-  | { t: "pay"; by: number; debtor: number; day: string; item: string }
+  | { t: "pay"; by: number; debtor: number; day: string; item: string; penalty?: boolean }
   | { t: "chest"; u: number; kind: "daily" | "weekly" }
   | { t: "probe"; label: string; leaving?: number; how?: "leave" | "remove" | "delete" };
 
@@ -106,12 +106,14 @@ export function toSql(s: Scenario): string {
         break;
       }
       case "test":
-        // At most 3 a day, like start_typing_test; the test belongs to the day it started.
+        // The quota of start_typing_test, by its own rule (0031): 3 normal tests, then the single "Nova tentativa"
+        // when the server opens it. The test belongs to the day it started.
         out.push(
-          `insert into public.typing_tests (user_id, group_id, day, device, seconds, started_at, finished_at, correct_chars, typed_chars, wpm, accuracy, score)
-           select m.user_id, m.group_id, s.d, 'pc', 60, s.at, pacto_clock.now(), 300, 300, ${e.score}, 1, ${e.score}
-           from public.members m, (select pacto_clock.now() - interval '${e.startedSecondsAgo ?? 60} seconds' as at, ((pacto_clock.now() - interval '${e.startedSecondsAgo ?? 60} seconds') at time zone 'America/Sao_Paulo')::date as d) s
-           where m.user_id = ${me} and (select count(*) from public.typing_tests t where t.user_id = m.user_id and t.day = s.d) < 3;`,
+          `insert into public.typing_tests (user_id, group_id, day, device, seconds, started_at, finished_at, correct_chars, typed_chars, wpm, accuracy, score, special)
+           select m.user_id, m.group_id, s.d, 'pc', 60, s.at, pacto_clock.now(), 300, 300, ${e.score}, 1, ${e.score}, k.kind = 'special'
+           from public.members m, (select pacto_clock.now() - interval '${e.startedSecondsAgo ?? 60} seconds' as at, ((pacto_clock.now() - interval '${e.startedSecondsAgo ?? 60} seconds') at time zone 'America/Sao_Paulo')::date as d) s,
+                lateral (select public._typing_attempt_kind(m.user_id, s.d) as kind) k
+           where m.user_id = ${me} and k.kind is not null;`,
         );
         break;
       case "typing": {
@@ -147,7 +149,7 @@ export function toSql(s: Scenario): string {
         as(step, owner, `perform public.set_debt_menu(array[${e.items.map(q).join(", ")}])`);
         break;
       case "pay":
-        as(step, q(uid(S, e.by)), `insert into public.payments (debtor_id, day, item) values ('${uid(S, e.debtor)}', '${e.day}', '${e.item}')`);
+        as(step, q(uid(S, e.by)), `insert into public.payments (debtor_id, day, item, penalty) values ('${uid(S, e.debtor)}', '${e.day}', '${e.item}', ${e.penalty ? "true" : "false"})`);
         break;
       case "chest":
         as(step, me, `perform * from public.open_chest('${e.kind}')`);
@@ -331,8 +333,10 @@ export const HAND: Scenario[] = [
     at(1, "09:20:00"), { t: "typing", u: 1, pick: "oldest" }, // proof with the first test; the second one stays unused
     at(1, "10:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "10:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
     at(1, "10:02:00"), { t: "probe", label: "prova de digitação anulada" },
-    at(1, "10:10:00"), { t: "typing", u: 1, pick: "best" }, // retake with the test finished before the condemned proof
-    at(1, "10:11:00"), { t: "chest", u: 1, kind: "daily" }, { t: "probe", label: "refeita com teste já julgado" },
+    at(1, "10:10:00"), { t: "typing", u: 1, pick: "best" }, // refused (0031): the unused test started before the verdict
+    at(1, "10:11:00"), { t: "chest", u: 1, kind: "daily" }, { t: "probe", label: "refeita com teste já julgado: recusada" },
+    at(1, "10:20:00"), { t: "test", u: 1, score: 30 }, at(1, "10:21:00"), { t: "typing", u: 1, pick: "best" }, // the third test, after the verdict
+    at(1, "10:22:00"), { t: "probe", label: "refeita com um teste novo" },
     at(2, "09:00:00"), { t: "probe", label: "dia seguinte" },
   ]),
 
@@ -342,20 +346,62 @@ export const HAND: Scenario[] = [
     at(1, "09:05:00"), { t: "test", u: 1, score: 50 }, at(1, "09:10:00"), { t: "test", u: 1, score: 60 }, at(1, "09:15:00"), { t: "test", u: 1, score: 70 },
     at(1, "09:20:00"), { t: "typing", u: 1, pick: "best" },
     at(1, "10:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "10:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
-    at(1, "10:02:00"), { t: "test", u: 1, score: 65 }, // a 4th test: the fixture refuses it like start_typing_test would
-    at(1, "10:03:00"), { t: "probe", label: "anulada, sem tentativa e sem resultado para enviar" },
-    at(2, "09:00:00"), { t: "probe", label: "dia seguinte: o dia virou dívida" },
+    at(1, "10:01:30"), { t: "probe", label: "anulada: a nova tentativa abre" },
+    at(1, "10:02:00"), { t: "test", u: 1, score: 65 }, // the "Nova tentativa" (0031)
+    at(1, "10:02:30"), { t: "test", u: 1, score: 99 }, // a 5th test: refused, like start_typing_test
+    at(1, "10:03:00"), { t: "probe", label: "nova tentativa feita, prova ainda não enviada" },
+    at(1, "10:04:00"), { t: "typing", u: 1, pick: "best" }, { t: "probe", label: "refeita com a nova tentativa" },
+    at(2, "09:00:00"), { t: "probe", label: "dia seguinte: o dia valeu" },
   ]),
 
   hand("digitação: teste melhor feito depois da prova e antes do julgamento", [
     at(0, "09:00:00"), { t: "create", u: 1, items: ["coke", "snack"] }, at(0, "09:01:00"), { t: "join", u: 2 }, at(0, "09:02:00"), { t: "join", u: 3 },
     at(1, "09:00:00"), { t: "proof", u: 1, goal: "study" }, at(1, "09:00:01"), { t: "proof", u: 1, goal: "reading" },
     at(1, "09:05:00"), { t: "test", u: 1, score: 50 }, at(1, "10:00:00"), { t: "typing", u: 1, pick: "best" },
-    at(1, "11:00:00"), { t: "test", u: 1, score: 90 }, // the proof now shows this one as the day's best
+    at(1, "11:00:00"), { t: "test", u: 1, score: 90 }, // the proof stays frozen on the 50 (0031); the 90 only scores
+    at(1, "11:30:00"), { t: "probe", label: "prova com o 50, melhor do dia 90" },
     at(1, "12:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "12:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
-    at(1, "12:02:00"), { t: "probe", label: "anulada com o teste de 90 à vista" },
-    at(1, "12:10:00"), { t: "typing", u: 1, pick: "best" },
-    at(1, "12:11:00"), { t: "probe", label: "refeita com o teste de 90" },
+    at(1, "12:02:00"), { t: "probe", label: "anulada; o 90 é de antes do veredito" },
+    at(1, "12:10:00"), { t: "typing", u: 1, pick: "best" }, // refused: the 90 started before the verdict
+    at(1, "12:11:00"), { t: "probe", label: "refeita com o 90: recusada" },
+    at(1, "12:20:00"), { t: "test", u: 1, score: 35 }, at(1, "12:21:00"), { t: "typing", u: 1, pick: "best" },
+    at(1, "12:22:00"), { t: "probe", label: "refeita com o teste novo; o ranking conta só ele" },
+  ]),
+
+  hand("digitação: a nova tentativa também anulada vira 1 Coca a mais", [
+    at(0, "09:00:00"), { t: "create", u: 1, items: ["coke", "snack"] }, at(0, "09:01:00"), { t: "join", u: 2 }, at(0, "09:02:00"), { t: "join", u: 3 },
+    at(1, "09:00:00"), { t: "proof", u: 1, goal: "study" }, at(1, "09:00:01"), { t: "proof", u: 1, goal: "reading" },
+    at(1, "09:05:00"), { t: "test", u: 1, score: 50 }, at(1, "09:10:00"), { t: "test", u: 1, score: 60 }, at(1, "09:15:00"), { t: "test", u: 1, score: 70 },
+    at(1, "09:20:00"), { t: "typing", u: 1, pick: "best" },
+    at(1, "10:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "10:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
+    at(1, "10:10:00"), { t: "test", u: 1, score: 40 }, at(1, "10:11:00"), { t: "typing", u: 1, pick: "best" },
+    at(1, "11:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "11:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
+    at(1, "11:02:00"), { t: "probe", label: "nova tentativa anulada: Coca de punição" },
+    at(1, "11:03:00"), { t: "test", u: 1, score: 90 }, // refused: nothing left after the special one
+    at(1, "11:04:00"), { t: "pay", by: 2, debtor: 1, day: day(1), item: "coke", penalty: true }, { t: "probe", label: "punição paga no mesmo dia" },
+    at(2, "09:00:00"), { t: "pay", by: 3, debtor: 1, day: day(1), item: "coke" }, { t: "probe", label: "dia seguinte: dívida normal e punição, separadas" },
+  ]),
+
+  hand("digitação: nova tentativa contestada e mantida não pune", [
+    at(0, "09:00:00"), { t: "create", u: 1, items: ["coke"] }, at(0, "09:01:00"), { t: "join", u: 2 }, at(0, "09:02:00"), { t: "join", u: 3 },
+    ...fullDay(1, 1, "09:00:00"),
+    at(1, "09:30:00"), { t: "test", u: 1, score: 55 }, at(1, "09:40:00"), { t: "test", u: 1, score: 58 },
+    at(1, "10:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "10:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: true },
+    at(1, "10:10:00"), { t: "test", u: 1, score: 45 }, at(1, "10:11:00"), { t: "typing", u: 1, pick: "best" },
+    at(1, "11:00:00"), { t: "dispute", by: 2, of: 1, goal: "typing" }, at(1, "11:01:00"), { t: "vote", by: 3, of: 1, goal: "typing", upheld: false },
+    at(1, "11:02:00"), { t: "probe", label: "contestação em aberto" },
+    at(4, "12:00:00"), { t: "probe", label: "72 h depois: empate mantém, sem punição" },
+  ]),
+
+  hand("desafio da semana: removido no meio da semana não bloqueia; quem entra depois de segunda joga a próxima", [
+    at(0, "09:00:00"), { t: "create", u: 1, items: ["coke"] }, at(0, "09:01:00"), { t: "join", u: 2 }, at(0, "09:02:00"), { t: "join", u: 3 },
+    ...[0, 1, 2, 3, 4].flatMap((n) => [...fullDay(n, 1), ...fullDay(n, 2, "11:00:00")]), // U3 sends nothing
+    at(2, "12:00:00"), { t: "join", u: 4 }, // joined on Wednesday: not in this week's challenge, never blocks it
+    at(4, "12:00:00"), { t: "probe", label: "sexta, antes da remoção", leaving: 3, how: "remove" },
+    at(4, "12:00:01"), { t: "remove", u: 3 }, { t: "probe", label: "sexta, depois da remoção" },
+    at(4, "12:01:00"), { t: "chest", u: 1, kind: "weekly" }, { t: "chest", u: 4, kind: "weekly" }, { t: "probe", label: "baú aberto; quem entrou na quarta não abre" },
+    ...[7, 8, 9, 10].flatMap((n) => [...fullDay(n, 1), ...fullDay(n, 2, "11:00:00"), ...fullDay(n, 4, "12:00:00")]),
+    at(11, "09:00:00"), { t: "probe", label: "semana seguinte: quem entrou na quarta conta" },
   ]),
 
   hand("tribunal: só prova de hoje ou de ontem; quem entrou depois não vota; empate em 72 h mantém", [

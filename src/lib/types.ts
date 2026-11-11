@@ -110,6 +110,8 @@ export interface DisputeResult {
   majority: number;
   closes_at: string;
   status: DisputeStatus;
+  /** When the verdict became final (the vote that reached the majority, or closes_at); null while open (0031). */
+  decided_at: string | null;
 }
 
 export interface DisputeVote {
@@ -130,6 +132,8 @@ export interface PaymentRow {
   received_by: string | null;
   received_name?: string | null;
   paid_at: string;
+  /** The extra Coca of an annulled "Nova tentativa" (0031), paid apart from the day's normal items. */
+  penalty?: boolean;
 }
 
 

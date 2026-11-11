@@ -20,7 +20,7 @@ function groupByDay(lines: DebtLine[], nameOf: Map<string, string>): DebtDay[] {
   for (const l of lines) {
     const d = days.get(l.day) ?? { day: l.day, label: formatDayPt(l.day), overdue: false, items: [] };
     d.overdue ||= l.overdue;
-    d.items.push({ item: l.item, receivedBy: l.payment ? receiverName(l.payment, nameOf) : null });
+    d.items.push({ item: l.item, penalty: !!l.penalty, receivedBy: l.payment ? receiverName(l.payment, nameOf) : null });
     days.set(l.day, d);
   }
   return [...days.values()];
@@ -30,7 +30,7 @@ export default async function DebtsPage() {
   const { supabase, me } = await requireMember();
   const today = spToday();
   const members = await getMembers(supabase);
-  const [{ inputs, paymentsBy, menus }, urls] = await Promise.all([
+  const [{ inputs, paymentsBy, menus, penaltiesBy }, urls] = await Promise.all([
     getLedgerInputs(supabase, members),
     signUrls(supabase, members.map((m) => m.avatar_path)),
   ]);
@@ -38,7 +38,7 @@ export default async function DebtsPage() {
 
   const rows = members
     .map((m) => {
-      const lines = debtLines(inputs.get(m.user_id)!, paymentsBy.get(m.user_id) ?? [], today, menus);
+      const lines = debtLines(inputs.get(m.user_id)!, paymentsBy.get(m.user_id) ?? [], today, menus, penaltiesBy.get(m.user_id) ?? []);
       // Open items first; paid ones stay visible as history inside the expansion.
       const days = groupByDay([...lines.filter((l) => !l.payment), ...lines.filter((l) => l.payment)], nameOf);
       return { m, days, sum: debtSummary(lines) };
@@ -114,6 +114,7 @@ export default async function DebtsPage() {
         ))}
       </ul>
       <p className="mt-4 text-sm text-muted">O dia de hoje só vira dívida depois das 23:59.</p>
+      <p className="mt-1 text-sm text-muted">Coca de punição: quando o grupo anula também a prova enviada com a nova tentativa da digitação, o dia deve 1 Coca a mais, já a partir do veredito.</p>
     </div>
   );
 }

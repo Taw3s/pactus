@@ -102,6 +102,15 @@ describe("ledger", () => {
     expect(debtSummary(lines)).toEqual({ counts: [["coke", 1], ["snack", 2]], total: 3, overdue: 3 });
   });
 
+  it("adds the penalty Coca of an annulled \"Nova tentativa\" apart from the day's menu (0031)", () => {
+    // 20 missed (coke + snack) and its special proof annulled too: one more Coca, paid on its own.
+    const lines = debtLines(base(), [{ day: "2026-10-20", item: "coke", received_by: "u2", paid_at: "2026-10-20T20:00:00Z", penalty: true }], "2026-10-21", [], ["2026-10-20"]);
+    expect(lines.map((l) => `${l.item}${l.penalty ? "+p" : ""}:${l.payment ? "paid" : "open"}`)).toEqual(["coke:open", "snack:open", "coke+p:paid"]);
+    // Owed even on a day that is not a debt (today, or a day off), from the verdict on.
+    expect(debtLines(base(), [], "2026-10-21", [], ["2026-10-21"]).filter((l) => l.penalty).map((l) => l.day)).toEqual(["2026-10-21"]);
+    expect(debtSummary(lines)).toEqual({ counts: [["coke", 1], ["snack", 1]], total: 2, overdue: 0 });
+  });
+
   it("debt in the current month is not overdue", () => {
     const lines = debtLines(base(), [], "2026-10-21");
     expect(lines.map((l) => l.day)).toEqual(["2026-10-20", "2026-10-20"]);

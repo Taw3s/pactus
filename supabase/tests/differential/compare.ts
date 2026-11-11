@@ -22,9 +22,13 @@ export interface Probe {
   day_off_changes: (DayOffChange & { user_id: string })[];
   debt_menus: { effective_from: string; items: string[] }[];
   checkins: { id: string; user_id: string; day: string; goal: "study" | "typing" | "reading" | "project"; minutes: number | null; pages: number | null; extra: boolean; retake_of: string | null; created_at: string; typing_test_id: string | null }[];
-  results: { checkin_id: string; status: "open" | "upheld" | "rejected"; yes: number; no: number; eligible: number }[];
-  payments: { debtor_id: string; day: string; item: string; received_by: string | null; received_name: string | null; paid_at: string }[];
-  typing: { id: string; user_id: string; day: string; score: number | null; wpm: number | null; accuracy: number | null; device: "pc" | "mobile"; minutes: number; finished_at: string | null }[];
+  results: { checkin_id: string; status: "open" | "upheld" | "rejected"; yes: number; no: number; eligible: number; decided_at: string | null }[];
+  payments: { debtor_id: string; day: string; item: string; received_by: string | null; received_name: string | null; paid_at: string; penalty: boolean }[];
+  /** typing_penalties (0031): the extra Coca of an annulled "Nova tentativa". */
+  penalties: { user_id: string; day: string }[];
+  /** my_typing_attempts() of each member (0031): what the Hoje screen gets from the server. */
+  attempts: { user_id: string; used: number; special_available: boolean; special_used: boolean }[];
+  typing: { id: string; user_id: string; day: string; score: number | null; wpm: number | null; accuracy: number | null; device: "pc" | "mobile"; minutes: number; started_at: string; finished_at: string | null; special: boolean }[];
   chests: { user_id: string; kind: "daily" | "weekly"; period: string }[];
   completed: { user_id: string; day: string }[];
   weekly: { user_id: string; done_days: number }[];
@@ -34,7 +38,7 @@ export interface Probe {
   votes: { dispute_id: string; voter_id: string | null }[];
   dispute_try: { user_id: string; checkin_id: string; out: string }[];
   vote_try: { user_id: string; dispute_id: string; out: string }[];
-  pay: { debtor: string; day: string; item: string; out: string }[];
+  pay: { debtor: string; day: string; item: string; penalty?: boolean; out: string }[];
   chest_try: { user_id: string; kind: "daily" | "weekly"; out: string }[];
   proof_try: { user_id: string; goal: "study" | "reading" | "project" | "extra" | "typing"; test_id?: string; out: string }[];
   ranking: { month: string; user_id: string; points: number }[];
@@ -56,6 +60,7 @@ export function tsView(p: Probe, userId: string) {
   const me = p.members.find((m) => m.user_id === userId)!;
   const today = spToday(new Date(p.now));
   const annulled = new Set(p.results.filter((r) => r.status === "upheld").map((r) => r.checkin_id));
+  const decidedAt = new Map(p.results.map((r) => [r.checkin_id, r.decided_at]));
   const menus: DebtMenu[] = p.debt_menus.map((m) => ({ effective_from: m.effective_from, items: m.items.filter(isDebtItem) }));
   // getLedgerInputs (src/lib/data.ts): completed days come from the completed_days view.
   const input: MemberLedgerInput = {
@@ -64,7 +69,8 @@ export function tsView(p: Probe, userId: string) {
     completedDays: new Set(p.completed.filter((c) => c.user_id === userId).map((c) => c.day)),
   };
   const payments = p.payments.filter((x) => x.debtor_id === userId && isDebtItem(x.item)) as unknown as Payment[];
-  const lines = debtLines(input, payments, today, menus);
+  const penaltyDays = p.penalties.filter((x) => x.user_id === userId).map((x) => x.day);
+  const lines = debtLines(input, payments, today, menus, penaltyDays);
 
   // Hoje (src/app/(app)/hoje/page.tsx): the latest proof of each goal decides its state.
   const mine = p.checkins.filter((c) => c.user_id === userId && c.day === today);
@@ -82,28 +88,35 @@ export function tsView(p: Probe, userId: string) {
   const weeklyOpen = p.weekly.length > 0 && p.weekly.every((r) => Number(r.done_days) >= WEEKLY_GOAL_DAYS) && me.joined_on <= monday;
 
   // Hoje typingToday: the tests that still score, and the one "Enviar resultado" would send.
-  const tests = p.typing.filter((t) => t.user_id === userId && t.day === today && t.finished_at && t.score !== null).map((t) => ({ ...t, finished_at: t.finished_at! }));
-  const judged = mine.filter((c) => c.goal === "typing" && !c.extra && annulled.has(c.id));
+  const tests = p.typing.filter((t) => t.user_id === userId && t.day === today && t.finished_at && t.score !== null);
+  const judged = mine.filter((c) => c.goal === "typing" && !c.extra && annulled.has(c.id)).map((c) => ({ ...c, decided_at: decidedAt.get(c.id) ?? null }));
   const scoring = new Set(scoringTypingTests(tests, judged).map((t) => t.id));
   const typingProof = latest("typing");
-  const condemned = typingProof && annulled.has(typingProof.id) ? typingProof.created_at : null;
-  const unsent = !typingProof || condemned ? unsentTypingTest(tests, mine.map((c) => c.typing_test_id), condemned) : null;
+  const verdictAt = typingProof && annulled.has(typingProof.id) ? (decidedAt.get(typingProof.id) ?? null) : null;
+  const unsent = !typingProof || verdictAt ? unsentTypingTest(tests, mine.map((c) => c.typing_test_id), verdictAt) : null;
+  // TypingGoal: a retake with the server's "Nova tentativa" has one attempt, otherwise what is left of the 3.
+  const attempts = p.attempts.find((a) => a.user_id === userId);
+  const typingLeft = attempts?.special_available ? 1 : Math.max(0, 3 - (attempts?.used ?? 0));
 
   const extras = mine.filter((c) => c.extra);
   const mainStudyValid = mine.some((c) => c.goal === "study" && !c.extra && !annulled.has(c.id));
 
-  return { me, today, input, menus, lines, state, dayComplete, goalsDone, monday, weeklyOpen, scoring, unsent, typingProof, extras, mainStudyValid, annulled };
+  return { me, today, input, menus, lines, state, dayComplete, goalsDone, monday, weeklyOpen, scoring, unsent, typingProof, extras, mainStudyValid, annulled, attempts, typingLeft };
 }
 
 /** getMonthScores (src/lib/data.ts) over the rows of a probe: points per person and month. */
 export function tsRanking(p: Probe): Map<string, number> {
   const annulled = new Set(p.results.filter((r) => r.status === "upheld").map((r) => r.checkin_id));
+  const decidedAt = new Map(p.results.map((r) => [r.checkin_id, r.decided_at]));
   const months = new Set([...p.checkins.map((c) => monthKey(c.day)), ...p.completed.map((c) => monthKey(c.day)), ...p.ranking.map((r) => r.month)]);
   const out = new Map<string, number>();
   for (const month of months) {
     const checkins = p.checkins.filter((c) => monthKey(c.day) === month);
-    const typing = p.typing.filter((t) => monthKey(t.day) === month && t.score !== null).map((t) => ({ ...t, score: Number(t.score), finished_at: t.finished_at! }));
-    const typingBest = typingBestByDay(typing, checkins.filter((c) => c.goal === "typing" && annulled.has(c.id)));
+    const typing = p.typing.filter((t) => monthKey(t.day) === month && t.score !== null).map((t) => ({ ...t, score: Number(t.score) }));
+    const typingBest = typingBestByDay(
+      typing,
+      checkins.filter((c) => c.goal === "typing" && annulled.has(c.id)).map((c) => ({ ...c, decided_at: decidedAt.get(c.id) ?? null })),
+    );
     const scores = scoreMonth(
       p.members.map((m) => m.user_id),
       checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),
@@ -148,20 +161,21 @@ export function compareProbe(p: Probe, name: (userId: string) => string): Mismat
 
     // Debt: the days and items the app lists against what the payments trigger accepts.
     if (!solo) {
-      const db = new Map(p.pay.filter((x) => x.debtor === m.user_id).map((x) => [`${x.day}|${x.item}`, x.out === "ok" ? "open" : x.out === "paid" ? "paid" : `refused (${x.out})`]));
-      const ts = new Map(v.lines.map((l) => [`${l.day}|${l.item}`, l.payment ? "paid" : "open"]));
+      const db = new Map(p.pay.filter((x) => x.debtor === m.user_id).map((x) => [`${x.day}|${x.item}${x.penalty ? "|penalty" : ""}`, x.out === "ok" ? "open" : x.out === "paid" ? "paid" : `refused (${x.out})`]));
+      const ts = new Map(v.lines.map((l) => [`${l.day}|${l.item}${l.penalty ? "|penalty" : ""}`, l.payment ? "paid" : "open"]));
       for (const k of new Set([...db.keys(), ...ts.keys()])) {
         if ((db.get(k) ?? "not owed") !== (ts.get(k) ?? "not owed")) bad("debt", `${who} ${k}`, db.get(k) ?? "not owed", ts.get(k) ?? "not owed");
       }
       // A payment on file the app no longer lists (its day stopped being a debt).
       for (const x of p.payments.filter((x) => x.debtor_id === m.user_id)) {
-        if (!ts.has(`${x.day}|${x.item}`)) bad("payment-without-debt", `${who} ${x.day}|${x.item}`, "payment on file", "no debt line");
+        if (!ts.has(`${x.day}|${x.item}${x.penalty ? "|penalty" : ""}`)) bad("payment-without-debt", `${who} ${x.day}|${x.item}`, "payment on file", "no debt line");
       }
 
       // Streak, rebuilt from the database's own answers: a payable day breaks it, a completed working day adds one.
       let streak = 0;
       for (let d = today; d >= m.joined_on; d = addDays(d, -1)) {
-        if ([...db.keys()].some((k) => k.startsWith(`${d}|`))) break;
+        // A penalty Coca is owed apart from the day: it neither breaks nor adds (the day is judged on its own).
+        if ([...db.keys()].some((k) => k.startsWith(`${d}|`) && !k.endsWith("|penalty"))) break;
         if (completed.has(`${m.user_id}|${d}`) && offOn.get(`${m.user_id}|${d}`) !== dowOf.get(d)) streak++;
       }
       const ts2 = currentStreak(v.input, today);
@@ -212,12 +226,16 @@ export function compareProbe(p: Probe, name: (userId: string) => string): Mismat
         if (ok !== ts) bad("new-proof", `${who} ${today} ${t.goal}`, t.out, ts ? "form offered" : "already sent");
       }
     }
-    // Condemned typing proof: the guide promises a new proof until 23:59. With the 3 attempts spent and no
-    // result the screen can send, there is no way left (start_typing_test refuses a 4th test).
-    if (v.state("typing") === "annulled" && !v.unsent && p.typing.filter((t) => t.user_id === m.user_id && t.day === today).length >= 3) {
+    // Condemned typing proof: the guide promises a new proof until 23:59. With the 3 attempts spent, the server opens
+    // the single "Nova tentativa" (0031); only after that one is also annulled is there no way left (and a penalty).
+    if (v.state("typing") === "annulled" && !v.unsent && v.typingLeft === 0 && !v.attempts?.special_used) {
       const taken = p.proof_try.some((x) => x.user_id === m.user_id && x.goal === "typing" && x.out === "ok");
       bad("typing-retake-no-way", `${who} ${today}`, taken ? "would take an older test of today" : "takes no test", "no attempt left, nothing to send");
     }
+    // The penalty exists exactly when a proof sent with the special test was annulled.
+    const penaltyExpected = p.checkins.filter((c) => c.user_id === m.user_id && c.typing_test_id && p.typing.find((t) => t.id === c.typing_test_id)?.special && v.annulled.has(c.id)).map((c) => c.day).sort();
+    const penaltyDb = p.penalties.filter((x) => x.user_id === m.user_id).map((x) => x.day).sort();
+    if (penaltyExpected.join() !== penaltyDb.join()) bad("typing-penalty", who, penaltyDb.join() || "none", penaltyExpected.join() || "none");
     // The result the screen offers to send must be one the database takes.
     if (v.unsent && p.proof_try.find((x) => x.test_id === v.unsent!.id)?.out !== "ok") bad("typing-unsent", `${who} ${today}`, "refused", "offered");
   }
@@ -232,8 +250,10 @@ export function compareProbe(p: Probe, name: (userId: string) => string): Mismat
   for (const c of p.checkins.filter((c) => c.goal === "typing" && c.typing_test_id)) {
     const annulled = p.results.some((r) => r.checkin_id === c.id && r.status === "upheld");
     if (annulled) continue;
-    const tests = p.typing.filter((t) => t.user_id === c.user_id && t.day === c.day && t.score !== null).map((t) => ({ ...t, score: Number(t.score), finished_at: t.finished_at! }));
-    const judged = p.checkins.filter((x) => x.user_id === c.user_id && x.day === c.day && x.goal === "typing" && p.results.some((r) => r.checkin_id === x.id && r.status === "upheld"));
+    const tests = p.typing.filter((t) => t.user_id === c.user_id && t.day === c.day && t.score !== null).map((t) => ({ ...t, score: Number(t.score) }));
+    const judged = p.checkins
+      .filter((x) => x.user_id === c.user_id && x.day === c.day && x.goal === "typing" && p.results.some((r) => r.checkin_id === x.id && r.status === "upheld"))
+      .map((x) => ({ ...x, decided_at: p.results.find((r) => r.checkin_id === x.id)?.decided_at ?? null }));
     if (!typingBestByDay(tests, judged).has(`${c.user_id}|${c.day}`)) bad("typing-proof-scores-zero", `${name(c.user_id)} ${c.day}`, "proof stands (day complete)", "0 typing points");
   }
   return out;
@@ -284,7 +304,7 @@ export function compareLeave(before: Probe, after: Probe, leaver: string, how: "
   for (const m of after.members) {
     const a = tsView(before, m.user_id);
     const b = tsView(after, m.user_id);
-    const key = (v: typeof a) => v.lines.map((l) => `${l.day}|${l.item}|${l.payment ? "paid" : "open"}`).join(",");
+    const key = (v: typeof a) => v.lines.map((l) => `${l.day}|${l.item}${l.penalty ? "|penalty" : ""}|${l.payment ? "paid" : "open"}`).join(",");
     if (key(a) !== key(b)) bad("leave-others-debt", name(m.user_id), key(b), key(a));
     if (currentStreak(a.input, a.today) !== currentStreak(b.input, b.today)) bad("leave-others-streak", name(m.user_id), currentStreak(b.input, b.today), currentStreak(a.input, a.today));
     for (const [k, pts] of pointsBefore) if (k.endsWith(`|${m.user_id}`) && (pointsAfter.get(k) ?? 0) !== pts) bad("leave-others-points", `${name(m.user_id)} ${k.slice(0, 7)}`, pointsAfter.get(k), pts);

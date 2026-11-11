@@ -82,11 +82,11 @@ export interface FinishedTyping {
 /**
  * A test of today the server already confirmed but no proof points to: the proof failed or its answer
  * was lost after the result was saved. It can still send the goal, without another test. The best one
- * counts; tests already used by a proof are out, and after a condemned proof only tests finished later
- * (the tribunal judged the ones before it, as in `typingBestByDay`).
+ * counts; tests already used by a proof are out, and after an annulled proof only tests started after
+ * the verdict (the database refuses the others, 0031).
  */
-export function unsentTypingTest<T extends FinishedTyping>(tests: T[], usedIds: (string | null)[], condemnedAt: string | null): T | null {
+export function unsentTypingTest<T extends FinishedTyping & { started_at: string }>(tests: T[], usedIds: (string | null)[], verdictAt: string | null): T | null {
   const used = new Set(usedIds.filter(Boolean));
-  const open = tests.filter((t) => t.finished_at && t.score !== null && !used.has(t.id) && (!condemnedAt || Date.parse(t.finished_at) > Date.parse(condemnedAt)));
+  const open = tests.filter((t) => t.finished_at && t.score !== null && !used.has(t.id) && (!verdictAt || Date.parse(t.started_at) > Date.parse(verdictAt)));
   return open.sort((a, b) => Number(b.score) - Number(a.score))[0] ?? null;
 }

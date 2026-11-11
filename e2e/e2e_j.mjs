@@ -62,7 +62,7 @@ await step("the retake counts: typing is done again and the tribunal links to th
   await davi.getByText("Digitação (refeita)").waitFor();
 });
 
-await step("after the retake, Hoje and the Feed show the retake's best test, as the ranking and the proof page score it", async () => {
+await step("after the retake, Hoje, the Feed and the proof page show the retake's own test (frozen), never the judged one", async () => {
   // The test judged with the condemned proof becomes the day's highest: it must not come back as the day's best.
   sql(`update public.typing_tests t set wpm = 199, accuracy = 1, score = 199 from public.checkins c
        where c.photo_path = '${firstTyping}' and t.id = c.typing_test_id`);

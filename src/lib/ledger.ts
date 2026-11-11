@@ -40,6 +40,8 @@ export interface Payment {
   received_by: string | null;
   received_name?: string | null;
   paid_at: string;
+  /** Pays a penalty line (0031), not the day's normal item. */
+  penalty?: boolean;
 }
 
 export const DEFAULT_DAY_OFF = 0; // Sunday
@@ -83,19 +85,30 @@ export interface DebtLine {
   item: DebtItem;
   overdue: boolean; // missed in a previous month and still unpaid
   payment?: Payment;
+  /** The extra Coca owed when the tribunal also annuls a proof sent with the "Nova tentativa" (0031). */
+  penalty?: boolean;
 }
 
-/** The items of the group's menu for each missed day (1 Coca + 1 salgado by default); each settled independently. */
-export function debtLines(input: MemberLedgerInput, payments: Payment[], today: ISODate, menus: DebtMenu[] = []): DebtLine[] {
-  const paid = new Map(payments.map((p) => [`${p.day}|${p.item}`, p]));
+/**
+ * The items of the group's menu for each missed day (1 Coca + 1 salgado by default); each settled independently.
+ * `penaltyDays`: days whose "Nova tentativa" proof the tribunal annulled (typing_penalties, 0031). Each adds one
+ * Coca on top of whatever the day owes, from the final verdict on (payments_before_insert takes it right away).
+ */
+export function debtLines(input: MemberLedgerInput, payments: Payment[], today: ISODate, menus: DebtMenu[] = [], penaltyDays: ISODate[] = []): DebtLine[] {
+  const key = (day: ISODate, item: DebtItem, penalty: boolean) => `${day}|${item}|${penalty ? "p" : ""}`;
+  const paid = new Map(payments.map((p) => [key(p.day, p.item, !!p.penalty), p]));
   const lines: DebtLine[] = [];
   for (const day of missedDays(input, today)) {
     for (const item of itemsOn(menus, day)) {
-      const payment = paid.get(`${day}|${item}`);
+      const payment = paid.get(key(day, item, false));
       lines.push({ day, item, payment, overdue: !payment && monthKey(day) < monthKey(today) });
     }
   }
-  return lines;
+  for (const day of [...new Set(penaltyDays)].sort()) {
+    const payment = paid.get(key(day, "coke", true));
+    lines.push({ day, item: "coke", payment, overdue: !payment && monthKey(day) < monthKey(today), penalty: true });
+  }
+  return lines.sort((a, b) => a.day.localeCompare(b.day) || Number(!!a.penalty) - Number(!!b.penalty));
 }
 
 /** Open items per kind (in catalog order), their total and how many are overdue. */

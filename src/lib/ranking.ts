@@ -98,32 +98,35 @@ export function scoreMonth(
 }
 
 /**
- * The typing tests that can still score: a typing proof the tribunal annulled showed the day's best test at
- * that moment, so every test finished up to the condemned proof was judged and does not count after a retake.
- * The same cut is used by the ranking, Hoje, the Feed, the proof page and the result sent again (P100-1).
+ * The typing tests that can still score. After the tribunal annuls a typing proof, only a test started after the
+ * final verdict may serve as the new proof (rule approved on 10/11/2026, checkins_typing_test in 0031), and the same
+ * cut decides what scores: every test started up to the last verdict that annulled a typing proof of that person and
+ * day is out. Used by the ranking, Hoje and the result sent again (P100-1).
  */
-export function scoringTypingTests<T extends { user_id: string; day: ISODate; finished_at: string }>(
+export function scoringTypingTests<T extends { user_id: string; day: ISODate; started_at: string }>(
   tests: T[],
-  condemned: { user_id: string; day: ISODate; created_at: string }[],
+  annulled: { user_id: string; day: ISODate; decided_at: string | null }[],
 ): T[] {
-  const cut = new Map<string, string>();
-  for (const c of condemned) {
+  const cut = new Map<string, number>();
+  for (const c of annulled) {
+    if (!c.decided_at) continue;
     const k = `${c.user_id}|${c.day}`;
-    if (!cut.has(k) || c.created_at > cut.get(k)!) cut.set(k, c.created_at);
+    const at = Date.parse(c.decided_at);
+    if (!cut.has(k) || at > cut.get(k)!) cut.set(k, at);
   }
   return tests.filter((t) => {
     const until = cut.get(`${t.user_id}|${t.day}`);
-    return !until || t.finished_at > until;
+    return until === undefined || Date.parse(t.started_at) > until;
   });
 }
 
 /** Best typing score per "user|day", among the tests that can still score (`scoringTypingTests`). */
 export function typingBestByDay(
-  tests: { user_id: string; day: ISODate; score: number; finished_at: string }[],
-  condemned: { user_id: string; day: ISODate; created_at: string }[],
+  tests: { user_id: string; day: ISODate; score: number; started_at: string }[],
+  annulled: { user_id: string; day: ISODate; decided_at: string | null }[],
 ): Map<string, number> {
   const best = new Map<string, number>();
-  for (const t of scoringTypingTests(tests, condemned)) {
+  for (const t of scoringTypingTests(tests, annulled)) {
     const k = `${t.user_id}|${t.day}`;
     best.set(k, Math.max(best.get(k) ?? 0, Number(t.score)));
   }
