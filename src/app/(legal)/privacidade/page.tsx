@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTACT_EMAIL, CONTROLLER_NAME, LEGAL_UPDATED } from "@/lib/legal";
+import { CONTACT_EMAIL, CONTROLLER_NAME, LEGAL_UPDATED, PUBLIC_NAME } from "@/lib/legal";
 import { KEEP_FULL_DAYS } from "@/lib/media-retention";
 
 export const metadata: Metadata = { title: "Política de privacidade · Pacto" };
@@ -8,14 +8,16 @@ export const metadata: Metadata = { title: "Política de privacidade · Pacto" }
 // Written from what the code actually stores and sends (keep in sync when that changes; see CLAUDE.md).
 export default function PrivacyPage() {
   const contact = CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <b>(e-mail de contato ainda não definido)</b>;
+  const controller = CONTROLLER_NAME || <b>(identidade do controlador ainda não informada)</b>;
   return (
     <>
       <h1>Política de privacidade</h1>
       <p className="text-sm text-muted">Atualizada em {LEGAL_UPDATED}.</p>
       <p>
         O Pacto é um app para grupos de amigos cumprirem metas diárias juntos. Esta página explica quais dados o app guarda, quem vê, com quem
-        eles são compartilhados e como você apaga tudo. Responsável pelos dados (controlador, na LGPD): {CONTROLLER_NAME}, que também é o
-        encarregado pelo tratamento de dados (LGPD, art. 41). Contato: {contact}.
+        eles são compartilhados e como você apaga tudo. {PUBLIC_NAME} é só o nome público do projeto, não uma empresa. Responsável pelos dados
+        (controlador, na LGPD): {controller}, que também é o encarregado pelo tratamento de dados (LGPD, art. 41). Contato para assuntos de
+        privacidade: {contact}.
       </p>
 
       <h2>O que o Pacto guarda</h2>
@@ -42,6 +44,10 @@ export default function PrivacyPage() {
         </li>
         <li>
           <b>Avisos:</b> se você ativar os avisos no aparelho, o endereço que o navegador cria para recebê-los.
+        </li>
+        <li>
+          <b>Feedback do beta:</b> se você usar o formulário de feedback, o app guarda só o dia e a hora de cada envio ligados à sua conta,
+          para limitar os envios (um a cada 30 segundos e até 3 em 24 horas). O texto da mensagem não fica guardado no app.
         </li>
       </ul>
       <p>
@@ -96,6 +102,12 @@ export default function PrivacyPage() {
           envios saem por servidores em São Paulo.
         </li>
         <li>
+          <b>Resend (feedback):</b> quando você manda feedback pelo formulário, o servidor do Pacto entrega por e-mail à equipe do projeto o
+          assunto escolhido, o texto que você escreveu e a data. Não vão junto o seu e-mail, o seu nome, o seu perfil nem o identificador da
+          sua conta, e o seu aplicativo de e-mail não é aberto. Só aparece o que você mesmo escrever no texto. O Resend guarda registros dos
+          envios conforme a política dele, e a mensagem fica na caixa de e-mail da equipe enquanto for útil para responder ou corrigir o app.
+        </li>
+        <li>
           <b>GitHub (cópia de segurança):</b> uma vez por dia, uma cópia do banco de dados (contas, perfis, provas sem as fotos, testes, dívidas,
           tribunal) é cifrada antes de sair e guardada como arquivo privado no GitHub, que não consegue lê-la. Ela só serve para recuperar o
           app se o banco for perdido.
@@ -107,6 +119,10 @@ export default function PrivacyPage() {
         <li>Para o app funcionar como você pediu ao entrar num grupo: execução do serviço (LGPD, art. 7º, V).</li>
         <li>Para os avisos no aparelho: o seu consentimento, que você retira desativando os avisos.</li>
         <li>Para a segurança do app e para responder a problemas: legítimo interesse (art. 7º, IX).</li>
+        <li>
+          Para receber o feedback que você decide mandar e limitar os envios contra abuso: legítimo interesse (art. 7º, IX, e art. 10), só com
+          a data e a hora de cada envio.
+        </li>
         <li>
           Para saber se os grupos continuam usando o app (as datas de entrada e saída e as semanas com prova, descritas abaixo): legítimo
           interesse (art. 7º, IX, e art. 10), só com os dados estritamente necessários para isso.
@@ -140,6 +156,10 @@ export default function PrivacyPage() {
           conta, como no item acima.
         </li>
         <li>
+          As datas dos envios de <b>feedback</b> são apagadas quando a sua conta passa 30 dias sem enviar nada, ou na hora, se você excluir a
+          conta.
+        </li>
+        <li>
           As <b>cópias de segurança</b> do banco são apagadas 30 dias depois de feitas. Por isso, o que você apaga ou leva ao sair ainda pode
           existir numa cópia por até 30 dias, cifrada e sem uso, até ela expirar. Se uma cópia precisar ser usada para recuperar o app, o
           grupo é avisado, e quem tiver saído ou excluído a conta depois da data da cópia pode pedir a exclusão de novo pelo contato abaixo.
@@ -158,7 +178,8 @@ export default function PrivacyPage() {
         <li>retirar o consentimento dos avisos (em Configurações ou no seu aparelho) e saber o que muda se não der o consentimento: só deixa de receber avisos.</li>
       </ul>
       <p>
-        Para o que não está em Configurações, escreva para {contact}. Se não for atendido, você pode reclamar à ANPD (gov.br/anpd) ou a um
+        Para o que não está em Configurações, escreva para {contact}. Se você tem conta, também pode usar o formulário de{" "}
+        <Link href="/feedback">feedback</Link> com o assunto “Privacidade e dados” (escreva no texto como prefere ser respondido). Se não for atendido, você pode reclamar à ANPD (gov.br/anpd) ou a um
         órgão de defesa do consumidor, como o Procon.
       </p>
 

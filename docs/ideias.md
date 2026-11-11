@@ -209,3 +209,25 @@ Preparado no repositório privado, para abrir num repositório público **novo**
 - [x] Commits do repositório novo com o e-mail `noreply` do GitHub, não o pessoal.
 - **Q5 = A** (decisão do dono em 05/11): o desenvolvimento continua neste repositório privado (Vercel, CI e PRs sem mudança). O público é uma cópia: criado pelo template do GitHub ("Template repository" ligado só durante a criação; o repositório gerado começa com um commit, sem o histórico) e atualizado de tempos em tempos por um PR de sincronização no próprio `Taw3s/pacto` (um commit com os arquivos do `main` privado, sem o histórico). Repetir o template não serve para atualizar: ele cria outro repositório. Antes de cada atualização, conferir que nada de nomes do beta, números de retenção ou e-mail pessoal entrou nos arquivos.
 
+
+
+## Integração do pacote de handoff (11/11/2026, branch `integrar-handoff-pactus`)
+
+Feito neste branch: regras aprovadas de digitação (0031), feedback do beta (0032), textos legais. **Não integrado** por falta dos
+arquivos do snapshot (o ZIP não chegou ao `handoff-docs`):
+
+- Área Aprender (`/aprender`, aulas, desafios, playlists, progresso por conta): precisa de `src/app/(app)/aprender/**`, dos componentes
+  e materiais das aulas, e da lista de vídeos das playlists. Nada foi inventado.
+- Playground (prévia HTML/CSS, console JS, runtimes locais): precisa de `public/local-runtimes/**`, `public/toolchains/**`,
+  `public/workers/**`, `src/workers/**` e das licenças de cada runtime.
+- Revisão de segurança do snapshot (middleware/CSP, origem das mutações, Sentry, Web Push): precisa de `src/middleware.ts`,
+  `src/lib/supabase/middleware.ts`, `src/lib/request-origin.ts`, `src/lib/sentry.ts`, `src/lib/push.ts`, `next.config.ts` e dos
+  testes correspondentes do snapshot, para comparar com o `main`.
+
+Pendências do dono antes de produção: identidade real em `NEXT_PUBLIC_CONTROLLER_NAME`; `NEXT_PUBLIC_CONTACT_EMAIL` com um endereço
+institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031 e
+0032 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
+
+Decisão a confirmar: com a regra 1, os **pontos** de digitação de um dia com prova anulada passam a contar só testes iniciados depois do
+veredito (antes: depois da prova condenada). Escolhi alinhar ao que pode virar prova; se o dono preferir o corte antigo, muda só
+`scoringTypingTests` e o `diff.ranking`.
