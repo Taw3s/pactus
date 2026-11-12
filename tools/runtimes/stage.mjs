@@ -1,4 +1,4 @@
-// Copies the local runtimes of Aprender (Bash, Python, SQL, Java) from their npm packages into public/, and refuses
+// Copies the local runtimes of Aprender (Bash, Python, SQL, Java and the WASM-OJ runner) from their npm packages into public/, and refuses
 // any file whose SHA-256 differs from the one checked on 12/11/2026 against the published package. The binaries are
 // not kept in git: they come from the exact versions pinned in package.json. Runs on postinstall and before build.
 import { createHash } from "node:crypto";
@@ -23,6 +23,18 @@ const FILES = [
   [pkg("@wasm-oj/toolchain-java", "assets/java-teavm-0.13.1.compile-classlib.bin"), "toolchains/java-teavm-0.13.1.compile-classlib.bin", "738a82b7d7e7ff8d98b07bb076785da7035847a166afb8446fd150c4efce6103"],
   [pkg("@wasm-oj/toolchain-java", "assets/java-teavm-0.13.1.compiler.wasm"), "toolchains/java-teavm-0.13.1.compiler.wasm", "8c37bce1c6fceeaffeffe93e10834309b67c8b6fb58c6f8a24547afe8be67f5d"],
   [pkg("@wasm-oj/toolchain-java", "assets/java-teavm-0.13.1.runtime-classlib.bin"), "toolchains/java-teavm-0.13.1.runtime-classlib.bin", "0ed234b66cdde19cb29e6c2865a3636d792d3cf72f102e73a7b3fdede80b79e6"],
+  // Files the WASM-OJ runner loads from a URL it builds at run time, which webpack cannot see: served from
+  // public/wasm-oj/ and reached through the rewrite in next.config.ts (WASM_OJ_ASSETS there must list the same names).
+  ...[
+    ["runtime-core_bg-CKk6CPFH.wasm", "077aa936a3382a242eee7222fc17369769cb5ad265303d730ffc45ee192367e9"],
+    ["wasmer_js_bg-lccPpAdN.wasm", "49a6646209f5ab5e7c737eac33407d87d9a9959ac83e5ecaaab9261b2323589e"],
+    ["java-stage.worker-COWR2SIP.js", "e24e88de34b96a39b39c71f5dc1bf06a8763bae9f6a4e7e387a1d0212116ad5e"],
+    ["index-CMYYN-aK.mjs", "d5e0424d9de8173c0c7bc6a6b704aecde620d3f424050e0e6a079d863a44d58b"],
+    ["interactive-side.worker-pP6UC6gL.js", "2d046ee80b70df36e09935fd3998b0c1beee07f7f36927f8df5cafc4bd025fcf"],
+    ["wasmer-thread.worker-DKlJE3cb.js", "301e164851ca743ce00bc9e8e33d7a616f9349d1c87c6b86766520d8433a3b7c"],
+    ["compiler.worker-CD4QCBe0.js", "c5c12725abf767d59178b771e5d3c5e151c45ed991dd511228fa3fe8a9d06069"],
+    ["runner.worker-BEbZIYKj.js", "cff064f8a58522b67cd5c91bb43c5d14466d36e39117fac352192f31eca52a44"],
+  ].map(([file, hash]) => [pkg("@wasm-oj/browser", `dist/assets/${file}`), `wasm-oj/${file}`, hash]),
 ];
 
 const sha = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");

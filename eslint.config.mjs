@@ -22,6 +22,7 @@ const eslintConfig = [
       "tools/video/public/**",
       "public/local-runtimes/**",
       "public/toolchains/**",
+      "public/wasm-oj/**",
     ],
   },
 ];

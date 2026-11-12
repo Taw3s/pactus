@@ -47,3 +47,4 @@ next-env.d.ts
 /public/local-runtimes/python/
 /public/local-runtimes/sql/
 /public/toolchains/
+/public/wasm-oj/

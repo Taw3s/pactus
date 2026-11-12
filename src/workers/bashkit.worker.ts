@@ -1,0 +1,31 @@
+import { Bash, initBashkit } from "@everruns/bashkit-wasm";
+import { lockdownWorker } from "@/lib/worker-lockdown";
+
+const workerScope = self as unknown as {
+  onmessage: ((event: MessageEvent<{ code?: string }>) => void) | null;
+  postMessage: (message: unknown) => void;
+};
+
+workerScope.onmessage = async (event: MessageEvent<{ code?: string }>) => {
+  try {
+    await initBashkit("/local-runtimes/bash/bashkit_wasm_bg.wasm");
+    // The interpreter is loaded: remove networking, storage and nested workers before running the script.
+    const left = lockdownWorker(self);
+    if (left.length) throw new Error(`Isolamento incompleto (${left.join(", ")}); o script não foi executado.`);
+    const shell = new Bash({
+      profile: "hardened",
+      timeoutMs: 5000,
+      maxCommands: 1500,
+      maxLoopIterations: 1000,
+      maxMemory: 16 * 1024 * 1024,
+    });
+    const result = await shell.execute(String(event.data?.code ?? ""), { capture: 12000 });
+    if (result.stdout) workerScope.postMessage({ kind: "log", text: result.stdout });
+    if (result.stderr) workerScope.postMessage({ kind: "error", text: result.stderr });
+    workerScope.postMessage({ kind: "done", failed: !result.success });
+  } catch (error) {
+    const detail = error instanceof Error ? error.stack ?? error.message : String(error);
+    workerScope.postMessage({ kind: "error", text: detail });
+    workerScope.postMessage({ kind: "done", failed: true });
+  }
+};
