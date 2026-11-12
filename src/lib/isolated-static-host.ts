@@ -13,6 +13,11 @@ const ISOLATED_STATIC_PREFIXES = [
   "/_next/static/",
 ];
 
+export function isPactusAppHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/\.$/, "");
+  return normalized === "pactus.dev.br" || normalized.endsWith(".pactus.dev.br");
+}
+
 export function isIsolatedStaticHost(
   requestHost: string,
   configuredOrigin: string | undefined,
@@ -28,9 +33,11 @@ export function isIsolatedStaticHost(
       && ["localhost", "127.0.0.1", "[::1]"].includes(isolated.hostname);
     if (isolated.protocol !== "https:" && !localDevelopment) return false;
     const appHost = siteUrl ? new URL(siteUrl).host.toLowerCase() : "";
-    const canonicalAppHosts = new Set(["pactus.dev.br", "www.pactus.dev.br"]);
+    const appHostname = siteUrl ? new URL(siteUrl).hostname.toLowerCase() : "";
+    const isolatedHostname = isolated.hostname.toLowerCase();
     const host = isolated.host.toLowerCase();
-    if (host === appHost || canonicalAppHosts.has(isolated.hostname.toLowerCase())) return false;
+    if (host === appHost || isolatedHostname === appHostname || isolatedHostname.endsWith(`.${appHostname}`)
+      || isPactusAppHostname(isolatedHostname)) return false;
     return requestHost.toLowerCase() === host;
   } catch {
     return false;

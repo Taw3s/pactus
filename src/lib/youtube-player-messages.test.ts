@@ -14,6 +14,7 @@ describe("isolated YouTube player boundaries", () => {
   it("accepts a dedicated HTTPS hostname and refuses the app host, paths and non-HTTPS production URLs", () => {
     expect(resolveIsolatedHostOrigin("https://player.pactus.example", "https://www.pactus.dev.br")).toBe("https://player.pactus.example");
     expect(resolveIsolatedHostOrigin("https://www.pactus.dev.br", "https://www.pactus.dev.br")).toBeNull();
+    expect(resolveIsolatedHostOrigin("https://runner.pactus.dev.br", "https://www.pactus.dev.br")).toBeNull();
     expect(resolveIsolatedHostOrigin("https://player.pactus.example/player", "https://www.pactus.dev.br")).toBeNull();
     expect(resolveIsolatedHostOrigin("http://player.pactus.example", "https://www.pactus.dev.br")).toBeNull();
     expect(resolveIsolatedHostOrigin("ftp://localhost", "http://localhost:3000", true)).toBeNull();
@@ -41,6 +42,7 @@ describe("isolated YouTube player boundaries", () => {
     expect(url.searchParams.get("start")).toBe("86400");
     expect(() => buildIsolatedYouTubePlayerUrl("http://localhost", playlistId, "https://pactus.dev.br", 0, 0)).not.toThrow();
     expect(() => buildIsolatedYouTubePlayerUrl("ftp://localhost", playlistId, "https://pactus.dev.br", 0, 0)).toThrow();
+    expect(() => buildIsolatedYouTubePlayerUrl("https://runner.pactus.dev.br", playlistId, "https://pactus.dev.br", 0, 0)).toThrow();
   });
 
   it("keeps the safe fallback as a direct no-cookie embed without the IFrame API", () => {

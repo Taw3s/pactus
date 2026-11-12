@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { learningIsolationHeaders } from "@/lib/learning-isolation";
-import { isAllowedIsolatedStaticPath, isIsolatedStaticHost } from "@/lib/isolated-static-host";
+import { isAllowedIsolatedStaticPath, isIsolatedStaticHost, isPactusAppHostname } from "@/lib/isolated-static-host";
 
 const SESSION_FREE_STATIC_FILES = new Set([
   "/youtube-player.html",
@@ -15,6 +15,7 @@ const SESSION_FREE_STATIC_FILES = new Set([
   "/manifest.webmanifest",
 ]);
 const SESSION_FREE_STATIC_PREFIXES = ["/_next/static/", "/icons/", "/workers/", "/local-runtimes/", "/toolchains/", "/wasm-oj/"];
+const RUNNER_ENTRY_FILES = new Set(["/playground-runner.html", "/playground-runner.js"]);
 
 function isSessionFreeStaticAsset(pathname: string): boolean {
   return SESSION_FREE_STATIC_FILES.has(pathname)
@@ -33,6 +34,10 @@ export async function middleware(request: NextRequest) {
     return isAllowedIsolatedStaticPath(pathname)
       ? NextResponse.next({ request })
       : new NextResponse(null, { status: 404 });
+  }
+  // The runner must never execute on a Pactus hostname, including when its configured origin is mis-set to a subdomain.
+  if (RUNNER_ENTRY_FILES.has(pathname) && isPactusAppHostname(request.nextUrl.hostname)) {
+    return new NextResponse(null, { status: 404 });
   }
   if (pathname.startsWith("/_next/image") || isSessionFreeStaticAsset(pathname)) return NextResponse.next({ request });
 

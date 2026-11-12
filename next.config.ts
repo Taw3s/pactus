@@ -13,6 +13,11 @@ const WASM_OJ_ASSETS = [
   "compiler.worker-CD4QCBe0.js",
   "runner.worker-BEbZIYKj.js",
 ];
+const APP_FRAME_ANCESTORS = [
+  "https://www.pactus.dev.br",
+  "https://pactus.dev.br",
+  ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:*", "http://127.0.0.1:*"]),
+].join(" ");
 
 const nextConfig: NextConfig = {
   async rewrites() {
@@ -34,7 +39,7 @@ const nextConfig: NextConfig = {
         // This public video player is embedded only by the canonical app domains.
         source: "/youtube-player.html",
         headers: [
-          { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://*.gstatic.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; img-src data: https://*.ytimg.com https://*.googleusercontent.com https://*.youtube.com; media-src blob: https://*.googlevideo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://www.pactus.dev.br https://pactus.dev.br http://localhost:* http://127.0.0.1:*" },
+          { key: "Content-Security-Policy", value: `default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://*.gstatic.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; img-src data: https://*.ytimg.com https://*.googleusercontent.com https://*.youtube.com; media-src blob: https://*.googlevideo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${APP_FRAME_ANCESTORS}` },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "no-referrer" },
         ],
@@ -43,7 +48,7 @@ const nextConfig: NextConfig = {
         // Runs on the isolated static hostname. Authenticated app routes are denied by middleware there.
         source: "/playground-runner.html",
         headers: [
-          { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://www.pactus.dev.br https://pactus.dev.br http://localhost:* http://127.0.0.1:*" },
+          { key: "Content-Security-Policy", value: `default-src 'none'; script-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${APP_FRAME_ANCESTORS}` },
           { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "X-Content-Type-Options", value: "nosniff" },

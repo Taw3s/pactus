@@ -5,7 +5,7 @@ O player do YouTube e os interpretadores Python, SQL e Bash devem usar uma orige
 ## Configuração na Vercel
 
 1. Adicione um segundo domínio ao mesmo projeto Vercel do Pacto, por exemplo um domínio Vercel independente como https://pactus-isolated.vercel.app. A origem do Pacto é https://www.pactus.dev.br.
-2. Use um domínio registrável separado do Pacto. Não use subdomínio de pactus.dev.br e não configure cookie de autenticação com Domain compartilhado. O Supabase deve continuar usando cookies restritos ao hostname.
+2. Use um domínio registrável separado do Pacto. Não use subdomínio de pactus.dev.br e não configure cookie de autenticação com Domain compartilhado. O código rejeita o domínio principal e seus subdomínios como executor. O Supabase deve continuar usando cookies restritos ao hostname.
 3. Confirme que NEXT_PUBLIC_SITE_URL aponta para a origem principal real do Pacto. O middleware usa essa configuração para distinguir a origem autenticada da origem isolada.
 4. Defina NEXT_PUBLIC_ISOLATED_ORIGIN com a origem completa do segundo domínio, sem caminho, como https://pactus-isolated.vercel.app. Como a variável é pública e entra no build do Next.js, gere uma nova implantação depois de configurá-la.
 5. A segunda origem pode apontar para a mesma implantação Vercel. O middleware permite ali apenas os arquivos estáticos necessários; páginas, login e APIs respondem 404. Os workers usam os mesmos arquivos do build, inclusive o worker empacotado do Bash.

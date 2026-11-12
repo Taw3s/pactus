@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedIsolatedStaticPath, isIsolatedStaticHost } from "./isolated-static-host";
+import { isAllowedIsolatedStaticPath, isIsolatedStaticHost, isPactusAppHostname } from "./isolated-static-host";
 
 describe("isolated hostname routing", () => {
   it("recognizes only a distinct, configured HTTPS host", () => {
     expect(isIsolatedStaticHost("pactus-runner.vercel.app", "https://pactus-runner.vercel.app", "https://www.pactus.dev.br", true)).toBe(true);
     expect(isIsolatedStaticHost("www.pactus.dev.br", "https://pactus-runner.vercel.app", "https://www.pactus.dev.br", true)).toBe(false);
+    expect(isIsolatedStaticHost("runner.pactus.dev.br", "https://runner.pactus.dev.br", "https://www.pactus.dev.br", true)).toBe(false);
+    expect(isPactusAppHostname("runner.pactus.dev.br")).toBe(true);
+    expect(isPactusAppHostname("pactus-runner.vercel.app")).toBe(false);
   });
 
   it("fails closed for the app host and malformed or insecure production origins", () => {

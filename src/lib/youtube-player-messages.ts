@@ -1,3 +1,5 @@
+import { isPactusAppHostname } from "./isolated-static-host";
+
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const PLAYLIST_ID_PATTERN = /^PL[A-Za-z0-9_-]{8,}$/;
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -80,6 +82,9 @@ export function resolveIsolatedHostOrigin(raw: string | undefined, appOrigin: st
     const player = new URL(raw);
     const app = new URL(appOrigin);
     if (!isSafeOriginUrl(player) || !isSafeOriginUrl(app) || !isAllowedIsolatedParentOrigin(app.origin, development)) return null;
+    const playerHostname = player.hostname.toLowerCase();
+    const appHostname = app.hostname.toLowerCase();
+    if (isPactusAppHostname(playerHostname) || playerHostname === appHostname || playerHostname.endsWith(`.${appHostname}`)) return null;
     const localDevelopment = development && LOCAL_HOSTS.has(player.hostname);
     if (player.protocol !== "https:" && !(localDevelopment && player.protocol === "http:")) return null;
     if (player.hostname.toLowerCase() === app.hostname.toLowerCase()) return null;
@@ -125,7 +130,10 @@ export function buildIsolatedYouTubePlayerUrl(
   const origin = new URL(playerOrigin);
   const parent = new URL(parentOrigin);
   const localOrigin = origin.protocol === "http:" && LOCAL_HOSTS.has(origin.hostname);
-  if ((!localOrigin && origin.protocol !== "https:") || !isSafeOriginUrl(origin) || !isSafeOriginUrl(parent)
+  const originHostname = origin.hostname.toLowerCase();
+  const parentHostname = parent.hostname.toLowerCase();
+  if (isPactusAppHostname(originHostname) || originHostname === parentHostname || originHostname.endsWith(`.${parentHostname}`)
+    || parentHostname.endsWith(`.${originHostname}`) || (!localOrigin && origin.protocol !== "https:") || !isSafeOriginUrl(origin) || !isSafeOriginUrl(parent)
     || !isAllowedIsolatedParentOrigin(parent.origin, localOrigin)) {
     throw new Error("The isolated player must use a safe HTTPS origin and an approved parent");
   }

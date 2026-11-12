@@ -160,7 +160,7 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   }, [scriptLanguage, english]);
 
   useEffect(() => {
-    if (!needsIsolatedRunner || !runnerOrigin || runnerReady) return;
+    if (!needsIsolatedRunner || !runnerOrigin) return;
     const onRunnerMessage = (event: MessageEvent<unknown>) => {
       if (event.source !== runnerFrameRef.current?.contentWindow || event.origin !== runnerOrigin || !isPlaygroundRunnerMessage(event.data)) return;
       const message = event.data;
@@ -178,14 +178,18 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
       setConsoleLines((current) => current.length >= MAX_CONSOLE_LINES ? current : [...current, ...chunks.slice(0, MAX_CONSOLE_LINES - current.length).map((text) => ({ kind: message.kind === "error" ? "error" as const : "log" as const, text }))]);
     };
     window.addEventListener("message", onRunnerMessage);
+    return () => window.removeEventListener("message", onRunnerMessage);
+  }, [english, needsIsolatedRunner, runnerOrigin]);
+
+  useEffect(() => {
+    if (!needsIsolatedRunner || !runnerOrigin || runnerReady) return;
     const ping = () => runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "ping" }, runnerOrigin);
     ping();
     const pingTimer = window.setInterval(ping, 500);
     return () => {
       window.clearInterval(pingTimer);
-      window.removeEventListener("message", onRunnerMessage);
     };
-  }, [english, needsIsolatedRunner, runnerOrigin, runnerReady]);
+  }, [needsIsolatedRunner, runnerOrigin, runnerReady]);
 
   function appendLine(kind: ConsoleLine["kind"], text: string) {
     const clipped = clampOutput(text);
