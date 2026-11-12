@@ -19,7 +19,8 @@ async function newChallenge(name, s) {
   await p.fill("#group", `Estudos da ${name}`);
   await p.getByRole("button", { name: "Criar desafio" }).click();
   await p.waitForURL("**/hoje");
-  return { ...s, id: sql(`select user_id from members where display_name = '${name}'`) };
+  // By the account's own e-mail: display names repeat across stages.
+  return { ...s, id: sql(`select id from auth.users where email = '${name.toLowerCase()}.aprender@pacto.test'`) };
 }
 
 async function login(p, name) {
