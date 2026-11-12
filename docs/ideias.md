@@ -228,6 +228,16 @@ Pendências do dono antes de produção: identidade real em `NEXT_PUBLIC_CONTROL
 institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031 e
 0032 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
 
-Decisão a confirmar: com a regra 1, os **pontos** de digitação de um dia com prova anulada passam a contar só testes iniciados depois do
-veredito (antes: depois da prova condenada). Escolhi alinhar ao que pode virar prova; se o dono preferir o corte antigo, muda só
-`scoringTypingTests` e o `diff.ranking`.
+**Decisão PENDENTE do dono (bloqueia o merge): corte dos pontos de digitação depois de uma prova anulada.** Não faz parte das
+regras aprovadas em 10/11. Só importa num dia com prova de digitação anulada e refeita; o banco (prova refeita só com teste iniciado
+depois do veredito) é igual nas duas opções.
+
+- **A — corte no veredito (o que o branch faz hoje):** contam só testes iniciados depois do veredito final. O teste que vale como
+  prova e o que dá pontos vêm do mesmo conjunto: ninguém pontua com um teste que o tribunal poderia ter visto e que não pode virar prova.
+  Efeito: um teste feito enquanto o tribunal estava aberto deixa de pontuar; quem refaz com um teste pior perde pontos daquele dia.
+- **B — corte na prova contestada (regra antiga, P100-3):** contam testes terminados depois da prova anulada, inclusive os feitos
+  com o tribunal ainda aberto. Efeito: um teste feito entre a acusação e o veredito pode dar os pontos do dia, embora não possa ser
+  usado como prova; o teste diferencial precisa aceitar essa diferença de propósito.
+
+Para trocar para B: `scoringTypingTests` (`ranking.ts`, corte pelo `created_at` da prova e `finished_at`), `diff.ranking` em
+`harness.sql`, os testes de `ranking.test.ts` e os casos "teste melhor feito depois da prova" do diferencial.

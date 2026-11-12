@@ -63,7 +63,7 @@ export const GUIDE: GuideEntry[] = [
     q: "Minha prova foi anulada. E agora?",
     a: [
       "Se a prova for anulada no mesmo dia, você pode mandar uma nova até 23:59 na tela Hoje, e a meta volta a valer.",
-      "Na digitação, a prova nova precisa de um teste começado depois do veredito. Testes de antes, mesmo sem uso, não servem, e também não contam nos pontos daquele dia.",
+      "Na digitação, a prova nova precisa de um teste começado depois do veredito. Testes de antes, mesmo sem uso, não servem.",
       "Se as suas 3 tentativas do dia já tinham sido usadas, o app libera uma nova tentativa, única, depois do veredito. Se o grupo anular também a prova feita com ela, o dia deve 1 Coca a mais, além da dívida normal. Uma acusação rejeitada não custa nada.",
       "Depois da meia-noite não dá mais: o dia fica sem a meta.",
     ],
