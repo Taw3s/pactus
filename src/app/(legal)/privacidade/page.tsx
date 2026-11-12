@@ -39,6 +39,12 @@ export default function PrivacyPage() {
           celular e até onde você chegou em cada texto.
         </li>
         <li>
+          <b>Aprender:</b> quais aulas escritas e desafios você concluiu, a melhor nota de cada desafio (de 0 a 5) e, em cada curso em vídeo,
+          os identificadores dos vídeos do YouTube que você concluiu, o vídeo atual, a posição nele e o tamanho da playlist. Isso fica na sua
+          conta, para você continuar em qualquer aparelho; só você vê, e não muda pontos, ranking nem nada do grupo. O código que você digita
+          no playground roda no seu aparelho, em quadros e processos isolados do navegador, e não é enviado ao Pacto nem a outro serviço.
+        </li>
+        <li>
           <b>Vida do grupo:</b> dívidas e pagamentos (quem pagou, o que e quem recebeu), acusações, defesas e votos no tribunal com o motivo,
           carimbos nas provas, baús e itens da coleção.
         </li>
@@ -60,7 +66,17 @@ export default function PrivacyPage() {
         Também guarda o rascunho de uma prova ainda não enviada (resposta à pergunta do dia, minutos, páginas, nome e link do projeto, nunca fotos
         nem arquivos), para ele não se perder se a página recarregar. O rascunho vale só para a sua conta, o seu grupo e o dia em que foi escrito:
         sai quando a prova é enviada, no dia seguinte, ao sair da conta, ao sair do grupo e ao excluir a conta.
+        Nos cursos em vídeo, o navegador guarda também a ordem e os títulos dos vídeos de cada playlist, como vieram do YouTube, só para
+        desenhar a lista antes de o player responder (o que você assistiu fica na conta, acima).
         Limpar os dados do site no navegador apaga essas marcações. O link de convite leva só o código do grupo, nunca o seu e-mail ou a sua conta.
+      </p>
+
+      <p>
+        Os cursos em vídeo usam o player do YouTube. Ele só carrega quando você toca em “Carregar player do YouTube”: nesse momento o app
+        busca o programa do player em youtube.com e abre o vídeo pelo domínio youtube-nocookie.com, sem começar a tocar sozinho. A partir daí
+        o Google/YouTube recebe dados técnicos do navegador e da conexão e, durante a reprodução, dados de uso do player, conforme a{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">política de privacidade do Google</a>. Se
+        preferir, abra a playlist direto no YouTube, sem carregar o player aqui.
       </p>
 
       <h2>Quem vê</h2>
@@ -95,6 +111,11 @@ export default function PrivacyPage() {
           decide nada sozinho: a decisão é sempre do grupo.
         </li>
         <li>
+          <b>YouTube/Google:</b> só se você carregar o player de um curso em vídeo: recebe dados técnicos do navegador e da conexão e, durante
+          a reprodução, dados de uso do player. Não recebe o seu nome, e-mail nem o seu progresso no Pacto. Veja os{" "}
+          <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">Termos de Serviço do YouTube</a>.
+        </li>
+        <li>
           <b>Serviços de aviso do navegador</b> (Google, Apple ou Mozilla, conforme o seu aparelho): entregam os avisos que você ativou.
         </li>
         <li>
@@ -118,6 +139,8 @@ export default function PrivacyPage() {
       <ul>
         <li>Para o app funcionar como você pediu ao entrar num grupo: execução do serviço (LGPD, art. 7º, V).</li>
         <li>Para os avisos no aparelho: o seu consentimento, que você retira desativando os avisos.</li>
+        <li>Para guardar o seu progresso no Aprender e retomá-lo em outro aparelho: execução do serviço (art. 7º, V).</li>
+        <li>Para os cursos em vídeo: a sua escolha de carregar o player do YouTube, que trata os dados conforme os próprios termos.</li>
         <li>Para a segurança do app e para responder a problemas: legítimo interesse (art. 7º, IX).</li>
         <li>
           Para receber o feedback que você decide mandar e limitar os envios contra abuso: legítimo interesse (art. 7º, IX, e art. 10), só com
@@ -154,6 +177,10 @@ export default function PrivacyPage() {
           Quando você <b>exclui a conta</b>, acontece o mesmo, o seu nome sai dos recibos do grupo em que você está (eles passam a dizer
           “ex-membro”) e o seu login é apagado. Recibos de grupos de que você já tinha saído continuam com o seu nome, sem ligação com a sua
           conta, como no item acima.
+        </li>
+        <li>
+          O progresso do <b>Aprender</b> fica enquanto a conta existir e é apagado junto quando você exclui a conta. Sair do grupo não o
+          apaga, porque ele não é do grupo; para apagar só o progresso, use o contato abaixo.
         </li>
         <li>
           As datas dos envios de <b>feedback</b> são apagadas quando a sua conta passa 30 dias sem enviar nada, ou na hora, se você excluir a

@@ -4,9 +4,11 @@ import type { Breadcrumb, ErrorEvent } from "@sentry/nextjs";
 
 export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || undefined;
 
-/** Drops the query and the fragment: invite codes (?convite=) and login links travel there. */
+/** Drops the query and the fragment (invite codes and login links travel there) and account/proof ids in the path. */
 export function stripQuery(url: string): string {
-  return url.replace(/[?#].*$/, "");
+  return url
+    .replace(/[?#].*$/, "")
+    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi, "/:id");
 }
 
 /** Removes everything that points at a person before an event leaves the app. */

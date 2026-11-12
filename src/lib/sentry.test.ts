@@ -7,6 +7,9 @@ describe("error reports carry no personal data", () => {
     expect(stripQuery("https://www.pactus.dev.br/join?convite=ABC123")).toBe("https://www.pactus.dev.br/join");
     expect(stripQuery("/auth/callback#access_token=x")).toBe("/auth/callback");
     expect(stripQuery("/hoje")).toBe("/hoje");
+    // Account and proof ids in the path point at a person: replaced, the route shape stays.
+    expect(stripQuery("/historico/550e8400-e29b-41d4-a716-446655440000")).toBe("/historico/:id");
+    expect(stripQuery("https://www.pactus.dev.br/checkin/550E8400-E29B-41D4-A716-446655440000/x?y=1")).toBe("https://www.pactus.dev.br/checkin/:id/x");
   });
 
   it("removes the user, cookies, headers and the server name", () => {

@@ -51,6 +51,14 @@ export default function TermsPage() {
         </li>
       </ul>
 
+      <h2>Aprender</h2>
+      <p>
+        As aulas, os desafios e o playground estão em fase de testes e servem para estudar: não dão pontos nem mudam nada no grupo. O código do
+        playground roda no seu aparelho, com limites de tempo e de memória. Os cursos em vídeo são playlists públicas do YouTube, feitas por
+        outros autores, e o uso do player segue os termos do YouTube. Interpretadores e compiladores
+        incluídos têm as próprias licenças, listadas em <a href="/local-runtimes/licenses/README.md">/local-runtimes/licenses</a>.
+      </p>
+
       <h2>Feedback do beta</h2>
       <p>
         O formulário de feedback serve para relatar problemas e sugerir melhorias. Não mande senhas, documentos ou dados de outras pessoas. Há
