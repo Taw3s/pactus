@@ -213,20 +213,25 @@ Preparado no repositório privado, para abrir num repositório público **novo**
 
 ## Integração do pacote de handoff (11/11/2026, branch `integrar-handoff-pactus`)
 
-Feito neste branch: regras aprovadas de digitação (0031), feedback do beta (0032), textos legais. **Não integrado** por falta dos
-arquivos do snapshot (o ZIP não chegou ao `handoff-docs`):
+Feito neste branch: regras aprovadas de digitação (0031), feedback do beta (0032), textos legais, Aprender com progresso na
+conta (0033), Playground com runtimes locais e a revisão de segurança do snapshot (12/11/2026, com os três ZIPs do snapshot).
 
-- Área Aprender (`/aprender`, aulas, desafios, playlists, progresso por conta): precisa de `src/app/(app)/aprender/**`, dos componentes
-  e materiais das aulas, e da lista de vídeos das playlists. Nada foi inventado.
-- Playground (prévia HTML/CSS, console JS, runtimes locais): precisa de `public/local-runtimes/**`, `public/toolchains/**`,
-  `public/workers/**`, `src/workers/**` e das licenças de cada runtime.
-- Revisão de segurança do snapshot (middleware/CSP, origem das mutações, Sentry, Web Push): precisa de `src/middleware.ts`,
-  `src/lib/supabase/middleware.ts`, `src/lib/request-origin.ts`, `src/lib/sentry.ts`, `src/lib/push.ts`, `next.config.ts` e dos
-  testes correspondentes do snapshot, para comparar com o `main`.
+Riscos e decisões abertas do Aprender/Playground:
+
+- **Script do YouTube na origem do app.** O player usa o `iframe_api` de youtube.com, que roda com o mesmo acesso do app
+  (as cookies de sessão do Supabase não são `httpOnly`). Só carrega depois do clique, mas é confiança no Google. Alternativas:
+  player sem a API (perde a retomada automática e a lista de vídeos) ou servir o player numa origem separada. Decisão do dono.
+- **`import()` dinâmico nos workers.** Não dá para bloquear por código; a CSP dos workers (`script-src 'self'`) limita a
+  arquivos do próprio site, e a resposta não é legível. Um GET no próprio site continua possível (rotas de leitura).
+- **Faixa "Beta" em todas as telas do app** (veio do snapshot): precisa do olhar do Astra.
+- **Node 24** pedido pelo `@wasm-oj/*`: hoje é só aviso; acompanhar quando o CI e a Vercel mudarem de versão.
+- **npm audit**: 10 moderadas, todas do `glob`/`minimatch` usados pelo `@sentry/nextjs` 11.7.0 (já existiam no `main`). O
+  `npm audit fix --force` troca a versão fixada do Sentry; decidir junto com uma atualização planejada do Sentry.
+- Firefox e Safari: sem isolamento entre origens, Java diz para usar Chrome ou Edge; os outros runtimes e os vídeos funcionam.
 
 Pendências do dono antes de produção: identidade real em `NEXT_PUBLIC_CONTROLLER_NAME`; `NEXT_PUBLIC_CONTACT_EMAIL` com um endereço
-institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031 e
-0032 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
+institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031,
+0032 e 0033 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
 
 **Decisão PENDENTE do dono (bloqueia o merge): corte dos pontos de digitação depois de uma prova anulada.** Não faz parte das
 regras aprovadas em 10/11. Só importa num dia com prova de digitação anulada e refeita; o banco (prova refeita só com teste iniciado
