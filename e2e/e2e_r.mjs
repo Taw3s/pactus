@@ -55,8 +55,8 @@ await step("Iara sends typing, spends the 3 tests, and the tribunal annuls the p
   annulLatestTyping(iara);
   await p.reload();
   const retake = p.locator("[data-goal=typing][data-state=retake]");
-  await retake.getByText(/nova tentativa, única/).waitFor();
-  await retake.getByText(/a dívida do dia ganha 1 Coca a mais/).waitFor();
+  await retake.getByText(/Você tem uma nova tentativa, única, até 23:59/).waitFor();
+  await retake.getByText(/a dívida do dia ganha 1 Coca a mais/).first().waitFor();
   // The 199 tests are older than the verdict: nothing to "send again".
   assert((await p.getByTestId("typing-unsent").count()) === 0, "an old test was offered as the retake");
   await p.addStyleTag({ content: "body{background-image:none!important;background-color:#2a2d32!important}" });
@@ -94,4 +94,5 @@ await step("the tribunal annuls the Nova tentativa too: no way left, and Dívida
   await p.getByText("Coca (punição)").waitFor();
 });
 
-await done(browser);
+await browser.close();
+done();
