@@ -1,6 +1,6 @@
 // Same lockdown as public/workers/lockdown.js, for the Bash worker that webpack bundles (see that file for why).
-const BLOCKED = ["fetch", "XMLHttpRequest", "WebSocket", "WebTransport", "EventSource", "Worker", "SharedWorker", "importScripts",
-  "BroadcastChannel", "indexedDB", "caches", "RTCPeerConnection", "Notification", "cookieStore"] as const;
+const BLOCKED = ["fetch", "XMLHttpRequest", "WebSocket", "WebSocketStream", "WebTransport", "EventSource", "Worker", "SharedWorker", "importScripts",
+  "BroadcastChannel", "indexedDB", "caches", "RTCPeerConnection", "Notification", "cookieStore", "navigator", "postMessage"] as const;
 
 function blocked(): never {
   throw new Error("Acesso à rede e ao armazenamento desativado neste interpretador local.");

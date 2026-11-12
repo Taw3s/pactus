@@ -9,8 +9,8 @@
  * response being readable, and the worker CSP (next.config.ts) limits it to this site's own files.
  */
 (function (root) {
-  var BLOCKED = ["fetch", "XMLHttpRequest", "WebSocket", "WebTransport", "EventSource", "Worker", "SharedWorker", "importScripts",
-    "BroadcastChannel", "indexedDB", "caches", "RTCPeerConnection", "Notification", "cookieStore"];
+  var BLOCKED = ["fetch", "XMLHttpRequest", "WebSocket", "WebSocketStream", "WebTransport", "EventSource", "Worker", "SharedWorker", "importScripts",
+    "BroadcastChannel", "indexedDB", "caches", "RTCPeerConnection", "Notification", "cookieStore", "navigator", "postMessage"];
   function blocked() {
     throw new Error("Acesso à rede e ao armazenamento desativado neste interpretador local.");
   }

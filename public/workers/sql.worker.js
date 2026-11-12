@@ -1,4 +1,5 @@
 /* A fresh in-memory SQLite database is created for each run. */
+const postWorkerMessage = self.postMessage.bind(self);
 self.onmessage = async (event) => {
   try {
     self.importScripts("/local-runtimes/sql/sql-wasm.js", "/workers/lockdown.js");
@@ -17,15 +18,15 @@ self.onmessage = async (event) => {
       for (const row of rows) chunks.push(row.map((value) => String(value ?? "NULL")).join(" | "));
       if (result.values.length > rows.length) chunks.push(`… mais ${result.values.length - rows.length} linha(s)`);
       const text = chunks.join("\n").slice(0, Math.max(0, 12000 - used));
-      if (text) self.postMessage({ kind: "log", text });
+      if (text) postWorkerMessage({ kind: "log", text });
       used += text.length;
       if (used >= 12000) break;
     }
-    if (results.length === 0) self.postMessage({ kind: "log", text: "Comando executado; a consulta não retornou linhas." });
-    self.postMessage({ kind: "done" });
+    if (results.length === 0) postWorkerMessage({ kind: "log", text: "Comando executado; a consulta não retornou linhas." });
+    postWorkerMessage({ kind: "done" });
     database.close();
   } catch (error) {
-    self.postMessage({ kind: "error", text: String(error?.message ?? error) });
-    self.postMessage({ kind: "done", failed: true });
+    postWorkerMessage({ kind: "error", text: String(error?.message ?? error) });
+    postWorkerMessage({ kind: "done", failed: true });
   }
 };

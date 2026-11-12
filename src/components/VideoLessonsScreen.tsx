@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   Check,
@@ -17,6 +17,7 @@ import { LANGUAGE_CODE_EXAMPLES, type LanguageExampleId } from "@/lib/typing-lan
 import { VIDEO_METADATA_CACHE_KEY } from "@/lib/video-lessons-storage";
 import { loadVideoProgress, saveVideoProgress, type VideoRow } from "@/lib/learning-progress";
 import { createClient } from "@/lib/supabase/client";
+import { buildDirectYouTubePlaylistUrl, buildIsolatedYouTubePlayerUrl, isYouTubePlayerMessage, manualPlaylistVideoId, resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
 
 type Difficulty = "Fácil" | "Intermediário" | "Difícil";
 type DifficultyFilter = "Todas" | Difficulty;
@@ -47,52 +48,6 @@ export type VideoCourseProgress = {
 };
 
 type ProgressMap = Record<string, VideoCourseProgress>;
-
-type YouTubePlayer = {
-  destroy: () => void;
-  cuePlaylist: (
-    playlist: string[] | {
-      listType: "playlist";
-      list: string;
-      index?: number;
-      startSeconds?: number;
-    },
-    index?: number,
-    startSeconds?: number,
-  ) => void;
-  playVideo: () => void;
-  getPlaylist: () => string[];
-  getPlaylistIndex: () => number;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-  getPlayerState: () => number;
-  getVideoData: () => { video_id?: string; title?: string };
-};
-
-type YouTubeEvent = { target: YouTubePlayer; data: number };
-type YouTubeApi = {
-  Player: new (
-    element: HTMLElement,
-    options: {
-      width: string;
-      height: string;
-      playerVars: Record<string, string | number>;
-      events: {
-        onReady: (event: YouTubeEvent) => void;
-        onStateChange: (event: YouTubeEvent) => void;
-        onError: (event: { data: number }) => void;
-      };
-    },
-  ) => YouTubePlayer;
-  PlayerState: { ENDED: number; PLAYING: number; PAUSED: number; BUFFERING: number; CUED: number };
-};
-
-declare global {
-  interface Window {
-    YT?: YouTubeApi;
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
 
 const COURSES: PlaylistCourse[] = [
   {
@@ -204,40 +159,6 @@ const LANGUAGE_OPTIONS: { id: "todas" | LanguageExampleId; label: string }[] = [
 const DIFFICULTY_OPTIONS: DifficultyFilter[] = ["Todas", "Fácil", "Intermediário", "Difícil"];
 const MAX_TRACKED_VIDEOS = 600;
 
-let youtubeApiPromise: Promise<YouTubeApi> | null = null;
-
-function loadYouTubeApi(): Promise<YouTubeApi> {
-  if (typeof window === "undefined") return Promise.reject(new Error("O player só abre no navegador."));
-  if (window.YT?.Player) return Promise.resolve(window.YT);
-  if (youtubeApiPromise) return youtubeApiPromise;
-
-  youtubeApiPromise = new Promise<YouTubeApi>((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(new Error("O YouTube demorou para carregar. Confira sua conexão e tente novamente.")), 20000);
-    const previousCallback = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      try { previousCallback?.(); } catch { /* não interrompe o carregamento do player */ }
-      window.clearTimeout(timeout);
-      if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error("A API de vídeo do YouTube não ficou disponível."));
-    };
-
-    let script = document.querySelector<HTMLScriptElement>("script[data-pactus-youtube-api]");
-    if (!script) {
-      script = document.createElement("script");
-      script.src = "https://www.youtube.com/iframe_api";
-      script.async = true;
-      script.dataset.pactusYoutubeApi = "true";
-      script.onerror = () => {
-        window.clearTimeout(timeout);
-        reject(new Error("Não foi possível conectar ao YouTube. Use o botão para abrir a playlist no site."));
-      };
-      document.head.appendChild(script);
-    }
-  });
-
-  return youtubeApiPromise;
-}
-
 function emptyProgress(): VideoCourseProgress {
   return {
     videoOrder: [],
@@ -339,212 +260,220 @@ function CoursePlayer({
   onProgress: (courseId: string, next: VideoCourseProgress) => void;
 }) {
   const playerHost = useRef<HTMLIFrameElement>(null);
-  const playerRef = useRef<YouTubePlayer | null>(null);
   const progressRef = useRef(progress);
   const onProgressRef = useRef(onProgress);
-  const playerId = `video-course-player-${useId().replace(/:/g, "")}`;
-  const [playlistVideos, setPlaylistVideos] = useState<string[]>(progress.videoOrder);
-  const playlistVideosRef = useRef(playlistVideos);
+  const [playlistVideos, setPlaylistVideos] = useState(progress.videoOrder);
   const [currentVideoId, setCurrentVideoId] = useState(progress.currentVideoId);
   const [currentTitle, setCurrentTitle] = useState(progress.currentTitle);
+  const [selectedIndex, setSelectedIndex] = useState(progress.currentIndex);
+  const [manualLessonNumber, setManualLessonNumber] = useState(String(progress.currentIndex + 1));
+  const [manualLessonCount, setManualLessonCount] = useState(String(progress.videoCount || progress.videoOrder.length || ""));
   const [playerEnabled, setPlayerEnabled] = useState(false);
-  const [playerMessage, setPlayerMessage] = useState("Conectando ao YouTube…");
+  const [playerOrigin, setPlayerOrigin] = useState<string | null>(null);
+  const [playerSource, setPlayerSource] = useState("");
+  const [playerReady, setPlayerReady] = useState(false);
+  const [playerMessage, setPlayerMessage] = useState("O player só carrega quando você pedir.");
   const [playerError, setPlayerError] = useState("");
-
-  const connectPlayerFrame = useCallback((frame: HTMLIFrameElement | null) => {
-    playerHost.current = frame;
-    if (!frame) return;
-    // Only Chromium implements credentialless iframes; Firefox gets no COEP header
-    // from middleware and must not receive an unsupported embed attribute.
-    if ("credentialless" in frame) frame.setAttribute("credentialless", "");
-    const embedUrl = new URL("https://www.youtube-nocookie.com/embed/videoseries");
-    embedUrl.searchParams.set("list", course.playlistId);
-    embedUrl.searchParams.set("enablejsapi", "1");
-    embedUrl.searchParams.set("origin", window.location.origin);
-    embedUrl.searchParams.set("playsinline", "1");
-    embedUrl.searchParams.set("rel", "0");
-    frame.src = embedUrl.toString();
-  }, [course.playlistId]);
 
   progressRef.current = progress;
   onProgressRef.current = onProgress;
-  playlistVideosRef.current = playlistVideos;
 
   useEffect(() => {
-    if (!playerEnabled) return;
-    let cancelled = false;
-    let player: YouTubePlayer | null = null;
-    let saveTimer = 0;
-    let listTimer = 0;
-    let listAttempts = 0;
-    let stableListSamples = 0;
-    let lastListSignature = "";
-    let playlistCueStartedAt = 0;
+    if (!playerEnabled || !playerOrigin) return;
+    const frame = playerHost.current;
+    const frameWindow = frame?.contentWindow;
+    if (!frameWindow) return;
 
-    const checkpoint = (completedVideoId?: string) => {
-      if (!player) return;
+    function receiveMessage(event: MessageEvent<unknown>) {
+      if (event.source !== frameWindow || event.origin !== playerOrigin || !isYouTubePlayerMessage(event.data)) return;
+      const message = event.data;
+      if (message.type === "ready") {
+        setPlayerReady(true);
+        setPlayerError("");
+        setPlayerMessage("Player isolado conectado. O YouTube não recebe acesso à sessão do Pacto.");
+        return;
+      }
+      if (message.type === "error") {
+        setPlayerError(message.code === 100 || message.code === 101 || message.code === 150
+          ? "Esta aula não permite reprodução incorporada. Abra a playlist no YouTube."
+          : "O player isolado não conseguiu carregar. Tente abrir a playlist no YouTube.");
+        return;
+      }
+      if (message.type === "state") {
+        if (message.state === "PLAYING") setPlayerMessage("A posição e as aulas concluídas são salvas automaticamente.");
+        else if (message.state === "PAUSED") setPlayerMessage("Aula pausada. Sua posição foi salva.");
+        else if (message.state === "ENDED") setPlayerMessage("Aula concluída. Seu progresso foi salvo.");
+        return;
+      }
+
       const previous = progressRef.current;
-      const order = (player.getPlaylist?.() ?? previous.videoOrder).filter(Boolean).slice(0, MAX_TRACKED_VIDEOS);
-      const playerIndex = player.getPlaylistIndex?.() ?? -1;
-      const videoData = player.getVideoData?.() ?? {};
-      const id = videoData.video_id || (playerIndex >= 0 ? order[playerIndex] : "") || previous.currentVideoId;
-      if (!id && !order.length) return;
-      const seconds = Number.isFinite(player.getCurrentTime?.())
-        ? Math.max(0, Math.floor(player.getCurrentTime()))
-        : previous.currentSeconds;
-      const title = (videoData.title ?? "").trim().slice(0, 240);
+      if (message.type === "playlist") {
+        setPlaylistVideos(message.videoOrder);
+        const next = { ...previous, videoOrder: message.videoOrder, videoTitles: message.videoTitles, videoCount: message.videoOrder.length };
+        onProgressRef.current(course.id, next);
+        return;
+      }
+
       const completed = new Set(previous.completedVideoIds);
-      if (completedVideoId) completed.add(completedVideoId);
-      const index = playerIndex >= 0 ? playerIndex : Math.max(0, previous.currentIndex);
-      const titles = { ...previous.videoTitles };
-      if (id && title) titles[id] = title;
+      if (message.completedVideoId) completed.add(message.completedVideoId);
       const next: VideoCourseProgress = {
-        videoOrder: order.length ? order : previous.videoOrder,
+        ...previous,
+        videoOrder: message.videoOrder.length ? message.videoOrder : previous.videoOrder,
+        videoTitles: { ...previous.videoTitles, ...message.videoTitles },
         completedVideoIds: [...completed].slice(0, MAX_TRACKED_VIDEOS),
-        videoTitles: titles,
-        currentVideoId: id,
-        currentTitle: title || (id ? titles[id] ?? previous.currentTitle : previous.currentTitle),
-        currentIndex: index,
-        currentSeconds: completedVideoId ? Math.floor(player.getDuration?.() ?? seconds) : seconds,
+        currentVideoId: message.currentVideoId || previous.currentVideoId,
+        currentTitle: message.currentTitle || previous.currentTitle,
+        currentIndex: message.currentIndex,
+        currentSeconds: message.currentSeconds,
+        videoCount: message.videoCount || previous.videoCount,
         updatedAt: Date.now(),
-        videoCount: order.length || previous.videoCount,
       };
-      progressRef.current = next;
       setCurrentVideoId(next.currentVideoId);
-      if (next.currentTitle) setCurrentTitle(next.currentTitle);
-      if (order.length && order.length !== playlistVideosRef.current.length) {
-        playlistVideosRef.current = order;
-        setPlaylistVideos(order);
-      }
+      setCurrentTitle(next.currentTitle);
+      setSelectedIndex(next.currentIndex);
+      setManualLessonNumber(String(next.currentIndex + 1));
       onProgressRef.current(course.id, next);
-    };
+    }
 
-    setPlayerError("");
-    setPlayerMessage("Conectando ao YouTube…");
-    loadYouTubeApi().then((api) => {
-      if (cancelled || !playerHost.current) return;
-      const saved = progressRef.current;
-      const startIndex = Math.min(saved.currentIndex, Math.max(0, saved.videoOrder.length - 1));
-      player = new api.Player(playerHost.current, {
-        width: "100%",
-        height: "100%",
-        playerVars: {
-          listType: "playlist",
-          list: course.playlistId,
-          index: startIndex,
-          playsinline: 1,
-          rel: 0,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (event) => {
-            player = event.target;
-            playerRef.current = event.target;
-            playlistCueStartedAt = Date.now();
-            event.target.cuePlaylist({
-              listType: "playlist",
-              list: course.playlistId,
-              index: startIndex,
-              startSeconds: saved.currentSeconds,
-            });
-            setPlayerMessage(saved.currentSeconds > 0 ? "Aula preparada no ponto em que você parou. Aperte reproduzir para continuar." : "Aulas carregadas. Escolha uma aula e aperte reproduzir.");
-            listTimer = window.setInterval(() => {
-              if (!player) return;
-              listAttempts += 1;
-              const order = player.getPlaylist?.() ?? [];
-              if (order.length) {
-                const limited = order.filter(Boolean).slice(0, MAX_TRACKED_VIDEOS);
-                const signature = limited.join(",");
-                stableListSamples = signature === lastListSignature ? stableListSamples + 1 : 1;
-                lastListSignature = signature;
-                // cuePlaylist loads asynchronously. Wait for its result to settle so an
-                // early one-item response does not get mistaken for the entire playlist.
-                if (stableListSamples >= 3 && Date.now() - playlistCueStartedAt >= 2000) {
-                  playlistVideosRef.current = limited;
-                  setPlaylistVideos(limited);
-                  checkpoint();
-                  window.clearInterval(listTimer);
-                }
-              }
-              if (listAttempts >= 30 && stableListSamples < 3) {
-                window.clearInterval(listTimer);
-                setPlayerError("Não foi possível carregar a lista completa de aulas. Abra a playlist no YouTube e confira se ela está pública.");
-              }
-            }, 400);
-            saveTimer = window.setInterval(() => checkpoint(), 5000);
-          },
-          onStateChange: (event) => {
-            if (!api.PlayerState) return;
-            if (event.data === api.PlayerState.ENDED) {
-              const videoId = event.target.getVideoData?.().video_id || "";
-              checkpoint(videoId || undefined);
-              setPlayerMessage("Aula concluída. Seu progresso foi salvo.");
-              return;
-            }
-            if (event.data === api.PlayerState.PLAYING) {
-              const data = event.target.getVideoData?.();
-              if (data?.video_id) setCurrentVideoId(data.video_id);
-              if (data?.title) setCurrentTitle(data.title);
-              setPlayerMessage("A posição da aula é salva automaticamente enquanto você assiste.");
-              checkpoint();
-            } else if (event.data === api.PlayerState.PAUSED) {
-              checkpoint();
-              setPlayerMessage("Aula pausada. Sua posição foi salva.");
-            }
-          },
-          onError: (event) => {
-            const message = event.data === 100 || event.data === 101 || event.data === 150
-              ? "Esta aula está indisponível para reprodução incorporada. Abra a playlist no YouTube."
-              : "O player do YouTube encontrou um erro. Tente abrir a playlist no site.";
-            setPlayerError(message);
-            setPlayerMessage("");
-          },
-        },
-      });
-    }).catch((error: unknown) => {
-      if (!cancelled) setPlayerError(error instanceof Error ? error.message : "Não foi possível abrir o player.");
-    });
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(saveTimer);
-      window.clearInterval(listTimer);
-      if (player) {
-        checkpoint();
-        if (playerRef.current === player) playerRef.current = null;
-        player.destroy();
-      }
-    };
-    // A player instance belongs to one playlist. Progress and callbacks are refreshed through refs.
-  }, [course.id, course.playlistId, playerEnabled]);
+    window.addEventListener("message", receiveMessage);
+    return () => window.removeEventListener("message", receiveMessage);
+  }, [course.id, playerEnabled, playerOrigin]);
 
   const visibleIds = playlistVideos.length ? playlistVideos : progress.videoOrder;
-  const currentIndex = Math.max(0, visibleIds.indexOf(currentVideoId || progress.currentVideoId));
+  const currentIndex = visibleIds.length
+    ? Math.max(0, visibleIds.indexOf(currentVideoId || progress.currentVideoId))
+    : selectedIndex;
   const completedIds = new Set(progress.completedVideoIds);
   const percent = progressPercent(progress);
+  const trackedDone = visibleIds.length
+    ? new Set(progress.completedVideoIds.filter((id) => visibleIds.includes(id))).size
+    : progress.completedVideoIds.length;
+  const isolatedPlayerConfigured = Boolean(playerOrigin);
+
+  function startPlayer() {
+    const origin = typeof window === "undefined" ? null : resolveIsolatedHostOrigin(
+      process.env.NEXT_PUBLIC_ISOLATED_ORIGIN,
+      window.location.origin,
+      process.env.NODE_ENV !== "production",
+    );
+    const index = Math.max(0, Math.min(599, progressRef.current.currentIndex));
+    const seconds = Math.max(0, Math.min(86400, progressRef.current.currentSeconds));
+    const source = origin
+      ? buildIsolatedYouTubePlayerUrl(origin, course.playlistId, window.location.origin, index, seconds)
+      : buildDirectYouTubePlaylistUrl(course.playlistId, index, seconds);
+    setPlayerOrigin(origin);
+    setPlayerSource(source);
+    setPlayerEnabled(true);
+    setPlayerReady(false);
+    setPlayerError("");
+    setPlayerMessage(origin
+      ? "Carregando o player isolado…"
+      : "Player direto aberto. Selecione o número da aula abaixo para registrar seu progresso.");
+  }
+
+  function moveToLesson(index: number) {
+    if (!Number.isInteger(index) || index < 0 || index >= MAX_TRACKED_VIDEOS) {
+      setPlayerMessage("Informe o número de uma aula entre 1 e 600.");
+      return;
+    }
+    const safeIndex = Math.max(0, Math.min(599, Math.floor(index)));
+    const knownOrder = playlistVideos.length ? playlistVideos : progressRef.current.videoOrder;
+    const count = Number(manualLessonCount);
+    const validCount = Number.isInteger(count) && count >= 1 && count <= MAX_TRACKED_VIDEOS ? count : 0;
+    if (validCount && safeIndex >= validCount) {
+      setPlayerMessage("O número da aula não pode ser maior que o total informado.");
+      return;
+    }
+    const order = knownOrder.length
+      ? knownOrder
+      : validCount
+        ? Array.from({ length: validCount }, (_, position) => manualPlaylistVideoId(position))
+        : [];
+    const id = order[safeIndex] ?? manualPlaylistVideoId(safeIndex);
+    const titles = { ...progressRef.current.videoTitles };
+    const title = titles[id] || (id.startsWith("pactus") ? `Aula ${String(safeIndex + 1).padStart(2, "0")}` : "");
+    if (title) titles[id] = title;
+    const next: VideoCourseProgress = {
+      ...progressRef.current,
+      videoOrder: order,
+      videoTitles: titles,
+      currentVideoId: id,
+      currentTitle: title,
+      currentIndex: safeIndex,
+      currentSeconds: 0,
+      videoCount: validCount || (order.length ? order.length : progressRef.current.videoCount),
+      updatedAt: Date.now(),
+    };
+    progressRef.current = next;
+    setSelectedIndex(safeIndex);
+    setCurrentVideoId(id);
+    setCurrentTitle(title);
+    setManualLessonNumber(String(safeIndex + 1));
+    onProgressRef.current(course.id, next);
+
+    if (playerEnabled && playerOrigin && playerReady) {
+      playerHost.current?.contentWindow?.postMessage({ type: "select", index: safeIndex, seconds: 0 }, playerOrigin);
+      setPlayerMessage(`Aula ${safeIndex + 1} selecionada. O player carrega o início dela.`);
+      return;
+    }
+
+    if (playerEnabled) {
+      const source = playerOrigin
+        ? buildIsolatedYouTubePlayerUrl(playerOrigin, course.playlistId, window.location.origin, safeIndex, 0)
+        : buildDirectYouTubePlaylistUrl(course.playlistId, safeIndex, 0);
+      setPlayerSource(source);
+      setPlayerReady(false);
+    }
+    setPlayerMessage(`Aula ${safeIndex + 1} selecionada. Abra o player para assistir.`);
+  }
 
   function selectLesson(index: number) {
-    const targetId = visibleIds[index];
-    const resumeSeconds = targetId && targetId === progress.currentVideoId ? progress.currentSeconds : 0;
-    playerRef.current?.cuePlaylist(visibleIds, index, resumeSeconds);
-    setPlayerMessage(`Aula ${index + 1} preparada. Aperte reproduzir no player para começar.`);
+    const id = visibleIds[index];
+    const resumeSeconds = id && id === progressRef.current.currentVideoId ? progressRef.current.currentSeconds : 0;
+    const safeIndex = Math.max(0, Math.min(599, index));
+    if (resumeSeconds > 0) {
+      const next = { ...progressRef.current, currentVideoId: id, currentIndex: safeIndex, currentSeconds: resumeSeconds, updatedAt: Date.now() };
+      progressRef.current = next;
+      setSelectedIndex(safeIndex);
+      setCurrentVideoId(id);
+      setCurrentTitle(next.videoTitles[id] ?? currentTitle);
+      setManualLessonNumber(String(safeIndex + 1));
+      onProgressRef.current(course.id, next);
+      if (playerEnabled && playerOrigin && playerReady) {
+        playerHost.current?.contentWindow?.postMessage({ type: "select", index: safeIndex, seconds: resumeSeconds }, playerOrigin);
+      } else if (playerEnabled) {
+        setPlayerSource(playerOrigin
+          ? buildIsolatedYouTubePlayerUrl(playerOrigin, course.playlistId, window.location.origin, safeIndex, resumeSeconds)
+          : buildDirectYouTubePlaylistUrl(course.playlistId, safeIndex, resumeSeconds));
+        setPlayerReady(false);
+      }
+      return;
+    }
+    moveToLesson(safeIndex);
   }
 
   function resume() {
-    if (!playerRef.current) {
-      setPlayerEnabled(true);
-      setPlayerMessage("Conectando ao YouTube. Depois, use o botão de reprodução no próprio player.");
+    if (!playerEnabled) {
+      startPlayer();
       return;
     }
-    playerRef.current.playVideo();
+    if (playerOrigin && playerReady) {
+      playerHost.current?.contentWindow?.postMessage({ type: "play" }, playerOrigin);
+      setPlayerMessage("Use os controles do player para continuar.");
+    } else if (!playerOrigin) {
+      setPlayerSource(buildDirectYouTubePlaylistUrl(course.playlistId, currentIndex, progress.currentSeconds));
+      setPlayerMessage("A playlist foi aberta no ponto salvo. O modo direto não acompanha o tempo automaticamente.");
+    } else {
+      setPlayerMessage("O player isolado ainda está conectando.");
+    }
   }
 
   function markCurrentComplete() {
-    const id = currentVideoId || progress.currentVideoId || visibleIds[currentIndex];
+    const id = currentVideoId || progress.currentVideoId;
     if (!id) return;
     const completed = new Set(progressRef.current.completedVideoIds);
     completed.add(id);
-    const next = { ...progressRef.current, completedVideoIds: [...completed], updatedAt: Date.now() };
+    const next = { ...progressRef.current, completedVideoIds: [...completed].slice(0, MAX_TRACKED_VIDEOS), updatedAt: Date.now() };
     progressRef.current = next;
     onProgressRef.current(course.id, next);
     setPlayerMessage("Aula marcada como concluída. Seu progresso foi salvo.");
@@ -554,18 +483,39 @@ function CoursePlayer({
     <div className="min-w-0">
       <div className="overflow-hidden rounded-sm border-2 border-divider bg-black">
         {playerEnabled ? <iframe
-          id={playerId}
-          ref={connectPlayerFrame}
+          ref={(frame) => {
+            playerHost.current = frame;
+            if (frame && "credentialless" in frame) frame.setAttribute("credentialless", "");
+          }}
           title={`Aulas de ${course.title}`}
+          src={playerSource}
           className="aspect-video min-h-[200px] w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          sandbox="allow-scripts allow-same-origin allow-presentation"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onLoad={() => {
+            if (!playerOrigin) setPlayerMessage("Player direto carregado. O YouTube não informa ao Pacto qual aula você está assistindo.");
+          }}
         /> : <div className="grid aspect-video min-h-[200px] place-items-center px-4 text-center text-white">
-          <div><p className="text-sm font-semibold">A playlist será carregada pelo YouTube.</p><p className="mx-auto mt-2 max-w-md text-xs text-white/75">Ao carregar o player, o Google/YouTube recebe dados técnicos do navegador e da conexão conforme as políticas deles. O vídeo não começa sozinho.</p><button type="button" onClick={() => { setPlayerEnabled(true); setPlayerMessage("Conectando ao YouTube…"); }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-white/60 px-3 text-sm font-semibold hover:bg-white/10"><Play size={15} /> Carregar player do YouTube</button></div>
+          <div><p className="text-sm font-semibold">A playlist será carregada pelo YouTube.</p><p className="mx-auto mt-2 max-w-md text-xs text-white/75">Ao carregar o player, o Google/YouTube recebe dados técnicos do navegador e da conexão conforme as políticas deles. O vídeo não começa sozinho.</p><button type="button" onClick={startPlayer} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-sm border-2 border-white/60 px-3 text-sm font-semibold hover:bg-white/10"><Play size={15} /> Carregar player do YouTube</button></div>
         </div>}
       </div>
       <p className="mt-1 text-[10px] text-muted"><a className="underline underline-offset-2" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">Termos do YouTube</a> · <a className="underline underline-offset-2" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacidade do Google</a></p>
+      {playerEnabled && !isolatedPlayerConfigured && <div className="mt-3 rounded-sm border border-pending/60 bg-warn-bg p-3 text-xs text-muted">
+        <p className="font-semibold text-fg">Modo direto do YouTube</p>
+        <p className="mt-1">O Pacto não carrega a API do YouTube na página da sua conta. Nesse modo, o YouTube não informa automaticamente a aula nem o tempo assistido. Escolha o número da aula aqui e marque-a como concluída quando terminar.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <label className="block">Aula atual
+            <input type="number" min={1} max={600} value={manualLessonNumber} onChange={(event) => setManualLessonNumber(event.target.value)} className="mt-1 min-h-9 w-full rounded-sm border border-divider bg-bg px-2 text-fg" />
+          </label>
+          <label className="block">Total de aulas (opcional)
+            <input type="number" min={1} max={600} value={manualLessonCount} onChange={(event) => setManualLessonCount(event.target.value)} className="mt-1 min-h-9 w-full rounded-sm border border-divider bg-bg px-2 text-fg" />
+          </label>
+          <button type="button" onClick={() => moveToLesson(Number(manualLessonNumber) - 1)} className="mt-auto min-h-9 rounded-sm border border-divider px-3 font-semibold text-accent hover:bg-raised">Carregar aula</button>
+        </div>
+      </div>}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="pixel truncate text-sm uppercase">{currentTitle || progress.currentTitle || "Escolha uma aula"}</p>
@@ -579,7 +529,7 @@ function CoursePlayer({
       <div className="mt-4 rounded-sm border-2 border-divider bg-bg p-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <span className="font-semibold">Progresso deste curso</span>
-          <span className="pixel text-accent">{percent}%</span>
+          <span className="pixel text-accent">{progress.videoOrder.length || progress.videoCount ? `${percent}%` : `${trackedDone} aula(s)`}</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-sm border border-divider bg-surface" role="progressbar" aria-label={`Progresso de ${course.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
           <div className="h-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
@@ -587,17 +537,23 @@ function CoursePlayer({
         <p className="mt-2 text-[11px] text-muted">
           {visibleIds.length
             ? `${new Set(progress.completedVideoIds.filter((id) => visibleIds.includes(id))).size} de ${visibleIds.length} aulas concluídas.`
-            : "A lista e o total de aulas aparecem quando o YouTube carregar."}
-          {progress.currentSeconds > 0 && ` Última posição: aula ${progress.currentIndex + 1}, ${formatTime(progress.currentSeconds)}.`}
+            : progress.videoCount
+              ? `${trackedDone} de ${progress.videoCount} aulas concluídas.`
+              : `${trackedDone} aula(s) concluída(s). Informe o total de aulas para ver o percentual.`}
+          {progress.currentSeconds > 0 && ` Última posição salva: aula ${progress.currentIndex + 1}, ${formatTime(progress.currentSeconds)}.`}
         </p>
       </div>
-      <p className="mt-3 text-[11px] text-muted">Assista até o fim para registrar a aula automaticamente. A posição atual é salva na sua conta enquanto você assiste. O percentual conta aulas concluídas.</p>
+      <p className="mt-3 text-[11px] text-muted">
+        {isolatedPlayerConfigured
+          ? "Assista até o fim para registrar a aula automaticamente. A posição atual é salva na sua conta."
+          : "No modo direto, a conclusão e o número da aula são registrados quando você os informa. O tempo assistido não é enviado automaticamente."}
+      </p>
     </div>
 
     <aside className="min-w-0 rounded-sm border-2 border-divider bg-bg p-3" aria-label="Aulas da playlist">
       <div className="flex items-center justify-between gap-2">
         <div><p className="pixel text-xs uppercase text-muted">Ordem da playlist</p><h3 className="pixel mt-1 text-sm uppercase">Aulas</h3></div>
-        <span className="rounded-sm border border-divider px-2 py-1 text-[11px] text-muted">{visibleIds.length || "…"}</span>
+        <span className="rounded-sm border border-divider px-2 py-1 text-[11px] text-muted">{visibleIds.length || progress.videoCount || "YouTube"}</span>
       </div>
       {visibleIds.length ? <ol className="mt-3 max-h-[440px] space-y-1 overflow-y-auto pr-1">
         {visibleIds.map((videoId, index) => {
@@ -612,9 +568,13 @@ function CoursePlayer({
             </button>
           </li>;
         })}
-      </ol> : <div className="mt-3 grid min-h-36 place-items-center rounded-sm border border-dashed border-divider px-4 text-center">
-        <div><LoaderCircle size={22} className="mx-auto animate-spin text-accent" /><p className="mt-2 text-xs text-muted">Carregando a lista de aulas…</p></div>
-      </div>}
+      </ol> : isolatedPlayerConfigured
+        ? <div className="mt-3 grid min-h-36 place-items-center rounded-sm border border-dashed border-divider px-4 text-center">
+          <div><LoaderCircle size={22} className="mx-auto animate-spin text-accent" /><p className="mt-2 text-xs text-muted">Carregando a lista de aulas…</p></div>
+        </div>
+        : <div className="mt-3 rounded-sm border border-dashed border-divider px-3 py-5 text-center text-xs text-muted">
+          O modo direto não lê a lista do YouTube. Use os números das aulas no controle acima ou abra a playlist completa no YouTube.
+        </div>}
       <a className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-sm border border-divider px-3 text-xs text-accent hover:bg-raised" href={`https://www.youtube.com/playlist?list=${encodeURIComponent(course.playlistId)}`} target="_blank" rel="noopener noreferrer"><ExternalLink size={14} /> Abrir no YouTube</a>
     </aside>
   </div>;
@@ -727,14 +687,14 @@ export function VideoLessonsScreen() {
     && (difficultyFilter === "Todas" || course.difficulty === difficultyFilter));
   const activeCourse = COURSES.find((course) => course.id === activeCourseId) ?? COURSES[0];
   const activeProgress = progress[activeCourse.id] ?? emptyProgress();
-  const totalCompleted = COURSES.filter((course) => progressPercent(progress[course.id]) === 100 && (progress[course.id]?.videoOrder.length ?? 0) > 0).length;
+  const totalCompleted = COURSES.filter((course) => progressPercent(progress[course.id]) === 100 && ((progress[course.id]?.videoOrder.length ?? 0) > 0 || (progress[course.id]?.videoCount ?? 0) > 0)).length;
   const coursesStarted = COURSES.filter((course) => (progress[course.id]?.currentTitle ?? "") || (progress[course.id]?.completedVideoIds.length ?? 0) > 0).length;
 
   return <>
     <header className="mb-5">
       <p className="pixel text-xs uppercase text-muted">Biblioteca de estudo</p>
       <h1 className="pixel mt-1 break-words text-[32px] font-bold uppercase leading-9">Cursos em vídeo</h1>
-      <p className="mt-2 max-w-4xl text-sm text-muted">Playlists gratuitas do YouTube, organizadas por linguagem e dificuldade. Escolha um curso, assista às aulas na ordem e continue de onde parou, em qualquer aparelho: as aulas concluídas e a posição ficam na sua conta. A lista e os vídeos vêm do YouTube.</p>
+      <p className="mt-2 max-w-4xl text-sm text-muted">Playlists gratuitas do YouTube, organizadas por linguagem e dificuldade. Com o player isolado configurado, a lista, a posição e as aulas concluídas acompanham sua conta. Sem esse domínio, o player abre diretamente e o progresso é marcado manualmente.</p>
       {storageNotice && <p className="mt-3 rounded-sm border border-pending/60 bg-warn-bg px-3 py-2 text-xs" role="status">{storageNotice}</p>}
     </header>
 
@@ -788,6 +748,6 @@ export function VideoLessonsScreen() {
       </section>
     </div>
 
-    <p className="mt-4 rounded-sm border border-divider bg-bg p-3 text-[11px] text-muted"><Video size={14} className="mr-1 inline-block text-accent" />As playlists pertencem aos canais do YouTube. Se uma aula bloquear a reprodução dentro do laboratório, use “Abrir no YouTube”; o progresso local continua disponível para você marcar as aulas concluídas.</p>
+    <p className="mt-4 rounded-sm border border-divider bg-bg p-3 text-[11px] text-muted"><Video size={14} className="mr-1 inline-block text-accent" />As playlists pertencem aos canais do YouTube. Se uma aula bloquear a reprodução dentro do laboratório, use “Abrir no YouTube”. O Pacto só recebe a posição e as conclusões automaticamente quando o player está em um domínio isolado.</p>
   </>;
 }

@@ -6,6 +6,8 @@ const workerScope = self as unknown as {
   postMessage: (message: unknown) => void;
 };
 
+const postWorkerMessage = workerScope.postMessage.bind(self);
+
 workerScope.onmessage = async (event: MessageEvent<{ code?: string }>) => {
   try {
     await initBashkit("/local-runtimes/bash/bashkit_wasm_bg.wasm");
@@ -20,12 +22,12 @@ workerScope.onmessage = async (event: MessageEvent<{ code?: string }>) => {
       maxMemory: 16 * 1024 * 1024,
     });
     const result = await shell.execute(String(event.data?.code ?? ""), { capture: 12000 });
-    if (result.stdout) workerScope.postMessage({ kind: "log", text: result.stdout });
-    if (result.stderr) workerScope.postMessage({ kind: "error", text: result.stderr });
-    workerScope.postMessage({ kind: "done", failed: !result.success });
+    if (result.stdout) postWorkerMessage({ kind: "log", text: result.stdout });
+    if (result.stderr) postWorkerMessage({ kind: "error", text: result.stderr });
+    postWorkerMessage({ kind: "done", failed: !result.success });
   } catch (error) {
     const detail = error instanceof Error ? error.stack ?? error.message : String(error);
-    workerScope.postMessage({ kind: "error", text: detail });
-    workerScope.postMessage({ kind: "done", failed: true });
+    postWorkerMessage({ kind: "error", text: detail });
+    postWorkerMessage({ kind: "done", failed: true });
   }
 };

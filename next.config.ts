@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/((?!youtube-player\\.html$|playground-runner\\.html$).*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
@@ -31,20 +31,40 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Workers of the local runtimes (Aprender): they run user code on this origin, so their own CSP keeps a dynamic
-        // import() or a runtime from reaching any other site. 'wasm-unsafe-eval' compiles the interpreters.
+        // This public video player is embedded only by the canonical app domains.
+        source: "/youtube-player.html",
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://*.gstatic.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; img-src data: https://*.ytimg.com https://*.googleusercontent.com https://*.youtube.com; media-src blob: https://*.googlevideo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://www.pactus.dev.br https://pactus.dev.br http://localhost:* http://127.0.0.1:*" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        // Runs on the isolated static hostname. Authenticated app routes are denied by middleware there.
+        source: "/playground-runner.html",
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors https://www.pactus.dev.br https://pactus.dev.br http://localhost:* http://127.0.0.1:*" },
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+      {
+        // Local runtimes run only on the isolated hostname; same-origin fetches there cannot see the app session or APIs.
         source: "/workers/:path*",
         headers: [
           { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; worker-src 'none'" },
           { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
-          // A page with cross-origin isolation (/aprender) only starts a dedicated worker whose response has COEP too.
           { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
         ],
       },
       {
-        // Same for the bundled workers (Bash) and the WASM-OJ workers rewritten from /_next/static/media.
+        // Bundled workers (Bash) and static dependencies use only this isolated origin.
         source: "/_next/static/:path*",
-        headers: [{ key: "Cross-Origin-Embedder-Policy", value: "credentialless" }],
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; worker-src 'none'" },
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
+        ],
       },
       {
         source: "/wasm-oj/:path*",
@@ -71,7 +91,6 @@ export default withSentryConfig(nextConfig, {
   authToken: process.env.SENTRY_AUTH_TOKEN,
   silent: !process.env.CI,
   telemetry: false,
-  // Reports go through the app's own domain, so ad blockers do not drop them; the middleware skips this path.
   tunnelRoute: "/monitoring",
   sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN, deleteSourcemapsAfterUpload: true },
 });

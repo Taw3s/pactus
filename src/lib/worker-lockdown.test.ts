@@ -10,7 +10,9 @@ function fakeScope() {
   Object.defineProperty(Base.prototype, "indexedDB", { get: () => ({ open: () => "db" }), configurable: true });
   Object.defineProperty(Base.prototype, "caches", { get: () => ({}), configurable: true });
   const scope = new Base() as Record<string, unknown>;
-  for (const name of ["XMLHttpRequest", "WebSocket", "EventSource", "Worker", "SharedWorker", "BroadcastChannel"]) scope[name] = function Native() {};
+  for (const name of ["XMLHttpRequest", "WebSocket", "WebSocketStream", "EventSource", "Worker", "SharedWorker", "BroadcastChannel"]) scope[name] = function Native() {};
+  scope.navigator = { storage: {}, locks: {} };
+  scope.postMessage = () => "message";
   scope.fetch = () => "own fetch";
   return scope;
 }
@@ -32,7 +34,7 @@ describe.each([
     expect(lockdown(scope)).toEqual([]);
     expect(() => (scope.fetch as () => void)()).toThrow(/desativado/);
     expect(() => (Object.getPrototypeOf(scope).fetch as () => void)()).toThrow(/desativado/);
-    for (const name of ["XMLHttpRequest", "WebSocket", "EventSource", "Worker", "SharedWorker", "BroadcastChannel", "indexedDB", "caches"]) {
+    for (const name of ["XMLHttpRequest", "WebSocket", "WebSocketStream", "EventSource", "Worker", "SharedWorker", "BroadcastChannel", "indexedDB", "caches", "navigator", "postMessage"]) {
       expect(scope[name], name).toBeUndefined();
     }
   });

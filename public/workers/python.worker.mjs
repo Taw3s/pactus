@@ -1,6 +1,7 @@
 import { loadPyodide } from "/local-runtimes/python/pyodide.mjs";
 import "/workers/lockdown.js";
 
+const postWorkerMessage = self.postMessage.bind(self);
 const PYODIDE_BASE = "/local-runtimes/python/";
 const OUTPUT_LIMIT = 12000;
 let outputBytes = 0;
@@ -11,7 +12,7 @@ function send(kind, text) {
   if (remaining === 0) return;
   const clipped = value.slice(0, remaining);
   outputBytes += clipped.length;
-  self.postMessage({ kind, text: clipped });
+  postWorkerMessage({ kind, text: clipped });
 }
 
 self.onmessage = async (event) => {
@@ -31,9 +32,9 @@ self.onmessage = async (event) => {
     const left = self.lockdownWorker(self);
     if (left.length) throw new Error(`Isolamento incompleto (${left.join(", ")}); o código não foi executado.`);
     pyodide.runPython(String(event.data?.code ?? ""));
-    self.postMessage({ kind: "done" });
+    postWorkerMessage({ kind: "done" });
   } catch (error) {
-    self.postMessage({ kind: "error", text: String(error?.stack ?? error) });
-    self.postMessage({ kind: "done", failed: true });
+    postWorkerMessage({ kind: "error", text: String(error?.stack ?? error) });
+    postWorkerMessage({ kind: "done", failed: true });
   }
 };

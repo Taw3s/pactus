@@ -42,7 +42,8 @@ export default function PrivacyPage() {
           <b>Aprender:</b> quais aulas escritas e desafios você concluiu, a melhor nota de cada desafio (de 0 a 5) e, em cada curso em vídeo,
           os identificadores dos vídeos do YouTube que você concluiu, o vídeo atual, a posição nele e o tamanho da playlist. Isso fica na sua
           conta, para você continuar em qualquer aparelho; só você vê, e não muda pontos, ranking nem nada do grupo. O código que você digita
-          no playground roda no seu aparelho, em quadros e processos isolados do navegador, e não é enviado ao Pacto nem a outro serviço.
+          no playground fica no aparelho: Python, SQL e Bash passam por uma mensagem entre quadros do navegador em domínios separados para
+          executar localmente. O texto do código não é enviado em uma requisição ao servidor nem a outro serviço.
         </li>
         <li>
           <b>Vida do grupo:</b> dívidas e pagamentos (quem pagou, o que e quem recebeu), acusações, defesas e votos no tribunal com o motivo,
@@ -72,9 +73,11 @@ export default function PrivacyPage() {
       </p>
 
       <p>
-        Os cursos em vídeo usam o player do YouTube. Ele só carrega quando você toca em “Carregar player do YouTube”: nesse momento o app
-        busca o programa do player em youtube.com e abre o vídeo pelo domínio youtube-nocookie.com, sem começar a tocar sozinho. A partir daí
-        o Google/YouTube recebe dados técnicos do navegador e da conexão e, durante a reprodução, dados de uso do player, conforme a{" "}
+        Os cursos em vídeo usam o player do YouTube. Ele só carrega quando você toca em “Carregar player do YouTube”. Se o domínio isolado
+        estiver configurado, o navegador abre o player nesse domínio separado do app; é lá que o YouTube carrega a API e o vídeo pelo domínio
+        youtube-nocookie.com, sem começar a tocar sozinho. Sem essa configuração, o navegador abre o player direto em youtube-nocookie.com e
+        o progresso é marcado manualmente. Quando o player do YouTube carrega, o Google/YouTube recebe dados técnicos do navegador e da conexão
+        e, durante a reprodução, dados de uso do player, conforme a{" "}
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">política de privacidade do Google</a>. Se
         preferir, abra a playlist direto no YouTube, sem carregar o player aqui.
       </p>

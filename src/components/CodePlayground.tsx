@@ -5,6 +5,8 @@ import { Globe2, Play, RotateCcw, Terminal } from "lucide-react";
 import type { LanguageExampleId } from "@/lib/typing-language-examples";
 import type { TypingLang } from "@/lib/typing";
 import { javaBrowserSource } from "@/lib/java-toolchain";
+import { isPlaygroundRunnerMessage, PLAYGROUND_RUNNER_BRIDGE } from "@/lib/playground-runner-messages";
+import { resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
 
 type Props = {
   id: LanguageExampleId;
@@ -25,6 +27,38 @@ const MAX_OUTPUT_LENGTH = 12000;
 const RUN_TIMEOUT_MS = 5000;
 const WORKER_TIMEOUT_MS = 10000;
 const JAVA_TIMEOUT_MS = 45000;
+let cachedBashWorkerPath: string | null = null;
+
+function createBashWorkerForUrlCapture(): Worker {
+  return new Worker(new URL("../workers/bashkit.worker.ts", import.meta.url), { type: "module", credentials: "omit", name: "pactus-bash-path" });
+}
+
+function resolveBashWorkerPath(): string {
+  if (cachedBashWorkerPath) return cachedBashWorkerPath;
+  const descriptor = Object.getOwnPropertyDescriptor(window, "Worker");
+  if (!descriptor?.configurable || !descriptor.value) throw new Error("Bash worker is not available in this build.");
+  let capturedUrl = "";
+  const originalWorker = descriptor.value as typeof Worker;
+  const interceptedWorker = new Proxy(originalWorker, {
+    construct(_target, args) {
+      capturedUrl = String(args[0]);
+      return { terminate() {} } as unknown as Worker;
+    },
+  });
+  try {
+    Object.defineProperty(window, "Worker", { ...descriptor, value: interceptedWorker });
+    createBashWorkerForUrlCapture();
+  } finally {
+    Object.defineProperty(window, "Worker", descriptor);
+  }
+  const url = new URL(capturedUrl, window.location.origin);
+  const allowedDirectory = url.pathname.startsWith("/_next/static/webpack/") || url.pathname.startsWith("/_next/static/chunks/");
+  if (url.origin !== window.location.origin || !allowedDirectory || !url.pathname.endsWith(".js") || url.pathname.includes("..")) {
+    throw new Error("Bash worker asset failed isolated-host validation.");
+  }
+  cachedBashWorkerPath = url.pathname;
+  return cachedBashWorkerPath;
+}
 
 function withPreviewPolicy(source: string) {
   const meta = `<meta http-equiv="Content-Security-Policy" content="${PREVIEW_POLICY}">`;
@@ -53,8 +87,10 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
   const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runMessage, setRunMessage] = useState("");
+  const [runnerOrigin, setRunnerOrigin] = useState<string | null>(null);
+  const [runnerReady, setRunnerReady] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const workerRef = useRef<Worker | null>(null);
+  const runnerFrameRef = useRef<HTMLIFrameElement>(null);
   const javaEngineRef = useRef<{ dispose: () => void } | null>(null);
   const activeRunRef = useRef(0);
   const timeoutRef = useRef<number | null>(null);
@@ -62,21 +98,25 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   const webOnly = id === "web";
   const scriptLanguage = id === "javascript" || id === "typescript";
   const localRunner = id === "python" || id === "sql" || id === "bash" || id === "java";
+  const needsIsolatedRunner = id === "python" || id === "sql" || id === "bash";
   const runnable = scriptLanguage || localRunner;
   const nonWebWithoutRunner = id === "fundamentals";
 
   const stopActiveRun = useCallback(() => {
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
-    workerRef.current?.terminate();
-    workerRef.current = null;
+    if (runnerOrigin) runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "cancel", runId: activeRunRef.current, silent: true }, runnerOrigin);
     javaEngineRef.current?.dispose();
     javaEngineRef.current = null;
-  }, []);
+  }, [runnerOrigin]);
 
   useEffect(() => () => {
     stopActiveRun();
   }, [stopActiveRun]);
+
+  useEffect(() => {
+    setRunnerOrigin(resolveIsolatedHostOrigin(process.env.NEXT_PUBLIC_ISOLATED_ORIGIN, window.location.origin, process.env.NODE_ENV !== "production"));
+  }, []);
 
   useEffect(() => {
     setSource(code);
@@ -85,8 +125,8 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
     setConsoleLines([]);
     setRunStatus("idle");
     setRunMessage("");
-    activeRunRef.current += 1;
     stopActiveRun();
+    activeRunRef.current += 1;
   }, [code, id, lang, stopActiveRun]);
 
   useEffect(() => {
@@ -119,6 +159,34 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
     return () => window.removeEventListener("message", onMessage);
   }, [scriptLanguage, english]);
 
+  useEffect(() => {
+    if (!needsIsolatedRunner || !runnerOrigin || runnerReady) return;
+    const onRunnerMessage = (event: MessageEvent<unknown>) => {
+      if (event.source !== runnerFrameRef.current?.contentWindow || event.origin !== runnerOrigin || !isPlaygroundRunnerMessage(event.data)) return;
+      const message = event.data;
+      if (message.type === "ready") { setRunnerReady(true); return; }
+      if (message.runId !== activeRunRef.current) return;
+      if (message.kind === "done") {
+        if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+        setRunStatus(message.failed ? "error" : "done");
+        setRunMessage(english ? "Executed on an isolated hostname without the signed-in app session." : "Executado em um hostname isolado, sem a sessão autenticada do Pacto.");
+        return;
+      }
+      if (!message.text) return;
+      const chunks = message.text.match(/[\s\S]{1,1200}/g) ?? [];
+      setConsoleLines((current) => current.length >= MAX_CONSOLE_LINES ? current : [...current, ...chunks.slice(0, MAX_CONSOLE_LINES - current.length).map((text) => ({ kind: message.kind === "error" ? "error" as const : "log" as const, text }))]);
+    };
+    window.addEventListener("message", onRunnerMessage);
+    const ping = () => runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "ping" }, runnerOrigin);
+    ping();
+    const pingTimer = window.setInterval(ping, 500);
+    return () => {
+      window.clearInterval(pingTimer);
+      window.removeEventListener("message", onRunnerMessage);
+    };
+  }, [english, needsIsolatedRunner, runnerOrigin, runnerReady]);
+
   function appendLine(kind: ConsoleLine["kind"], text: string) {
     const clipped = clampOutput(text);
     const chunks = clipped.match(new RegExp(`[\\s\\S]{1,${MAX_LINE_LENGTH}}`, "g")) ?? [];
@@ -127,45 +195,30 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   }
 
   function runWorker(language: WorkerLanguage, runId: number) {
-    const worker = language === "bash"
-      ? new Worker(new URL("../workers/bashkit.worker.ts", import.meta.url), { type: "module" })
-      : new Worker(language === "python" ? "/workers/python.worker.mjs" : "/workers/sql.worker.js", { type: language === "python" ? "module" : "classic" });
-    workerRef.current = worker;
-
-    const finish = (failed: boolean) => {
-      if (activeRunRef.current !== runId) return;
-      if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-      worker.terminate();
-      if (workerRef.current === worker) workerRef.current = null;
-      setRunStatus(failed ? "error" : "done");
-      setRunMessage(english
-        ? "Ran locally in an isolated worker; its temporary state is cleared after this run."
-        : "Executado localmente em um processo isolado; o estado temporário é apagado ao final desta execução.");
-    };
-
-    worker.onmessage = (event: MessageEvent<{ kind?: string; text?: string; failed?: boolean }>) => {
-      if (activeRunRef.current !== runId) return;
-      if (event.data.kind === "done") {
-        finish(Boolean(event.data.failed));
-      } else if (event.data.text) {
-        appendLine(event.data.kind === "error" ? "error" : "log", event.data.text);
-      }
-    };
-    worker.onerror = (event) => {
-      appendLine("error", event.message || (english ? "The local interpreter failed to start." : "Não foi possível iniciar o interpretador local."));
-      finish(true);
-    };
+    const runner = runnerFrameRef.current?.contentWindow;
+    if (!runnerOrigin || !runnerReady || !runner) {
+      setRunStatus("error");
+      setRunMessage(english ? "Code execution is unavailable until the isolated runner hostname is configured." : "A execução está desativada até configurar o hostname isolado do interpretador.");
+      return;
+    }
+    let workerPath: string | undefined;
+    try {
+      if (language === "bash") workerPath = resolveBashWorkerPath();
+    } catch (error) {
+      setRunStatus("error");
+      setRunMessage(String(error instanceof Error ? error.message : error));
+      return;
+    }
+    const command = { bridge: PLAYGROUND_RUNNER_BRIDGE, type: "run", runId, language, code: source, ...(workerPath ? { workerPath } : {}) };
+    runner.postMessage(command, runnerOrigin);
     timeoutRef.current = window.setTimeout(() => {
-      worker.terminate();
-      if (workerRef.current === worker) workerRef.current = null;
-      timeoutRef.current = null;
       if (activeRunRef.current !== runId) return;
+      runner.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "cancel", runId, silent: true }, runnerOrigin);
+      timeoutRef.current = null;
       setRunStatus("error");
       setRunMessage(english ? "Stopped after 10 seconds to keep the lab responsive." : "Interrompido após 10 segundos para manter o laboratório responsivo.");
       appendLine("error", english ? "Execution time limit reached." : "Limite de tempo de execução atingido.");
     }, WORKER_TIMEOUT_MS);
-    worker.postMessage({ code: source });
   }
 
   async function runJava(runId: number) {
@@ -306,8 +359,8 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   }
 
   function clearConsole() {
-    activeRunRef.current += 1;
     stopActiveRun();
+    activeRunRef.current += 1;
     setConsoleLines([]);
     setRunMessage("");
     setRunStatus("idle");
@@ -318,15 +371,19 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
     ? (english ? "Edit HTML and CSS; the preview refreshes as you type. JavaScript is disabled in this view." : "Edite HTML e CSS; a prévia atualiza enquanto você digita. JavaScript fica desativado nesta visualização.")
     : scriptLanguage
       ? (english ? "Edit the example, run it, and inspect the page and console below." : "Edite o exemplo, execute e acompanhe a página e o console abaixo.")
-      : id === "python"
-        ? (english ? "Python runs locally through Pyodide in a disposable worker; it cannot access the page or network." : "Python roda localmente com Pyodide em um processo descartável; não acessa a página nem a rede.")
-        : id === "sql"
-          ? (english ? "SQLite runs locally against a fresh in-memory database for each run." : "SQLite roda localmente em um banco temporário novo a cada execução.")
-          : id === "bash"
-            ? (english ? "Bash-compatible commands run in a virtual filesystem with resource limits and network access disabled." : "Comandos compatíveis com Bash rodam em arquivos virtuais, com limites de recursos e sem acesso à rede.")
-            : id === "java"
-              ? (english ? "Java compiles to WebAssembly locally in a bounded learning runtime; cross-origin isolation is available in Chrome and Edge." : "Java compila localmente para WebAssembly em um runtime de estudo com limites; o isolamento necessário fica disponível no Chrome e no Edge.")
-              : (english ? "Pseudocode is a teaching notation, so the terminal shows the reference output without claiming to execute it." : "Pseudocódigo é uma notação de ensino; o terminal mostra a saída de referência sem afirmar que executou o código.");
+      : needsIsolatedRunner && !runnerOrigin
+        ? (english ? "Python, SQL, and Bash wait for a separate runner hostname so code never shares the signed-in app origin." : "Python, SQL e Bash aguardam um hostname separado para que o código não compartilhe a origem autenticada do Pacto.")
+        : needsIsolatedRunner && !runnerReady
+          ? (english ? "Connecting to the isolated code runner…" : "Conectando ao interpretador isolado…")
+          : id === "python"
+            ? (english ? "Python runs in a disposable worker on the isolated hostname, without the signed-in app session." : "Python roda em um worker descartável no hostname isolado, sem a sessão autenticada do Pacto.")
+            : id === "sql"
+              ? (english ? "SQLite uses a fresh in-memory database inside the isolated runner hostname." : "SQLite usa um banco em memória dentro do hostname isolado.")
+              : id === "bash"
+                ? (english ? "Bash-compatible commands run in a disposable worker on the isolated hostname with resource limits." : "Comandos compatíveis com Bash rodam em um worker descartável no hostname isolado, com limites de recursos.")
+                : id === "java"
+                  ? (english ? "Java compiles to WebAssembly locally in a bounded learning runtime; cross-origin isolation is available in Chrome and Edge." : "Java compila localmente para WebAssembly em um runtime de estudo com limites; o isolamento necessário fica disponível no Chrome e no Edge.")
+                  : (english ? "Pseudocode is a teaching notation, so the terminal shows the reference output without claiming to execute it." : "Pseudocódigo é uma notação de ensino; o terminal mostra a saída de referência sem afirmar que executou o código.");
 
   return <section className="mt-4 rounded-sm border-2 border-accent/50 bg-raised p-3" data-testid="code-playground">
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -336,7 +393,7 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
         <p className="mt-1 text-sm text-muted">{helperText}</p>
       </div>
       {runnable && <div className="flex gap-2">
-        <button type="button" className="inline-flex min-h-9 items-center gap-2 rounded-sm border-2 border-accent bg-accent px-3 text-xs font-semibold text-on-accent disabled:opacity-60" disabled={runStatus === "running"} onClick={() => void runCode()}><Play size={14} /> {english ? "Run" : "Executar"}</button>
+        <button type="button" className="inline-flex min-h-9 items-center gap-2 rounded-sm border-2 border-accent bg-accent px-3 text-xs font-semibold text-on-accent disabled:opacity-60" disabled={runStatus === "running" || (needsIsolatedRunner && !runnerReady)} onClick={() => void runCode()}><Play size={14} /> {english ? "Run" : "Executar"}</button>
         <button type="button" className="inline-flex min-h-9 items-center gap-2 rounded-sm border-2 border-bevel-dark px-3 text-xs font-semibold text-muted hover:text-fg" onClick={clearConsole}><RotateCcw size={14} /> {english ? "Clear" : "Limpar"}</button>
       </div>}
     </div>
@@ -344,6 +401,26 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
     <label className="mt-3 block text-xs font-semibold text-muted">{english ? "Editable code" : "Código editável"}
       <textarea className="mt-1 min-h-48 w-full resize-y rounded-sm border-2 border-bevel-dark bg-bg p-3 font-mono text-xs leading-5 text-fg focus:border-accent focus:outline-none" spellCheck={false} autoCapitalize="off" autoCorrect="off" maxLength={30000} value={source} onChange={(event) => setSource(event.target.value)} aria-label={english ? "Editable playground code" : "Código editável do playground"} />
     </label>
+
+    {needsIsolatedRunner && !runnerOrigin && <p className="mt-3 rounded-sm border border-pending/60 bg-warn-bg p-3 text-xs text-muted" role="status">
+      {english
+        ? "Python, SQL, and Bash are paused until the separate runner hostname is configured. This keeps untrusted code away from your signed-in session."
+        : "Python, SQL e Bash estão pausados até configurar o hostname separado do interpretador. Isso mantém código não confiável longe da sua sessão autenticada."}
+    </p>}
+    {needsIsolatedRunner && runnerOrigin && <iframe
+      ref={(frame) => {
+        runnerFrameRef.current = frame;
+        if (frame && "credentialless" in frame) frame.setAttribute("credentialless", "");
+      }}
+      title={english ? "Isolated code runner" : "Interpretador isolado de código"}
+      sandbox="allow-scripts allow-same-origin"
+      referrerPolicy="no-referrer"
+      aria-hidden="true"
+      tabIndex={-1}
+      hidden
+      src={runnerOrigin + "/playground-runner.html?parent=" + encodeURIComponent(window.location.origin)}
+      onLoad={() => runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "ping" }, runnerOrigin)}
+    />}
 
     {webOnly && <div className="mt-3 overflow-hidden rounded-sm border-2 border-divider bg-bg">
       <div className="flex items-center gap-2 border-b border-divider px-3 py-2 text-xs font-semibold text-muted"><Globe2 size={14} /> {english ? "Live page" : "Página ao vivo"}<span className="ml-auto text-[10px] text-accent">{english ? "Auto-updating" : "Atualização automática"}</span></div>
