@@ -20,6 +20,8 @@ const eslintConfig = [
       "next-env.d.ts",
       "tools/*/node_modules/**",
       "tools/video/public/**",
+      "public/local-runtimes/**",
+      "public/toolchains/**",
     ],
   },
 ];

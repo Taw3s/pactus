@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Local runtimes of Aprender: copied and hash-checked from node_modules by tools/runtimes/stage.mjs (licenses stay tracked).
+/public/local-runtimes/bash/
+/public/local-runtimes/python/
+/public/local-runtimes/sql/
+/public/toolchains/
