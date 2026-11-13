@@ -1,6 +1,6 @@
 // Stage (s): Aprender. Progress belongs to the account (0033): a lesson and a challenge finished on one device show on
 // another, never for another account. Java runs on the device (only with cross-origin isolation, which /aprender gets in
-// Chromium); Python, SQL and Bash need the isolated host and stay paused without it. A challenge of its own: nothing depends on the other stages.
+// Chromium); Python, SQL and Bash need the isolated host and stay paused without it (their challenges refuse to check too). A challenge of its own: nothing depends on the other stages.
 import { createRequire } from "node:module";
 import { APP, assert, done, launch, newPhone, sql, step } from "./lib.mjs";
 
@@ -102,6 +102,38 @@ await step("all 8 Bash exercises are reachable; without the isolated host the ru
   await panel.getByTestId("challenge-submit").click();
   await panel.getByText(/interpretador isolado, que não está disponível aqui/).waitFor();
   assert((await panel.getByTestId("challenge-output").count()) === 0, "no output before an approved run");
+});
+
+await step("Python and SQL answers are checked by running them: without the isolated host even the exact reference is refused, never compared as text", async () => {
+  const p = lia.page;
+  await p.getByRole("tab", { name: "Desafios" }).click();
+  const panel = p.getByTestId("language-code-challenge");
+  for (const [language, level, item] of [["python", "easy", "python:easy:pt"], ["sql", "medium", "sql:medium:pt"]]) {
+    await p.getByLabel("Linguagem").selectOption(language);
+    await p.getByLabel("Nível").selectOption(level);
+    assert((await panel.getByTestId("mode-hints").getAttribute("aria-pressed")) === "true", `${language}: no-visualizer by default`);
+    // The cases are listed before any attempt (what goes in), and SQL shows the tables each case creates.
+    const listed = panel.getByRole("list", { name: "Casos conferidos" }).getByRole("listitem");
+    assert((await listed.count()) >= 2, `${language}: ${await listed.count()} cases`);
+    if (language === "python") await listed.first().getByText("entrada: “ana bia caio”").waitFor();
+    else {
+      await listed.first().getByText("Ver as tabelas deste caso").click();
+      await listed.first().getByText("tarefas (nome | categoria | concluida)").waitFor();
+    }
+    await panel.getByRole("button", { name: "Executar e conferir" }).waitFor();
+    // Reveal the reference (worth 1 point) and send exactly that text: before, this was approved by comparing text.
+    for (let i = 0; i < 4; i++) await panel.getByTestId("hint-next").click();
+    await panel.getByText("Esta tentativa vale até 1 ponto(s).").waitFor();
+    const reference = await panel.getByText("Solução de referência", { exact: true }).locator("xpath=following-sibling::pre").innerText();
+    assert(reference.includes(language === "python" ? "input()" : "FROM tarefas"), `${language}: reference reads its data from the case: ${reference}`);
+    await panel.getByTestId("challenge-answer").fill(reference);
+    await panel.getByTestId("challenge-submit").click();
+    await panel.getByText(/interpretador isolado, que não está disponível aqui/).waitFor();
+    assert((await panel.getByTestId("challenge-output").count()) === 0, `${language}: no output before an approved run`);
+    assert((await panel.getByText("Desafio concluído. Seu progresso ficou guardado na sua conta.").count()) === 0, `${language}: not completed`);
+    assert(sql(`select count(*) from learning_progress where user_id = '${lia.id}' and item_id = '${item}'`) === "0", `${language}: no score saved`);
+  }
+  assert((await p.locator("iframe[title='Interpretador isolado dos desafios']").count()) === 0, "no runner frame without the isolated host");
 });
 
 await step("typing: Código mode with Bash ends at the end of the code and offers Recomeçar", async () => {

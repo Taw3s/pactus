@@ -61,14 +61,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "Execute em PostgreSQL ou SQLite recente. Mude TRUE/FALSE e observe quais linhas entram no resultado.", en: "Run it in PostgreSQL or recent SQLite. Change TRUE/FALSE and observe which rows appear." },
     challenge: {
       title: { pt: "Filtrar tarefas pendentes", en: "Filter pending tasks" },
-      prompt: { pt: "Com os dados Estudar/TRUE, Revisar/FALSE e Praticar/FALSE, escreva uma consulta que mostre apenas os nomes pendentes, em ordem alfabética.", en: "Given Study/TRUE, Review/FALSE, and Practice/FALSE, write a query that returns only pending names in alphabetical order." },
+      prompt: { pt: "A tabela tarefas(nome, concluida) já existe; concluida vale TRUE ou FALSE. Escreva uma consulta que mostre apenas os nomes das tarefas pendentes, em ordem alfabética.", en: "The table tasks(name, completed) already exists; completed is TRUE or FALSE. Write a query that returns only the names of pending tasks in alphabetical order." },
       solution: {
-        pt: "WITH tarefas(nome, concluida) AS (\n  VALUES ('Estudar', TRUE), ('Revisar', FALSE), ('Praticar', FALSE)\n)\nSELECT nome\nFROM tarefas\nWHERE concluida = FALSE\nORDER BY nome;",
-        en: "WITH tasks(name, completed) AS (\n  VALUES ('Study', TRUE), ('Review', FALSE), ('Practice', FALSE)\n)\nSELECT name\nFROM tasks\nWHERE completed = FALSE\nORDER BY name;",
+        pt: "SELECT nome\nFROM tarefas\nWHERE concluida = FALSE\nORDER BY nome;",
+        en: "SELECT name\nFROM tasks\nWHERE completed = FALSE\nORDER BY name;",
       },
       hints: {
-        pt: ["Monte primeiro uma tabela temporária com os três pares nome e estado.", "Filtre as linhas em que concluida é FALSE e ordene pelo nome.", "Use uma CTE com VALUES, WHERE concluida = FALSE e ORDER BY nome."],
-        en: ["Start by making a temporary table with the three name and status pairs.", "Filter rows where completed is FALSE, then sort by name.", "Use a CTE with VALUES, WHERE completed = FALSE, and ORDER BY name."],
+        pt: ["A tabela já está pronta: a consulta só precisa ler dela com SELECT ... FROM tarefas.", "Filtre as linhas em que concluida é FALSE e ordene pelo nome.", "Use SELECT nome FROM tarefas, WHERE concluida = FALSE e ORDER BY nome."],
+        en: ["The table is ready: the query only needs to read from it with SELECT ... FROM tasks.", "Filter rows where completed is FALSE, then sort by name.", "Use SELECT name FROM tasks, WHERE completed = FALSE, and ORDER BY name."],
       },
       output: { pt: "Praticar\nRevisar", en: "Practice\nReview" },
     },
@@ -86,14 +86,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "Salve como media.py e execute com Python 3. Troque as notas; depois veja o que acontece com uma lista vazia.", en: "Save as average.py and run with Python 3. Change the scores, then consider what happens with an empty list." },
     challenge: {
       title: { pt: "Selecionar números pares", en: "Select even numbers" },
-      prompt: { pt: "Crie a lista [2, 5, 8, 1], selecione os números divisíveis por dois e mostre a lista resultante.", en: "Create the list [2, 5, 8, 1], select numbers divisible by two, and print the resulting list." },
+      prompt: { pt: "Leia uma linha com números inteiros separados por espaço (por exemplo: 2 5 8 1), selecione os divisíveis por dois e mostre a lista resultante.", en: "Read a line of integers separated by spaces (for example: 2 5 8 1), select the ones divisible by two, and print the resulting list." },
       solution: {
-        pt: "numeros = [2, 5, 8, 1]\npares = [numero for numero in numeros if numero % 2 == 0]\nprint(pares)",
-        en: "numbers = [2, 5, 8, 1]\nevens = [number for number in numbers if number % 2 == 0]\nprint(evens)",
+        pt: "numeros = [int(parte) for parte in input().split()]\npares = [numero for numero in numeros if numero % 2 == 0]\nprint(pares)",
+        en: "numbers = [int(part) for part in input().split()]\nevens = [number for number in numbers if number % 2 == 0]\nprint(evens)",
       },
       hints: {
-        pt: ["O operador de resto ajuda a descobrir se a divisão por dois não deixa sobra.", "Percorra a lista e mantenha somente os valores cujo resto da divisão por dois é zero.", "Use uma compreensão de lista com numero % 2 == 0 e depois imprima pares."],
-        en: ["The remainder operator helps determine whether division by two leaves anything over.", "Walk through the list and keep values whose remainder after division by two is zero.", "Use a list comprehension with number % 2 == 0, then print evens."],
+        pt: ["input() lê a linha, split() separa as partes e int() converte cada uma; o operador de resto diz se a divisão por dois deixa sobra.", "Percorra a lista e mantenha somente os valores cujo resto da divisão por dois é zero.", "Use uma compreensão de lista com numero % 2 == 0 e depois imprima pares."],
+        en: ["input() reads the line, split() separates the parts, and int() converts each one; the remainder operator tells whether division by two leaves anything over.", "Walk through the list and keep values whose remainder after division by two is zero.", "Use a list comprehension with number % 2 == 0, then print evens."],
       },
       output: { pt: "[2, 8]", en: "[2, 8]" },
     },
