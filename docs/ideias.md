@@ -233,8 +233,7 @@ Pendências do dono antes de produção: identidade real em `NEXT_PUBLIC_CONTROL
 institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031,
 0032 e 0033 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
 
-**Decisão PENDENTE do dono (bloqueia o merge): corte dos pontos de digitação depois de uma prova anulada.** Não faz parte das
-regras aprovadas em 10/11. Só importa num dia com prova de digitação anulada e refeita; o banco (prova refeita só com teste iniciado
+**Decidido em 13/11/2026: opção A.** Corte dos pontos de digitação depois de uma prova anulada (registro das opções avaliadas): Só importa num dia com prova de digitação anulada e refeita; o banco (prova refeita só com teste iniciado
 depois do veredito) é igual nas duas opções.
 
 - **A — corte no veredito (o que o branch faz hoje):** contam só testes iniciados depois do veredito final. O teste que vale como
