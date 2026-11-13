@@ -31,13 +31,13 @@ const JAVA_TIMEOUT_MS = 45000;
 let cachedBashWorkerPath: string | null = null;
 // Present on the iframe before its first navigation: /aprender has COEP in Chromium, and a cross-origin frame without
 // COEP of its own is only let in when credentialless. Setting it later (in a ref) is too late. Other browsers ignore it.
-const CREDENTIALLESS = { credentialless: "" } as Record<string, string>;
+export const CREDENTIALLESS = { credentialless: "" } as Record<string, string>;
 
 function createBashWorkerForUrlCapture(): Worker {
   return new Worker(new URL("../workers/bashkit.worker.ts", import.meta.url), { type: "module", credentials: "omit", name: "pactus-bash-path" });
 }
 
-function resolveBashWorkerPath(): string {
+export function resolveBashWorkerPath(): string {
   if (cachedBashWorkerPath) return cachedBashWorkerPath;
   const descriptor = Object.getOwnPropertyDescriptor(window, "Worker");
   if (!descriptor?.configurable || !descriptor.value) throw new Error("Bash worker is not available in this build.");

@@ -36,11 +36,15 @@ async function finishChallenge(p, language) {
   await p.getByRole("tab", { name: "Desafios" }).click();
   await p.getByLabel("Linguagem").selectOption(language);
   const panel = p.getByTestId("language-code-challenge");
+  // "Sem visualizador" is the default now (13/11/2026); typing the reference is the 1-point visualizer mode.
+  assert((await panel.getByTestId("mode-hints").getAttribute("aria-pressed")) === "true", "no-visualizer by default");
+  assert((await panel.getByText(/^Dica 1 de/).count()) === 0, "no hint shown before asking");
+  await panel.getByTestId("mode-visualizer").click();
   const solution = await panel.locator("pre[aria-hidden=true]").first().innerText();
   await panel.getByRole("textbox").first().fill(solution);
   await panel.getByRole("button", { name: "Conferir resposta" }).click();
   await panel.getByText("Desafio concluído. Seu progresso ficou guardado na sua conta.").waitFor({ timeout: 15000 });
-  await panel.getByRole("button", { name: "Abrir exemplo e playground" }).click();
+  await panel.getByRole("button", { name: "Abrir no playground" }).click();
   return panel.getByTestId("code-playground");
 }
 
@@ -74,6 +78,48 @@ await step("a challenge finished by typing the reference keeps its score in the 
   await playground.getByText("Python, SQL e Bash estão pausados até configurar o hostname separado do interpretador.").waitFor();
   assert(await playground.getByRole("button", { name: "Executar" }).isDisabled(), "Executar stays disabled");
   assert((await p.locator("iframe[title='Interpretador isolado de código']").count()) === 0, "no runner frame");
+});
+
+await step("all 8 Bash exercises are reachable; without the isolated host the run-based check refuses instead of comparing text", async () => {
+  const p = lia.page;
+  await p.getByRole("tab", { name: "Desafios" }).click();
+  await p.getByLabel("Linguagem").selectOption("bash");
+  const options = await p.getByTestId("bash-exercise").locator("option").allInnerTexts();
+  assert(options.length === 8, `bash exercises ${options.length}`);
+  const panel = p.getByTestId("language-code-challenge");
+  for (const [i, value] of (await p.getByTestId("bash-exercise").locator("option").evaluateAll((os) => os.map((o) => o.value))).entries()) {
+    await p.getByTestId("bash-exercise").selectOption(value);
+    await panel.getByText(`Caso 1:`, { exact: false }).first().waitFor();
+    assert((await panel.getByRole("heading").first().innerText()).length > 0, `exercise ${i + 1}`);
+  }
+  // Hints cost points; revealing the solution is worth 1, like the visualizer.
+  await panel.getByText("Esta tentativa vale até 5 ponto(s).").waitFor();
+  await panel.getByTestId("hint-next").click();
+  await panel.getByText("Esta tentativa vale até 4 ponto(s).").waitFor();
+  for (let i = 0; i < 3; i++) await panel.getByTestId("hint-next").click();
+  await panel.getByText("Esta tentativa vale até 1 ponto(s).").waitFor();
+  await panel.getByTestId("challenge-answer").fill("echo oi");
+  await panel.getByTestId("challenge-submit").click();
+  await panel.getByText(/interpretador isolado, que não está disponível aqui/).waitFor();
+  assert((await panel.getByTestId("challenge-output").count()) === 0, "no output before an approved run");
+});
+
+await step("typing: Código mode with Bash ends at the end of the code and offers Recomeçar", async () => {
+  const p = lia.page;
+  await p.goto(`${APP}/hoje`);
+  const typing = p.locator("[data-goal=typing][data-state=pending]");
+  await typing.getByTestId("typing-mode-code").click();
+  await typing.getByTestId("typing-text-code-bash-printf").click();
+  await typing.getByRole("button", { name: "Começar teste" }).click();
+  const input = typing.getByTestId("typing-input");
+  await input.waitFor();
+  for (let n = 0; n < 10 && (await typing.getByTestId("typing-test").getAttribute("data-phase").catch(() => "gone")) === "running"; n++) {
+    const word = await typing.getByTestId("typing-word-current").innerText().catch(() => "");
+    if (!word) break;
+    await input.pressSequentially(`${word} `, { delay: 5 }).catch(() => {});
+  }
+  await p.getByTestId("typing-moved").getByText(/Texto concluído/).waitFor({ timeout: 15000 });
+  assert(sql(`select words from typing_progress where user_id = '${lia.id}' and text_id = 'code-bash-printf'`) === "5", "place at the end, not wrapped");
 });
 
 await step("another account sees none of it", async () => {
