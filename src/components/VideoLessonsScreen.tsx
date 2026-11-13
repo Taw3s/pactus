@@ -518,12 +518,12 @@ function CoursePlayer({
           <button type="button" onClick={() => moveToLesson(Number(manualLessonNumber) - 1)} className="mt-auto min-h-9 rounded-sm border border-divider px-3 font-semibold text-accent hover:bg-raised">Carregar aula</button>
         </div>
       </div>}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="pixel truncate text-sm uppercase">{currentTitle || progress.currentTitle || "Escolha uma aula"}</p>
-          <p className="mt-1 text-xs text-muted" role="status">{playerError || playerMessage}</p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 sm:flex-1">
+          <p className="pixel break-words hyphens-auto text-sm uppercase">{currentTitle || progress.currentTitle || "Escolha uma aula"}</p>
+          <p className={`mt-1 text-xs ${playerError ? "text-fg" : "text-muted"}`} role="status" data-testid="player-status">{playerError || playerMessage}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <button type="button" onClick={resume} className="inline-flex min-h-9 items-center gap-2 rounded-sm border-2 border-bevel-dark bg-accent px-3 text-xs font-semibold text-on-accent shadow-[2px_2px_0_var(--color-hard-shadow)]"><Play size={14} /> Retomar aula</button>
           <button type="button" onClick={markCurrentComplete} disabled={!currentVideoId && !progress.currentVideoId} className="inline-flex min-h-9 items-center gap-2 rounded-sm border-2 border-divider px-3 text-xs font-semibold text-fg hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"><Check size={14} /> Marcar concluída</button>
         </div>

@@ -147,8 +147,9 @@
       script.src = "https://www.youtube.com/iframe_api";
       script.async = true;
       script.onerror = () => {
-        status.textContent = "Não foi possível carregar o YouTube.";
-        send({ type: "error", code: 0 });
+        status.textContent = "Não foi possível falar com o YouTube.";
+        // 900: our own code (not YouTube's) for "the API script never arrived": network, firewall or blocker.
+        send({ type: "error", code: 900 });
       };
       window.onYouTubeIframeAPIReady = onApiReady;
       document.head.appendChild(script);
