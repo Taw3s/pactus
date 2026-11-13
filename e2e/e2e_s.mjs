@@ -1,6 +1,6 @@
 // Stage (s): Aprender. Progress belongs to the account (0033): a lesson and a challenge finished on one device show on
-// another, never for another account. The playground runs Python and Java locally (Java only with cross-origin
-// isolation, which /aprender gets in Chromium). A challenge of its own: nothing depends on the other stages.
+// another, never for another account. Java runs on the device (only with cross-origin isolation, which /aprender gets in
+// Chromium); Python, SQL and Bash need the isolated host and stay paused without it. A challenge of its own: nothing depends on the other stages.
 import { createRequire } from "node:module";
 import { APP, assert, done, launch, newPhone, sql, step } from "./lib.mjs";
 
@@ -66,13 +66,14 @@ await step("a lesson finished on the phone is saved in the account and shows as 
   await other.ctx.close();
 });
 
-await step("a challenge finished by typing the reference keeps its score in the account; the playground runs Python locally", async () => {
+await step("a challenge finished by typing the reference keeps its score in the account; without an isolated host Python stays paused", async () => {
   const p = lia.page;
   const playground = await finishChallenge(p, "python");
   assert(sql(`select best_score from learning_progress where user_id = '${lia.id}' and item_id = 'python:beginner:pt'`) === "1", "challenge score");
-  const expected = await p.getByText("Resultado do exemplo").locator("..").locator("pre").innerText();
-  const out = await run(playground, 60000);
-  assert(out.includes(expected.trim()), `python output: ${out.slice(0, 300)}`);
+  // The CI build has no NEXT_PUBLIC_ISOLATED_ORIGIN: Python, SQL and Bash must not run on the signed-in origin.
+  await playground.getByText("Python, SQL e Bash estão pausados até configurar o hostname separado do interpretador.").waitFor();
+  assert(await playground.getByRole("button", { name: "Executar" }).isDisabled(), "Executar stays disabled");
+  assert((await p.locator("iframe[title='Interpretador isolado de código']").count()) === 0, "no runner frame");
 });
 
 await step("another account sees none of it", async () => {

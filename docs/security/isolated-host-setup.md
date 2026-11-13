@@ -20,3 +20,25 @@ Com o app em http://localhost:3000, pode-se usar http://127.0.0.1:3000 como a or
 ## Comportamento sem configuração
 
 Sem NEXT_PUBLIC_ISOLATED_ORIGIN, os vídeos ainda abrem em youtube-nocookie.com sem carregar a API na página autenticada; a pessoa marca o progresso manualmente. A execução de Python, SQL e Bash fica desativada até a origem isolada responder e validar a mensagem de conexão. Java e JavaScript continuam com seus ambientes locais separados.
+
+## Achados da revisão de 13/11/2026 (corrigidos nesta branch)
+
+- O middleware decidia pelo `request.nextUrl.host`, que no `next start` e no `next dev` é o hostname do próprio servidor:
+  a origem isolada recebia o app inteiro (login, páginas, APIs). Agora conta qualquer host que a requisição nomeia
+  (`Host`, primeiro `X-Forwarded-Host`, URL do Next); um cabeçalho forjado só torna a resposta mais restrita.
+- Em `/aprender`, que tem COEP no Chromium, o executor e o player isolados não carregavam (`chrome-error`): o atributo
+  `credentialless` era posto num `ref`, depois de a navegação começar. Agora vem no próprio JSX.
+- O Bash falhava no build de produção ("Module scripts don't support importScripts()"): o chunk do worker gerado pelo
+  webpack carrega as partes com `importScripts`, então o executor o abre como worker clássico.
+- JavaScript e TypeScript: um loop infinito síncrono no `iframe` travava a aba inteira, e o limite de 5 s nunca disparava.
+  O compilador TypeScript (já usado para TS) agora põe um limite de tempo em todo loop (`src/lib/loop-guard.ts`).
+  Travamentos que não são loop (`"x".repeat(1e9)`, expressão regular catastrófica) continuam possíveis.
+
+## Validação na Vercel (depende de quem administra a conta)
+
+O Python, o SQL e o Bash só rodam quando a página-mãe é `https://www.pactus.dev.br` ou `https://pactus.dev.br`
+(lista fixa em `youtube-player-messages.ts`, `isolated-origin-policy.js` e no `frame-ancestors` do `next.config.ts`).
+Num preview `*.vercel.app` eles ficam pausados de propósito, e os vídeos usam o modo direto. Para validar antes da
+produção, é preciso um domínio de staging incluído nessas três listas, ou validar no domínio principal depois do deploy.
+Roteiro: abrir `/aprender` no Chrome, conferir no DevTools que o `iframe` do executor vem de `NEXT_PUBLIC_ISOLATED_ORIGIN`,
+rodar os exemplos de Python, SQL e Bash, e abrir `https://<origem isolada>/api/feedback` e `/login` (devem dar 404).
