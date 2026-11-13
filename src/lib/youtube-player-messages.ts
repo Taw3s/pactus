@@ -158,6 +158,9 @@ export function youtubeErrorMessage(code: number): string {
   if (code === 153) {
     return "O YouTube não identificou de qual site vem o player (erro 153). Recarregue a página; se continuar, abra a playlist direto no YouTube.";
   }
+  if (code === 900) {
+    return "Este navegador não conseguiu falar com o YouTube: a rede, um firewall (comum em empresa) ou um bloqueador impediu. O app está funcionando; tente em outra rede ou abra a playlist direto no YouTube.";
+  }
   if (code === 100) return "Este vídeo foi removido ou é privado. Abra a playlist no YouTube para seguir com a próxima aula.";
   if (code === 101 || code === 150) return "O dono deste vídeo não permite reprodução dentro de outros sites. Abra a playlist no YouTube.";
   if (code === 2) return "O YouTube recusou o pedido do player. Recarregue a página e tente de novo.";

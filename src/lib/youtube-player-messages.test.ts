@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  youtubeErrorMessage,
   buildDirectYouTubePlaylistUrl,
   buildIsolatedYouTubePlayerUrl,
   isAllowedIsolatedParentOrigin,
@@ -91,5 +92,9 @@ describe("youtubeErrorMessage", () => {
     expect(youtubeErrorMessage(150)).toMatch(/não permite/);
     expect(youtubeErrorMessage(101)).toBe(youtubeErrorMessage(150));
     expect(youtubeErrorMessage(999)).toMatch(/não conseguiu carregar/);
+  });
+  it("tells a network or firewall block apart from a YouTube error", () => {
+    expect(youtubeErrorMessage(900)).toMatch(/firewall/);
+    expect(youtubeErrorMessage(900)).not.toMatch(/player isolado/);
   });
 });
