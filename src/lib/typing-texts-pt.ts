@@ -2,6 +2,7 @@
 // loadTypingTexts in typing-texts.ts). Prose only, no code symbols; a text's id is stored in
 // typing_progress, so never rename one.
 import type { TypingText } from "./typing-texts";
+import { BASH_TEXTS_PT } from "./typing-texts-bash";
 
 export const TEXTS: TypingText[] = [
   {
@@ -852,4 +853,5 @@ export const TEXTS: TypingText[] = [
       "texto devolve, na verdade, um texto novo. Por isso, montar textos longos dentro de um laço deve ser feito com o " +
       "StringBuilder, evitando criar milhares de objetos temporários.",
   },
+  ...BASH_TEXTS_PT,
 ];

@@ -3,6 +3,7 @@
 // symbols; a text's id is stored in typing_progress, so never rename one. English ids start with
 // "en-" (the database checks it).
 import type { TypingText } from "./typing-texts";
+import { BASH_TEXTS_EN } from "./typing-texts-bash";
 
 const EN: Omit<TypingText, "lang">[] = [
   {
@@ -796,4 +797,4 @@ const EN: Omit<TypingText, "lang">[] = [
   },
 ];
 
-export const TEXTS: TypingText[] = EN.map((t) => ({ ...t, lang: "en" as const }));
+export const TEXTS: TypingText[] = [...EN.map((t) => ({ ...t, lang: "en" as const })), ...BASH_TEXTS_EN];

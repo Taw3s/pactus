@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="referrer" content="no-referrer">
+  <!-- YouTube refuses embeds without a Referer (error 153): send only this origin, never a path or query. -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Player de aulas</title>
   <style>
     :root { color-scheme: dark; background: #000; }

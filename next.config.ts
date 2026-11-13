@@ -41,7 +41,8 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Security-Policy", value: `default-src 'none'; script-src 'self' https://www.youtube.com https://s.ytimg.com; connect-src https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com https://*.googleapis.com https://*.gstatic.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; img-src data: https://*.ytimg.com https://*.googleusercontent.com https://*.youtube.com; media-src blob: https://*.googlevideo.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${APP_FRAME_ANCESTORS}` },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "no-referrer" },
+          // YouTube answers error 153 without a Referer. Cross-origin requests get only this origin, never the path.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
       {

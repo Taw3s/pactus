@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { TEXTS as EN } from "./typing-texts-en";
 import { TEXTS as PT } from "./typing-texts-pt";
-import { progressAfter, textWords, TYPING_CATEGORIES, wordsFrom } from "./typing-texts";
+import { codeLayout, progressAfter, textWords, TYPING_CATEGORIES, wordsFrom } from "./typing-texts";
+import { codeTypingTexts } from "./typing-code-texts";
 
 const ALL = [...PT, ...EN];
 
@@ -26,14 +27,24 @@ describe("typing texts", () => {
     for (const c of TYPING_CATEGORIES) expect(EN.filter((t) => t.category === c).length, c).toBe(PT.filter((t) => t.category === c).length);
   });
 
-  it("continue where the person stopped and go around the text", () => {
+  it("continue where the person stopped and end at the end of the text", () => {
     const t = PT[0];
     const all = textWords(t);
-    const { words, wrapsAt } = wordsFrom(t, all.length - 2, 5);
-    expect(words).toEqual([all.at(-2), all.at(-1), all[0], all[1], all[2]]);
-    expect(wrapsAt).toBe(2);
-    expect(progressAfter(t, 10, 30)).toEqual({ words: 40, laps: 0, total: all.length });
-    expect(progressAfter(t, all.length - 5, 5)).toEqual({ words: 0, laps: 1, total: all.length });
-    expect(progressAfter(t, 10, all.length * 2 + 3)).toEqual({ words: 13, laps: 2, total: all.length });
+    const { words, left } = wordsFrom(t, all.length - 2);
+    expect(words).toEqual([all.at(-2), all.at(-1)]);
+    expect(left).toBe(2);
+    expect(wordsFrom(t, all.length).words).toEqual([]);
+    expect(progressAfter(t, 10, 30)).toEqual({ words: 40, finished: false, total: all.length });
+    expect(progressAfter(t, all.length - 5, 5)).toEqual({ words: all.length, finished: true, total: all.length });
+    expect(progressAfter(t, 10, all.length * 2)).toEqual({ words: all.length, finished: true, total: all.length });
+  });
+
+  it("include Bash theory in five stages per language, and Bash code with its line breaks", () => {
+    for (const list of [PT, EN]) expect(list.filter((t) => t.category === "Bash").length).toBe(5);
+    const code = codeTypingTexts("pt");
+    expect(code.length).toBe(8);
+    const layout = codeLayout(code.find((c) => c.id === "code-bash-printf")!);
+    expect(layout.lineEnd.filter(Boolean).length).toBe(2);
+    expect(codeTypingTexts("en").every((c) => c.id.startsWith("en-code-"))).toBe(true);
   });
 });

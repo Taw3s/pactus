@@ -76,8 +76,9 @@ export default function PrivacyPage() {
         Os cursos em vídeo usam o player do YouTube. Ele só carrega quando você toca em “Carregar player do YouTube”. Se o domínio isolado
         estiver configurado, o navegador abre o player nesse domínio separado do app; é lá que o YouTube carrega a API e o vídeo pelo domínio
         youtube-nocookie.com, sem começar a tocar sozinho. Sem essa configuração, o navegador abre o player direto em youtube-nocookie.com e
-        o progresso é marcado manualmente. Quando o player do YouTube carrega, o Google/YouTube recebe dados técnicos do navegador e da conexão
-        e, durante a reprodução, dados de uso do player, conforme a{" "}
+        o progresso é marcado manualmente. Quando o player do YouTube carrega, o Google/YouTube recebe dados técnicos do navegador e da conexão,
+        entre eles o endereço do site que abriu o player (só o domínio, nunca a página nem os parâmetros), que o YouTube exige para
+        identificar de onde vem o player, e, durante a reprodução, dados de uso do player, conforme a{" "}
         <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">política de privacidade do Google</a>. Se
         preferir, abra a playlist direto no YouTube, sem carregar o player aqui.
       </p>

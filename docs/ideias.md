@@ -245,3 +245,11 @@ depois do veredito) é igual nas duas opções.
 
 Para trocar para B: `scoringTypingTests` (`ranking.ts`, corte pelo `created_at` da prova e `finished_at`), `diff.ranking` em
 `harness.sql`, os testes de `ranking.test.ts` e os casos "teste melhor feito depois da prova" do diferencial.
+
+## Aprender e Digitação (13/11/2026, branch `claude/aprender-digitacao-fixes`)
+
+- Conferência por execução só em Bash. Python/SQL (runner isolado) e JS/TS (iframe local) ainda comparam o texto da resposta com a referência: falta escrever os casos de cada desafio.
+- O modo Código só tem Bash (os 8 exemplos do Aprender). Outras linguagens exigem textos de código e linhas novas no catálogo (migration).
+- Trilhas: a ordem das leituras é curada só em Fundamentos e Bash; nos outros temas segue a ordem dos arquivos, dividida em terços. Revisar com o Astra junto da comparação visual.
+- Comparação visual de Aprender e Digitação (celular e desktop) não foi feita nesta sessão: precisa de login (Supabase local) e o container não sobe o Docker. Rodar `e2e/responsive-audit.mjs` e mandar as capturas ao Astra.
+- Player do YouTube: reprodução real (Chromium e Firefox) depende do domínio isolado configurado; a sessão da nuvem não alcança o YouTube.

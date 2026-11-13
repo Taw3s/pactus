@@ -10,9 +10,11 @@ export interface TypingText {
   category: string;
   title: string;
   text: string;
+  /** Code ("Código" mode): typed with its symbols, shown with its line breaks and indentation. */
+  code?: boolean;
 }
 
-export const TYPING_CATEGORIES = ["Fundamentos", "SQL e dados", "Python", "JavaScript", "TypeScript", "Java", "Web"] as const;
+export const TYPING_CATEGORIES = ["Fundamentos", "SQL e dados", "Python", "JavaScript", "TypeScript", "Java", "Web", "Bash"] as const;
 
 /** The texts of one language (a separate chunk per language). */
 export async function loadTypingTexts(lang: TypingLang): Promise<TypingText[]> {
@@ -24,21 +26,34 @@ export function textWords(t: TypingText) {
   return t.text.split(/\s+/).filter(Boolean);
 }
 
-/** The words of a test that starts `start` words into the text; past the end it starts over. */
-export function wordsFrom(t: TypingText, start: number, n = 160) {
+/** The words still to type in a text, from `start` to the end. The text never starts over by itself. */
+export function wordsFrom(t: TypingText, start: number, n = Infinity) {
   const all = textWords(t);
-  const from = start % all.length;
-  const out: string[] = [];
-  for (let i = 0; out.length < n; i++) out.push(all[(from + i) % all.length]);
-  return { words: out, wrapsAt: all.length - from };
+  const from = Math.min(Math.max(0, start), all.length);
+  return { words: all.slice(from, from + n), left: all.length - from };
 }
 
 /**
- * Where the person stands in a text after typing `typed` words from `start`. A long test can go
- * around the text more than once: `laps` counts how many times it reached the end.
+ * Where the person stands in a text after typing `typed` words from `start`. The end of the text is the end of the
+ * session: `finished` says it was reached (the server keeps the place at the end until "Recomeçar").
  */
 export function progressAfter(t: TypingText, start: number, typed: number) {
   const total = textWords(t).length;
-  const at = (start % total) + typed;
-  return { words: at % total, laps: Math.floor(at / total), total };
+  const words = Math.min(total, Math.max(0, start) + typed);
+  return { words, finished: words >= total, total };
+}
+
+/** For code: for each word, the indentation (in spaces) when it opens a line and whether a line ends after it. */
+export function codeLayout(t: TypingText) {
+  const indent: number[] = [];
+  const lineEnd: boolean[] = [];
+  for (const line of t.text.split("\n")) {
+    const parts = line.split(/\s+/).filter(Boolean);
+    const lead = line.length - line.trimStart().length;
+    parts.forEach((_, i) => {
+      indent.push(i === 0 ? lead : 0);
+      lineEnd.push(i === parts.length - 1);
+    });
+  }
+  return { indent, lineEnd };
 }

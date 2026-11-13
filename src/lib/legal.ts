@@ -6,4 +6,4 @@ export const PUBLIC_NAME = "Equipe Pactus";
 export const CONTROLLER_NAME = process.env.NEXT_PUBLIC_CONTROLLER_NAME?.trim() || "";
 /** Public privacy channel (an institutional address). Never the private feedback recipient (FEEDBACK_TO_EMAIL). */
 export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || "";
-export const LEGAL_UPDATED = "12/11/2026";
+export const LEGAL_UPDATED = "13/11/2026";
