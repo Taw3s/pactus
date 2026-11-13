@@ -49,3 +49,14 @@ export function isAllowedIsolatedStaticPath(pathname: string): boolean {
   if (pathname.split("/").some((segment) => segment === "." || segment === "..")) return false;
   return ISOLATED_STATIC_FILES.has(pathname) || ISOLATED_STATIC_PREFIXES.some((prefix) => pathname.startsWith(prefix) && pathname.length > prefix.length);
 }
+
+/**
+ * Every host a request names: Host, the first X-Forwarded-Host and the URL Next built. request.nextUrl.host alone is not
+ * enough: next start and next dev fill it with the server's own hostname, so the isolated host was served the whole app
+ * (login, pages, APIs) in the local test of 12/11/2026. The middleware treats the request as isolated when any of them
+ * is the isolated host: a forged header can only make the answer stricter (404), never open the app there.
+ */
+export function requestHostCandidates(headers: { get(name: string): string | null }, nextUrlHost: string): string[] {
+  const first = (name: string) => headers.get(name)?.split(",")[0]?.trim().toLowerCase();
+  return [...new Set([first("host"), first("x-forwarded-host"), nextUrlHost.toLowerCase()].filter((h): h is string => !!h))];
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedIsolatedStaticPath, isIsolatedStaticHost, isPactusAppHostname } from "./isolated-static-host";
+import { isAllowedIsolatedStaticPath, isIsolatedStaticHost, isPactusAppHostname, requestHostCandidates } from "./isolated-static-host";
 
 describe("isolated hostname routing", () => {
   it("recognizes only a distinct, configured HTTPS host", () => {
@@ -40,5 +40,20 @@ describe("isolated static host allowlist", () => {
     expect(isAllowedIsolatedStaticPath("/workers/../api/checkins")).toBe(false);
     expect(isAllowedIsolatedStaticPath("/playground-runner.html/extra")).toBe(false);
     expect(isAllowedIsolatedStaticPath("/x".repeat(600))).toBe(false);
+  });
+});
+
+describe("requestHostCandidates", () => {
+  const headers = (h: Record<string, string>) => ({ get: (name: string) => h[name.toLowerCase()] ?? null });
+  it("names the Host header even when Next built the URL with the server's own hostname", () => {
+    const hosts = requestHostCandidates(headers({ host: "pactus-isolated.vercel.app" }), "localhost:3000");
+    expect(hosts).toContain("pactus-isolated.vercel.app");
+    expect(hosts.some((h) => isIsolatedStaticHost(h, "https://pactus-isolated.vercel.app", "https://www.pactus.dev.br", true))).toBe(true);
+  });
+  it("keeps only the first X-Forwarded-Host and lowercases everything, without repeats", () => {
+    expect(requestHostCandidates(headers({ host: "WWW.PACTUS.DEV.BR", "x-forwarded-host": "a.example, b.example" }), "www.pactus.dev.br")).toEqual([
+      "www.pactus.dev.br",
+      "a.example",
+    ]);
   });
 });
