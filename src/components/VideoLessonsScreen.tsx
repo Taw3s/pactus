@@ -17,7 +17,7 @@ import { LANGUAGE_CODE_EXAMPLES, type LanguageExampleId } from "@/lib/typing-lan
 import { VIDEO_METADATA_CACHE_KEY } from "@/lib/video-lessons-storage";
 import { loadVideoProgress, saveVideoProgress, type VideoRow } from "@/lib/learning-progress";
 import { createClient } from "@/lib/supabase/client";
-import { buildDirectYouTubePlaylistUrl, buildIsolatedYouTubePlayerUrl, isYouTubePlayerMessage, manualPlaylistVideoId, resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
+import { youtubeErrorMessage, buildDirectYouTubePlaylistUrl, buildIsolatedYouTubePlayerUrl, isYouTubePlayerMessage, manualPlaylistVideoId, resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
 
 const CREDENTIALLESS = { credentialless: "" } as Record<string, string>;
 
@@ -296,9 +296,7 @@ function CoursePlayer({
         return;
       }
       if (message.type === "error") {
-        setPlayerError(message.code === 100 || message.code === 101 || message.code === 150
-          ? "Esta aula não permite reprodução incorporada. Abra a playlist no YouTube."
-          : "O player isolado não conseguiu carregar. Tente abrir a playlist no YouTube.");
+        setPlayerError(youtubeErrorMessage(message.code));
         return;
       }
       if (message.type === "state") {
@@ -498,7 +496,7 @@ function CoursePlayer({
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
           loading="lazy"
-          referrerPolicy="no-referrer"
+          referrerPolicy="strict-origin-when-cross-origin"
           onLoad={() => {
             if (!playerOrigin) setPlayerMessage("Player direto carregado. O YouTube não informa ao Pacto qual aula você está assistindo.");
           }}

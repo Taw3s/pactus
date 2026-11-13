@@ -152,3 +152,15 @@ export function manualPlaylistVideoId(index: number): string {
   const safeIndex = Number.isFinite(index) ? Math.max(0, Math.min(599, Math.floor(index))) : 0;
   return `pactus${String(safeIndex + 1).padStart(5, "0")}`;
 }
+
+/** What the person reads for a YouTube IFrame API error code (player isolado). */
+export function youtubeErrorMessage(code: number): string {
+  if (code === 153) {
+    return "O YouTube não identificou de qual site vem o player (erro 153). Recarregue a página; se continuar, abra a playlist direto no YouTube.";
+  }
+  if (code === 100) return "Este vídeo foi removido ou é privado. Abra a playlist no YouTube para seguir com a próxima aula.";
+  if (code === 101 || code === 150) return "O dono deste vídeo não permite reprodução dentro de outros sites. Abra a playlist no YouTube.";
+  if (code === 2) return "O YouTube recusou o pedido do player. Recarregue a página e tente de novo.";
+  if (code === 5) return "Este vídeo não toca no player HTML5 deste navegador. Tente outro navegador ou abra no YouTube.";
+  return "O player isolado não conseguiu carregar. Tente abrir a playlist no YouTube.";
+}

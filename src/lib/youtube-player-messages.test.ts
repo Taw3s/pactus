@@ -83,3 +83,13 @@ describe("isolated YouTube player boundaries", () => {
     expect(manualPlaylistVideoId(999)).toBe("pactus00600");
   });
 });
+
+describe("youtubeErrorMessage", () => {
+  it("explains error 153 (missing Referer) and the embed refusals", async () => {
+    const { youtubeErrorMessage } = await import("./youtube-player-messages");
+    expect(youtubeErrorMessage(153)).toMatch(/153/);
+    expect(youtubeErrorMessage(150)).toMatch(/não permite/);
+    expect(youtubeErrorMessage(101)).toBe(youtubeErrorMessage(150));
+    expect(youtubeErrorMessage(999)).toMatch(/não conseguiu carregar/);
+  });
+});
