@@ -7,6 +7,7 @@ import type { TypingLang } from "@/lib/typing";
 import { javaBrowserSource } from "@/lib/java-toolchain";
 import { isPlaygroundRunnerMessage, PLAYGROUND_RUNNER_BRIDGE } from "@/lib/playground-runner-messages";
 import { resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
+import { prepareExercise } from "@/lib/loop-guard";
 
 type Props = {
   id: LanguageExampleId;
@@ -28,6 +29,9 @@ const RUN_TIMEOUT_MS = 5000;
 const WORKER_TIMEOUT_MS = 10000;
 const JAVA_TIMEOUT_MS = 45000;
 let cachedBashWorkerPath: string | null = null;
+// Present on the iframe before its first navigation: /aprender has COEP in Chromium, and a cross-origin frame without
+// COEP of its own is only let in when credentialless. Setting it later (in a ref) is too late. Other browsers ignore it.
+const CREDENTIALLESS = { credentialless: "" } as Record<string, string>;
 
 function createBashWorkerForUrlCapture(): Worker {
   return new Worker(new URL("../workers/bashkit.worker.ts", import.meta.url), { type: "module", credentials: "omit", name: "pactus-bash-path" });
@@ -90,6 +94,9 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   const [runnerOrigin, setRunnerOrigin] = useState<string | null>(null);
   const [runnerReady, setRunnerReady] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
+  // Read through a ref, so stopActiveRun stays stable: when it changed with the runner origin, the reset effect below ran
+  // again and threw away what the person had already typed.
+  const runnerOriginRef = useRef<string | null>(null);
   const runnerFrameRef = useRef<HTMLIFrameElement>(null);
   const javaEngineRef = useRef<{ dispose: () => void } | null>(null);
   const activeRunRef = useRef(0);
@@ -105,17 +112,20 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
   const stopActiveRun = useCallback(() => {
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
-    if (runnerOrigin) runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "cancel", runId: activeRunRef.current, silent: true }, runnerOrigin);
+    const origin = runnerOriginRef.current;
+    if (origin) runnerFrameRef.current?.contentWindow?.postMessage({ bridge: PLAYGROUND_RUNNER_BRIDGE, type: "cancel", runId: activeRunRef.current, silent: true }, origin);
     javaEngineRef.current?.dispose();
     javaEngineRef.current = null;
-  }, [runnerOrigin]);
+  }, []);
 
   useEffect(() => () => {
     stopActiveRun();
   }, [stopActiveRun]);
 
   useEffect(() => {
-    setRunnerOrigin(resolveIsolatedHostOrigin(process.env.NEXT_PUBLIC_ISOLATED_ORIGIN, window.location.origin, process.env.NODE_ENV !== "production"));
+    const origin = resolveIsolatedHostOrigin(process.env.NEXT_PUBLIC_ISOLATED_ORIGIN, window.location.origin, process.env.NODE_ENV !== "production");
+    runnerOriginRef.current = origin;
+    setRunnerOrigin(origin);
   }, []);
 
   useEffect(() => {
@@ -327,29 +337,26 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
       return;
     }
 
-    let executable = source;
-    if (id === "typescript") {
-      try {
-        const ts = await import("typescript");
-        const result = ts.transpileModule(source, {
-          reportDiagnostics: true,
-          compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None, strict: true },
-        });
-        if (activeRunRef.current !== runId) return;
-        const syntaxErrors = (result.diagnostics ?? []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
-        if (syntaxErrors.length) {
-          const details = syntaxErrors.map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")).join("\n");
-          appendLine("error", details);
-          setRunStatus("error");
-          setRunMessage(english ? "TypeScript could not be converted to JavaScript." : "Não foi possível converter o TypeScript para JavaScript.");
-          return;
-        }
-        executable = result.outputText;
-      } catch {
-        appendLine("error", english ? "The TypeScript compiler could not be loaded." : "Não foi possível carregar o compilador TypeScript.");
+    // JavaScript and TypeScript both go through the compiler, which puts a time guard in every loop (loop-guard.ts): a
+    // synchronous infinite loop in the iframe would otherwise freeze the whole tab before the 5 s timer below could run.
+    let executable: string;
+    try {
+      const ts = await import("typescript");
+      if (activeRunRef.current !== runId) return;
+      const prepared = prepareExercise(ts, source, id === "typescript");
+      if ("errors" in prepared) {
+        appendLine("error", prepared.errors);
         setRunStatus("error");
+        setRunMessage(id === "typescript"
+          ? (english ? "TypeScript could not be converted to JavaScript." : "Não foi possível converter o TypeScript para JavaScript.")
+          : (english ? "The code has a syntax error." : "O código tem um erro de sintaxe."));
         return;
       }
+      executable = prepared.code;
+    } catch {
+      appendLine("error", english ? "The code checker could not be loaded." : "Não foi possível carregar o verificador de código.");
+      setRunStatus("error");
+      return;
     }
 
     setRunDocument(scriptDocument(executable, runId));
@@ -412,9 +419,9 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
         : "Python, SQL e Bash estão pausados até configurar o hostname separado do interpretador. Isso mantém código não confiável longe da sua sessão autenticada."}
     </p>}
     {needsIsolatedRunner && runnerOrigin && <iframe
+      {...CREDENTIALLESS}
       ref={(frame) => {
         runnerFrameRef.current = frame;
-        if (frame && "credentialless" in frame) frame.setAttribute("credentialless", "");
       }}
       title={english ? "Isolated code runner" : "Interpretador isolado de código"}
       sandbox="allow-scripts allow-same-origin"

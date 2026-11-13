@@ -19,6 +19,8 @@ import { loadVideoProgress, saveVideoProgress, type VideoRow } from "@/lib/learn
 import { createClient } from "@/lib/supabase/client";
 import { buildDirectYouTubePlaylistUrl, buildIsolatedYouTubePlayerUrl, isYouTubePlayerMessage, manualPlaylistVideoId, resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
 
+const CREDENTIALLESS = { credentialless: "" } as Record<string, string>;
+
 type Difficulty = "Fácil" | "Intermediário" | "Difícil";
 type DifficultyFilter = "Todas" | Difficulty;
 
@@ -483,9 +485,11 @@ function CoursePlayer({
     <div className="min-w-0">
       <div className="overflow-hidden rounded-sm border-2 border-divider bg-black">
         {playerEnabled ? <iframe
+          // Present before the first navigation: /aprender has COEP in Chromium, and only a credentialless frame (with
+          // everything it loads, YouTube included) is let in without COEP of its own. Other browsers ignore it.
+          {...CREDENTIALLESS}
           ref={(frame) => {
             playerHost.current = frame;
-            if (frame && "credentialless" in frame) frame.setAttribute("credentialless", "");
           }}
           title={`Aulas de ${course.title}`}
           src={playerSource}

@@ -39,7 +39,9 @@
       : command.language === "sql"
         ? "/workers/sql.worker.js"
         : command.workerPath;
-    const moduleWorker = command.language !== "sql";
+    // Python is an ES module. SQL and the Bash chunk webpack emits load their parts with importScripts, which a module
+    // worker refuses ("Module scripts don't support importScripts()"): Bash failed in the production build.
+    const moduleWorker = command.language === "python";
     let worker;
     try {
       worker = new Worker(new URL(path, location.origin), moduleWorker
