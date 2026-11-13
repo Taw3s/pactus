@@ -441,7 +441,10 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
       {showExplanation && <CodeExplainer code={passed?.code && mode === "hints" ? passed.code : solution} lang={lang} checks={checks} hints={hints} prompt={challenge.prompt[lang]} />}
       {showExample && <section className="mt-3 rounded-sm border border-divider bg-bg p-3" aria-label="Playground">
         <p className="pixel text-[10px] uppercase text-muted">{passed?.code && mode === "hints" ? "Sua resposta" : example.id === "bash" ? "Solução de referência deste exercício" : `Exemplo separado da trilha: ${example.title[lang]}`}</p>
-        {example.id !== "bash" && <p className="mt-1 text-xs text-muted">Este exemplo é outro programa, para experimentar a linguagem; não é a resposta do desafio.</p>}
+        {example.id !== "bash" && !(passed?.code && mode === "hints") && <>
+          <p className="mt-1 text-xs text-muted">Este exemplo é outro programa, para experimentar a linguagem; não é a resposta do desafio.</p>
+          <div className="mt-2 rounded-sm border border-done/30 bg-done-bg p-2"><p className="pixel text-[10px] uppercase text-done">Resultado do exemplo</p><pre className="mt-1 whitespace-pre-wrap font-mono text-xs">{example.expected[lang]}</pre></div>
+        </>}
         {example.id === "bash" ? <BashTry code={playgroundCode} bash={bash} lang={lang} /> : <CodePlayground id={example.id} code={playgroundCode} expected={example.expected[lang]} lang={lang} />}
       </section>}
     </div>}
