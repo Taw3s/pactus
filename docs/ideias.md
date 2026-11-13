@@ -248,7 +248,12 @@ Para trocar para B: `scoringTypingTests` (`ranking.ts`, corte pelo `created_at` 
 
 ## Aprender e Digitação (13/11/2026, branch `claude/aprender-digitacao-fixes`)
 
-- Conferência por execução só em Bash. Python/SQL (runner isolado) e JS/TS (iframe local) ainda comparam o texto da resposta com a referência: falta escrever os casos de cada desafio.
+- [x] Conferência por execução em Python e SQL (13/11/2026, `python-challenge-checks.ts` e `sql-challenge-checks.ts`): casos por desafio nos 5 níveis e 2 idiomas, dados vindos do caso (entrada, argumentos, tabelas).
+- [ ] JS/TS (iframe local), Java, Web e Fundamentos ainda comparam o texto da resposta com a referência: falta escrever os casos e, em JS/TS, um caminho de execução com entradas.
+- [ ] Desafios de Python e SQL: quem já tinha concluído um desafio com o enunciado antigo mantém os pontos (as chaves não mudaram). Decidir se isso incomoda; zerar exigiria migration.
+- [ ] Conferência de Python e SQL no produto real (página `/aprender` logada com `NEXT_PUBLIC_ISOLATED_ORIGIN`): o E2E do CI não tem a origem isolada e só confere a recusa. Falta um E2E com duas origens locais, ou um teste manual em produção (aprovar, reprovar com esperado × obtido, abrir a resposta no playground).
+- [ ] SQL compara o texto que o worker imprime (`valor | valor`): um valor com ` | ` ou quebra de linha, ou a diferença entre NULL e o texto 'NULL', não é distinguível. Os casos atuais evitam isso; para dados assim, o worker precisaria devolver as linhas estruturadas.
+- [ ] Python: o dicionário é comparado como texto impresso (ordem de inserção). Uma resposta correta que imprima em outra ordem, ou um `Counter`, é reprovada com o esperado ao lado; o enunciado pede a ordem de aparição. Avaliar comparar pelo valor.
 - O modo Código só tem Bash (os 8 exemplos do Aprender). Outras linguagens exigem textos de código e linhas novas no catálogo (migration).
 - Trilhas: a ordem das leituras é curada só em Fundamentos e Bash; nos outros temas segue a ordem dos arquivos, dividida em terços. Revisar com o Astra junto da comparação visual.
 - Comparação visual de Aprender e Digitação (celular e desktop) não foi feita nesta sessão: precisa de login (Supabase local) e o container não sobe o Docker. Rodar `e2e/responsive-audit.mjs` e mandar as capturas ao Astra.

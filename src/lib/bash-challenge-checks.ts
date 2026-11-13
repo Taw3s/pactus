@@ -94,7 +94,8 @@ function clean(line: string, prompt: RegExp | null) {
   return out.replace(/^\.\//, "");
 }
 
-export type CaseResult = { ok: boolean; got: string[]; expected: string[] };
+/** `error` is what the answer itself raised in that case (Python), shown with what it printed. */
+export type CaseResult = { ok: boolean; got: string[]; expected: string[]; error?: string };
 
 /** Splits the run's output by the markers and compares each case. A missing marker fails that case and the rest. */
 export function compareCheckOutput(stdout: string, cases: BashCase[], marker: string, lang: TypingLang, code = ""): CaseResult[] {
