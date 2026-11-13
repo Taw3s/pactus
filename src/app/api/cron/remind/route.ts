@@ -44,9 +44,12 @@ export async function GET(request: NextRequest) {
   });
   const { count: forgotten, error } = await admin.from("membership_log").delete({ count: "exact" }).lt("left_on", addDays(today, -365));
   if (error) console.error("membership log purge failed", error);
+  // Feedback sending limits (0032): forget accounts with no send in 30 days. Missing before the migration: skipped.
+  const { data: feedbackForgotten, error: feedbackError } = await admin.rpc("prune_feedback_sends");
+  if (feedbackError) console.error("feedback limits purge failed");
   const mediaCleaned = await retryPendingMediaCleanup(admin).catch(() => {
     console.error("media cleanup retry failed");
     return 0;
   });
-  return NextResponse.json({ reminded, trimmed, attachmentsExpired, forgotten: forgotten ?? 0, mediaCleaned });
+  return NextResponse.json({ reminded, trimmed, attachmentsExpired, forgotten: forgotten ?? 0, mediaCleaned, feedbackForgotten: feedbackForgotten ?? 0 });
 }

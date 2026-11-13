@@ -13,7 +13,8 @@ export interface DebtDay {
   day: string;
   label: string; // "Seg 19/10"
   overdue: boolean;
-  items: { item: DebtItem; receivedBy: string | null }[];
+  /** `penalty`: the extra Coca of an annulled "Nova tentativa" (0031), apart from the day's menu. */
+  items: { item: DebtItem; receivedBy: string | null; penalty?: boolean }[];
 }
 
 interface Props {
@@ -88,16 +89,18 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
                 {d.overdue && <Badge tone="fail">Atrasada</Badge>}
               </p>
               <ul>
-                {d.items.map(({ item, receivedBy }) => {
+                {d.items.map(({ item, receivedBy, penalty }) => {
+                  const label = penalty ? `${DEBT_ITEM[item].label} (punição)` : DEBT_ITEM[item].label;
+                  const key = penalty ? `${item}-penalty` : item;
                   // A received item becomes its own receipt; the rest of the day keeps its action.
                   if (receivedBy) {
                     return (
-                      <li key={item} id={receiptId(debtorId, d.day, item)} tabIndex={-1} className="receipt my-2" data-receipt={item}>
+                      <li key={key} id={receiptId(debtorId, d.day, item, penalty)} tabIndex={-1} className="receipt my-2" data-receipt={key}>
                         <p className="pixel text-lg leading-6">Recebimento registrado</p>
                         <p className="mt-1 flex items-center gap-2 text-sm">
                           <Sprite name={DEBT_ITEM[item].sprite} />
                           <span className="min-w-0 flex-1">
-                            <span className="block font-semibold">{DEBT_ITEM[item].label}</span>
+                            <span className="block font-semibold">{label}</span>
                             <span className="block">Dia da dívida: {d.label}</span>
                             <span className="block break-words">Recebido por {receivedBy}</span>
                           </span>
@@ -110,13 +113,13 @@ export function DebtorRow({ debtorId, name, avatarUrl, isMe, counts, overdue, da
                     );
                   }
                   return (
-                    <li key={item} className="flex min-h-12 items-center gap-3">
+                    <li key={key} className="flex min-h-12 items-center gap-3">
                       <Sprite name={DEBT_ITEM[item].sprite} />
-                      <span className="flex-1">{DEBT_ITEM[item].label}</span>
+                      <span className="flex-1">{label}</span>
                       {isMe ? (
                         <span className="text-sm text-muted">Em aberto</span>
                       ) : (
-                        <PayButton debtorId={debtorId} debtorName={name} day={d.day} dayLabel={d.label} item={item} />
+                        <PayButton debtorId={debtorId} debtorName={name} day={d.day} dayLabel={d.label} item={item} penalty={penalty} />
                       )}
                     </li>
                   );

@@ -209,3 +209,39 @@ Preparado no repositório privado, para abrir num repositório público **novo**
 - [x] Commits do repositório novo com o e-mail `noreply` do GitHub, não o pessoal.
 - **Q5 = A** (decisão do dono em 05/11): o desenvolvimento continua neste repositório privado (Vercel, CI e PRs sem mudança). O público é uma cópia: criado pelo template do GitHub ("Template repository" ligado só durante a criação; o repositório gerado começa com um commit, sem o histórico) e atualizado de tempos em tempos por um PR de sincronização no próprio `Taw3s/pacto` (um commit com os arquivos do `main` privado, sem o histórico). Repetir o template não serve para atualizar: ele cria outro repositório. Antes de cada atualização, conferir que nada de nomes do beta, números de retenção ou e-mail pessoal entrou nos arquivos.
 
+
+
+## Integração do pacote de handoff (11/11/2026, branch `integrar-handoff-pactus`)
+
+Feito neste branch: regras aprovadas de digitação (0031), feedback do beta (0032), textos legais, Aprender com progresso na
+conta (0033), Playground com runtimes locais e a revisão de segurança do snapshot (12/11/2026, com os três ZIPs do snapshot).
+
+Riscos e decisões abertas do Aprender/Playground:
+
+- **Script do YouTube na origem do app.** O player usa o `iframe_api` de youtube.com, que roda com o mesmo acesso do app
+  (as cookies de sessão do Supabase não são `httpOnly`). Só carrega depois do clique, mas é confiança no Google. Alternativas:
+  player sem a API (perde a retomada automática e a lista de vídeos) ou servir o player numa origem separada. Decisão do dono.
+- **`import()` dinâmico nos workers.** Não dá para bloquear por código; a CSP dos workers (`script-src 'self'`) limita a
+  arquivos do próprio site, e a resposta não é legível. Um GET no próprio site continua possível (rotas de leitura).
+- **Faixa "Beta" em todas as telas do app** (veio do snapshot): precisa do olhar do Astra.
+- **Node 24** pedido pelo `@wasm-oj/*`: hoje é só aviso; acompanhar quando o CI e a Vercel mudarem de versão.
+- **npm audit**: 10 moderadas, todas do `glob`/`minimatch` usados pelo `@sentry/nextjs` 11.7.0 (já existiam no `main`). O
+  `npm audit fix --force` troca a versão fixada do Sentry; decidir junto com uma atualização planejada do Sentry.
+- Firefox e Safari: sem isolamento entre origens, Java diz para usar Chrome ou Edge; os outros runtimes e os vídeos funcionam.
+
+Pendências do dono antes de produção: identidade real em `NEXT_PUBLIC_CONTROLLER_NAME`; `NEXT_PUBLIC_CONTACT_EMAIL` com um endereço
+institucional; `RESEND_API_KEY`, `FEEDBACK_TO_EMAIL` e `FEEDBACK_FROM_EMAIL` só no painel (remetente verificado no Resend); rodar 0031,
+0032 e 0033 em staging e depois em produção, antes do merge; `npm audit`; validação em staging com dados sintéticos.
+
+**Decidido em 13/11/2026: opção A.** Corte dos pontos de digitação depois de uma prova anulada (registro das opções avaliadas): Só importa num dia com prova de digitação anulada e refeita; o banco (prova refeita só com teste iniciado
+depois do veredito) é igual nas duas opções.
+
+- **A — corte no veredito (o que o branch faz hoje):** contam só testes iniciados depois do veredito final. O teste que vale como
+  prova e o que dá pontos vêm do mesmo conjunto: ninguém pontua com um teste que o tribunal poderia ter visto e que não pode virar prova.
+  Efeito: um teste feito enquanto o tribunal estava aberto deixa de pontuar; quem refaz com um teste pior perde pontos daquele dia.
+- **B — corte na prova contestada (regra antiga, P100-3):** contam testes terminados depois da prova anulada, inclusive os feitos
+  com o tribunal ainda aberto. Efeito: um teste feito entre a acusação e o veredito pode dar os pontos do dia, embora não possa ser
+  usado como prova; o teste diferencial precisa aceitar essa diferença de propósito.
+
+Para trocar para B: `scoringTypingTests` (`ranking.ts`, corte pelo `created_at` da prova e `finished_at`), `diff.ranking` em
+`harness.sql`, os testes de `ranking.test.ts` e os casos "teste melhor feito depois da prova" do diferencial.

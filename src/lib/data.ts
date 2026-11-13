@@ -53,7 +53,7 @@ export async function getMembers(supabase: SupabaseClient): Promise<Member[]> {
 
 /** Everything the ledger needs for every member of the group. */
 export async function getLedgerInputs(supabase: SupabaseClient, members: Member[]) {
-  const [changes, completed, payments, { data: menuRows }] = await Promise.all([
+  const [changes, completed, payments, { data: menuRows }, { data: penaltyRows }] = await Promise.all([
     fetchAll<DayOffChange & { user_id: string }>((a, b) =>
       supabase.from("day_off_changes").select("user_id, weekday, effective_from").order("id").range(a, b),
     ),
@@ -63,6 +63,8 @@ export async function getLedgerInputs(supabase: SupabaseClient, members: Member[
     fetchAll<PaymentRow>((a, b) => supabase.from("payments").select("*").order("id").range(a, b)),
     // The group's debt menu history (RLS: only the caller's group).
     supabase.from("debt_menus").select("effective_from, items").order("effective_from"),
+    // Extra Cocas of an annulled "Nova tentativa" (0031). Before the migration the view is missing: none.
+    supabase.from("typing_penalties").select("user_id, day").order("day"),
   ]);
 
   const inputs = new Map<string, MemberLedgerInput>();
@@ -74,11 +76,13 @@ export async function getLedgerInputs(supabase: SupabaseClient, members: Member[
   for (const c of changes) inputs.get(c.user_id)?.dayOffChanges.push(c);
   for (const c of completed) inputs.get(c.user_id)?.completedDays.add(c.day);
   for (const p of payments) paymentsBy.get(p.debtor_id)?.push(p);
+  const penaltiesBy = new Map<string, string[]>();
+  for (const p of (penaltyRows ?? []) as { user_id: string; day: string }[]) penaltiesBy.set(p.user_id, [...(penaltiesBy.get(p.user_id) ?? []), p.day]);
   const menus = ((menuRows ?? []) as { effective_from: string; items: string[] }[]).map((m) => ({
     effective_from: m.effective_from,
     items: m.items.filter(isDebtItem),
   }));
-  return { inputs, paymentsBy, menus };
+  return { inputs, paymentsBy, menus, penaltiesBy };
 }
 
 /** Signed URLs for private media (photos, avatars). */
@@ -119,18 +123,22 @@ export async function getMonthScores(supabase: SupabaseClient, membersPromise: P
     fetchAll<Omit<RankingCheckin, "annulled"> & { id: string; created_at: string }>((a, b) =>
       supabase.from("checkins").select("id, user_id, day, goal, minutes, pages, extra, created_at").gte("day", from).lte("day", to).order("id").range(a, b),
     ),
-    fetchAll<{ checkin_id: string }>((a, b) =>
-      supabase.from("dispute_results").select("checkin_id").eq("status", "upheld").order("checkin_id").range(a, b),
+    fetchAll<{ checkin_id: string; decided_at: string | null }>((a, b) =>
+      supabase.from("dispute_results").select("checkin_id, decided_at").eq("status", "upheld").order("checkin_id").range(a, b),
     ),
     fetchAll<{ user_id: string; day: string }>((a, b) =>
       supabase.from("completed_days").select("user_id, day").gte("day", from).lte("day", to).order("user_id").order("day").range(a, b),
     ),
-    fetchAll<{ user_id: string; day: string; score: number; finished_at: string }>((a, b) =>
-      supabase.from("typing_tests").select("user_id, day, score, finished_at").gte("day", from).lte("day", to).not("score", "is", null).order("id").range(a, b),
+    fetchAll<{ user_id: string; day: string; score: number; started_at: string }>((a, b) =>
+      supabase.from("typing_tests").select("user_id, day, score, started_at").gte("day", from).lte("day", to).not("score", "is", null).order("id").range(a, b),
     ),
   ]);
   const annulled = new Set(upheld.map((u) => u.checkin_id));
-  const typingBest = typingBestByDay(typing, checkins.filter((c) => c.goal === "typing" && annulled.has(c.id)));
+  const decidedAt = new Map(upheld.map((u) => [u.checkin_id, u.decided_at]));
+  const typingBest = typingBestByDay(
+    typing,
+    checkins.filter((c) => c.goal === "typing" && annulled.has(c.id)).map((c) => ({ ...c, decided_at: decidedAt.get(c.id) ?? null })),
+  );
   const scores = scoreMonth(
     members.map((x) => x.user_id),
     checkins.map((c) => ({ ...c, annulled: annulled.has(c.id) })),

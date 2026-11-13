@@ -81,6 +81,18 @@ PSQL=(psql -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
 "${PSQL[@]}" -f ../migrations/0030_attachment_retention.sql
 "${PSQL[@]}" -f attachment_retention_test.sql
+"${PSQL[@]}" -f ../migrations/0031_typing_retake_rules.sql
+"${PSQL[@]}" -f ../migrations/0031_typing_retake_rules.sql
+"${PSQL[@]}" -f typing_retake_rules_test.sql
+./typing_retake_race.sh "${PSQL[@]}"
+"${PSQL[@]}" -f ../migrations/0032_feedback_rate_limits.sql
+"${PSQL[@]}" -f ../migrations/0032_feedback_rate_limits.sql
+"${PSQL[@]}" -f feedback_rate_limits_test.sql
+./feedback_race.sh "${PSQL[@]}"
+"${PSQL[@]}" -f ../migrations/0033_learning_progress.sql
+"${PSQL[@]}" -f ../migrations/0033_learning_progress.sql
+"${PSQL[@]}" -f learning_progress_test.sql
+./learning_race.sh "${PSQL[@]}"
 # Differential test: the same histories through the database and through src/lib (see differential/README.md).
 # Last on purpose: clock.sql swaps now() for a test clock, which no test above may see.
 "${PSQL[@]}" -f differential/clock.sql

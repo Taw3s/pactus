@@ -96,15 +96,15 @@ describe("podium", () => {
 });
 
 describe("typingBestByDay", () => {
-  const t = (score: number, finished_at: string) => ({ user_id: "a", day: "2026-10-29", score, finished_at });
+  const t = (score: number, started_at: string) => ({ user_id: "a", day: "2026-10-29", score, started_at });
   it("takes the best test of the day", () => {
     expect(typingBestByDay([t(30, "2026-10-29T10:00:00Z"), t(80, "2026-10-29T11:00:00Z")], []).get("a|2026-10-29")).toBe(80);
   });
-  it("ignores tests judged on a typing proof the tribunal annulled", () => {
-    const condemned = [{ user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:05:00Z" }];
-    const best = typingBestByDay([t(200, "2026-10-29T11:00:00Z"), t(15, "2026-10-29T15:00:00Z")], condemned);
+  it("after an annulled typing proof, only tests started after the verdict count", () => {
+    const annulled = [{ user_id: "a", day: "2026-10-29", decided_at: "2026-10-29T12:00:00Z" }];
+    const best = typingBestByDay([t(200, "2026-10-29T11:00:00Z"), t(90, "2026-10-29T11:59:00Z"), t(15, "2026-10-29T15:00:00Z")], annulled);
     expect(best.get("a|2026-10-29")).toBe(15);
-    expect(typingBestByDay([t(200, "2026-10-29T11:00:00Z")], condemned).has("a|2026-10-29")).toBe(false);
+    expect(typingBestByDay([t(200, "2026-10-29T11:00:00Z")], annulled).has("a|2026-10-29")).toBe(false);
   });
 });
 
@@ -159,25 +159,25 @@ describe("extra study sessions follow the main study proof", () => {
 });
 
 describe("scoringTypingTests", () => {
-  const t = (id: string, user_id: string, finished_at: string) => ({ id, user_id, day: "2026-10-29", finished_at });
-  it("keeps every test without a condemned typing proof", () => {
+  const t = (id: string, user_id: string, started_at: string) => ({ id, user_id, day: "2026-10-29", started_at });
+  it("keeps every test without an annulled typing proof", () => {
     expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], []).map((x) => x.id)).toEqual(["1"]);
   });
-  it("after a retake, drops the tests judged with the condemned proof, for that person only", () => {
-    const tests = [t("1", "a", "2026-10-29T10:00:00Z"), t("2", "a", "2026-10-29T12:00:00Z"), t("3", "b", "2026-10-29T10:00:00Z")];
-    const condemned = [{ user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:00:00Z" }];
-    expect(scoringTypingTests(tests, condemned).map((x) => x.id)).toEqual(["2", "3"]);
+  it("cuts at the verdict, not at the proof: a test made while the tribunal was open does not count", () => {
+    const tests = [t("1", "a", "2026-10-29T10:00:00Z"), t("2", "a", "2026-10-29T11:30:00Z"), t("3", "a", "2026-10-29T12:00:01Z"), t("4", "b", "2026-10-29T10:00:00Z")];
+    const annulled = [{ user_id: "a", day: "2026-10-29", decided_at: "2026-10-29T12:00:00Z" }];
+    expect(scoringTypingTests(tests, annulled).map((x) => x.id)).toEqual(["3", "4"]);
   });
-  it("a second condemnation moves the cut to the later proof", () => {
+  it("a second annulment moves the cut to its verdict", () => {
     const tests = [t("1", "a", "2026-10-29T12:00:00Z"), t("2", "a", "2026-10-29T15:00:00Z")];
-    const condemned = [
-      { user_id: "a", day: "2026-10-29", created_at: "2026-10-29T11:00:00Z" },
-      { user_id: "a", day: "2026-10-29", created_at: "2026-10-29T13:00:00Z" },
+    const annulled = [
+      { user_id: "a", day: "2026-10-29", decided_at: "2026-10-29T11:00:00Z" },
+      { user_id: "a", day: "2026-10-29", decided_at: "2026-10-29T13:00:00Z" },
     ];
-    expect(scoringTypingTests(tests, condemned).map((x) => x.id)).toEqual(["2"]);
+    expect(scoringTypingTests(tests, annulled).map((x) => x.id)).toEqual(["2"]);
   });
-  it("a condemnation on another day cuts nothing today", () => {
-    const condemned = [{ user_id: "a", day: "2026-10-28", created_at: "2026-10-28T23:00:00Z" }];
-    expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], condemned)).toHaveLength(1);
+  it("an annulment on another day, or one without a final verdict, cuts nothing today", () => {
+    expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], [{ user_id: "a", day: "2026-10-28", decided_at: "2026-10-28T23:00:00Z" }])).toHaveLength(1);
+    expect(scoringTypingTests([t("1", "a", "2026-10-29T10:00:00Z")], [{ user_id: "a", day: "2026-10-29", decided_at: null }])).toHaveLength(1);
   });
 });

@@ -102,15 +102,19 @@ await step("typing: another attempt over a text keeps the place, English is offe
   await typingTest(p, again);
   await p.getByTestId("typing-moved").getByText(/Avançou \d+ palavras? em “O que é SQL”/).waitFor();
   await p.getByRole("button", { name: /Tentar de novo \(1 restante\)/ }).waitFor();
-  // The proof follows the day's best test: Hoje, the feed and the proof page draw its card.
-  const best = sql("select round(max(t.wpm))::int from typing_tests t join members m using (user_id) where m.display_name like 'Ana%' and t.day = sp_today() and t.score = (select max(score) from typing_tests t2 where t2.user_id = t.user_id and t2.day = t.day)");
-  await p.locator("[data-goal=typing][data-state=done]").getByTestId("typing-card").getByText(best).waitFor();
+  // The proof is frozen to the test it was sent with (rule of 10/11/2026): Hoje, the feed and the proof page draw
+  // that card; a better test later only scores, and Hoje says so apart.
+  const sent = sql("select round(t.wpm)::int from checkins c join typing_tests t on t.id = c.typing_test_id join members m on m.user_id = c.user_id where m.display_name like 'Ana%' and c.goal = 'typing' and c.day = sp_today() order by c.created_at desc limit 1");
+  const bestScore = sql("select max(t.score) from typing_tests t join members m using (user_id) where m.display_name like 'Ana%' and t.day = sp_today()");
+  const sentScore = sql("select t.score from checkins c join typing_tests t on t.id = c.typing_test_id join members m on m.user_id = c.user_id where m.display_name like 'Ana%' and c.goal = 'typing' and c.day = sp_today() order by c.created_at desc limit 1");
+  await p.locator("[data-goal=typing][data-state=done]").getByTestId("typing-card").getByText(sent).waitFor();
+  if (Number(bestScore) > Number(sentScore)) await p.getByTestId("typing-best").waitFor();
   await p.goto(`${APP}/feed`);
   const tile = p.locator('[data-member^="Ana"] a', { hasText: "Digitação" });
-  await tile.getByTestId("typing-card").getByText(best).waitFor();
+  await tile.getByTestId("typing-card").getByText(sent).waitFor();
   await tile.click();
   await p.waitForURL("**/checkin/**");
-  await p.getByTestId("typing-card").getByText(best, { exact: true }).waitFor();
+  await p.getByTestId("typing-card").getByText(sent, { exact: true }).waitFor();
   await p.goto(`${APP}/hoje`);
   const place = Number(sql("select p.words from typing_progress p join members m using (user_id) where m.display_name like 'Ana%' and p.text_id = 'sql-o-que-e'"));
   assert(place > 0, `place ${place}`);

@@ -29,10 +29,10 @@ describe("makeWords", () => {
 });
 
 describe("unsentTypingTest", () => {
-  const test = (id: string, score: number | null, finished_at: string | null) => ({ id, wpm: score, accuracy: 1, score, device: "pc" as const, minutes: 1, finished_at });
-  const a = test("a", 40, "2026-11-05T12:00:00Z");
-  const b = test("b", 55, "2026-11-05T13:00:00Z");
-  const running = test("c", null, null);
+  const test = (id: string, score: number | null, started_at: string, finished_at: string | null) => ({ id, wpm: score, accuracy: 1, score, device: "pc" as const, minutes: 1, started_at, finished_at });
+  const a = test("a", 40, "2026-11-05T11:59:00Z", "2026-11-05T12:00:00Z");
+  const b = test("b", 55, "2026-11-05T12:59:00Z", "2026-11-05T13:00:00Z");
+  const running = test("c", null, "2026-11-05T13:10:00Z", null);
 
   it("gives the best confirmed test no proof uses", () => {
     expect(unsentTypingTest([a, b, running], [], null)?.id).toBe("b");
@@ -41,8 +41,9 @@ describe("unsentTypingTest", () => {
     expect(unsentTypingTest([a, b], ["b"], null)?.id).toBe("a");
     expect(unsentTypingTest([running], [], null)).toBeNull();
   });
-  it("after a condemned proof, only tests finished later can retake it", () => {
+  it("after an annulment, only a test started after the verdict can retake it", () => {
     expect(unsentTypingTest([a, b], [null], "2026-11-05T12:30:00Z")?.id).toBe("b");
-    expect(unsentTypingTest([a], [], "2026-11-05T12:00:00Z")).toBeNull();
+    // Finished after the verdict but started before it: refused by the database, never offered.
+    expect(unsentTypingTest([a], [], "2026-11-05T11:59:30Z")).toBeNull();
   });
 });

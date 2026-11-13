@@ -8,7 +8,7 @@ import { BackBar } from "@/components/PageHeader";
 import { DisputeActions } from "@/components/DisputeActions";
 import { Sprite } from "@/components/Sprite";
 import { PhotoViewer } from "@/components/PhotoViewer";
-import { TypingCard, type TypingScore } from "@/components/TypingCard";
+import { TypingCard } from "@/components/TypingCard";
 import { ReactionBar, type ReactionKind } from "@/components/ReactionBar";
 import { photoDaysBefore } from "@/lib/photo-date";
 import { DEVICE_LABEL, typingLabel } from "@/lib/typing";
@@ -44,22 +44,9 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
     supabase.from("checkin_reactions").select("user_id, kind").eq("checkin_id", id).order("created_at"),
   ]);
   if (!checkin) notFound();
-  // Typing: the proof shows the day's best test (what scores), not only the first one it was sent with.
-  // A retake only exists because the first proof was annulled: tests judged on it (finished before it) do not count.
-  const { data: condemned } = checkin.typing_tests && checkin.retake_of
-    ? await supabase.from("checkins").select("created_at").eq("id", checkin.retake_of).maybeSingle<{ created_at: string }>()
-    : { data: null };
-  let bestQuery = supabase
-    .from("typing_tests")
-    .select("wpm, accuracy, device, minutes")
-    .eq("user_id", checkin.user_id)
-    .eq("day", checkin.day)
-    .not("score", "is", null);
-  if (condemned) bestQuery = bestQuery.gt("finished_at", condemned.created_at);
-  const { data: bestTest } = checkin.typing_tests
-    ? await bestQuery.order("score", { ascending: false }).limit(1).maybeSingle<TypingScore>()
-    : { data: null };
-  const typingShown = bestTest ?? checkin.typing_tests;
+  // Typing: the proof is frozen to the test chosen when it was sent (rule approved on 10/11/2026). A better test
+  // made later never rewrites the proof, this page or what the tribunal reviews.
+  const typingShown = checkin.typing_tests;
   const votes = [...(dispute?.dispute_votes ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const byId = new Map(members.map((m) => [m.user_id, m]));
@@ -86,7 +73,7 @@ export default async function CheckinPage({ params }: { params: Promise<{ id: st
   const avatar = (m?: Member) => (m?.avatar_path ? (urls.get(m.avatar_path) ?? null) : null);
   const goal = goalMeta(checkin.goal);
   const GoalIcon = GOAL_ICON[checkin.goal];
-  // Typing made in the app shows the server-measured result of the day's best test.
+  // Typing made in the app shows the server-measured result of the test sent with the proof.
   const value = typingShown ? `${typingLabel(typingShown)} · ${DEVICE_LABEL[typingShown.device]}` : checkinNumbers(checkin);
   const question = studyPrompt(checkin.study_prompt);
   // The date the file reports (EXIF, or the file's own date): context, never proof either way.

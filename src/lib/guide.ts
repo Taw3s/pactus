@@ -17,7 +17,8 @@ export const GUIDE: GuideEntry[] = [
       `Três metas: estudo (foto + mínimo ${MIN_STUDY_MINUTES} min + a resposta à pergunta do dia, com pelo menos ${MIN_SUMMARY} caracteres), digitação (um teste de 1 minuto aqui no app) e leitura (foto + páginas lidas).`,
       "O prazo é 23:59, horário de São Paulo. O dia só vale com as três.",
       `Cada prova com foto aceita até ${MAX_PHOTOS} fotos. Na leitura, a página inicial e a final bastam.`,
-      "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e vale a melhor.",
+      "Na digitação você tem 3 tentativas por dia: a primeira já cumpre a meta, e nos pontos vale a melhor.",
+      "A prova de digitação guarda o teste com que foi enviada: é ele que o grupo e o tribunal veem. Um teste melhor feito depois conta nos pontos, mas não muda a prova.",
       "O teste toca um som baixo a cada tecla. O botão de alto-falante no canto do cartão desliga, inclusive no meio do teste, e a escolha fica salva neste aparelho.",
       "O projeto é opcional. Para registrar um, informe o link do repositório no GitHub. A prova de estudo aceita um PDF, e a de projeto um ZIP, os dois opcionais, com até 10 MB.",
       "No teste dá para escolher Palavras (aleatórias) ou Texto: explicações curtas sobre fundamentos, SQL, Python, JavaScript, TypeScript, Java e web. Cada texto continua de onde você parou no teste anterior. Dá para fazer tudo em português ou em inglês, em 1 ou 5 minutos.",
@@ -62,6 +63,8 @@ export const GUIDE: GuideEntry[] = [
     q: "Minha prova foi anulada. E agora?",
     a: [
       "Se a prova for anulada no mesmo dia, você pode mandar uma nova até 23:59 na tela Hoje, e a meta volta a valer.",
+      "Na digitação, a prova nova precisa de um teste começado depois do veredito. Testes de antes, mesmo sem uso, não servem, e também não contam nos pontos daquele dia.",
+      "Se as suas 3 tentativas do dia já tinham sido usadas, o app libera uma nova tentativa, única, depois do veredito. Se o grupo anular também a prova feita com ela, o dia deve 1 Coca a mais, além da dívida normal. Uma acusação rejeitada não custa nada.",
       "Depois da meia-noite não dá mais: o dia fica sem a meta.",
     ],
   },
@@ -88,6 +91,7 @@ export const GUIDE: GuideEntry[] = [
     a: [
       "Fechou as três metas do dia: abre o baú do dia, com um item comum, raro ou lendário para a sua coleção.",
       "Desafio da semana: se todos que estavam no grupo na segunda fecharem 5 dias até domingo, cada um abre um baú raro ou melhor.",
+      "Quem sai ou é removido durante a semana deixa de contar no desafio. Quem entra depois da segunda participa a partir da semana seguinte.",
       "Baú aberto não volta: se depois o tribunal anular uma prova daquele dia ou daquela semana, o objeto continua na sua coleção. Pontos, sequência e dívida seguem a decisão do tribunal.",
     ],
   },

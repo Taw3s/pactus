@@ -40,10 +40,13 @@ const ERRORS: [string, string][] = [
  */
 export function TypingTest({
   attemptsLeft,
+  special = false,
   onResult,
   onUnconfirmed,
 }: {
   attemptsLeft: number;
+  /** The single "Nova tentativa" the server opened after an annulment (0031): the server picks it on start. */
+  special?: boolean;
   onResult: (r: TypingResult) => void | Promise<void>;
   /** The result could not be confirmed (network): the server may still have it, so the page asks again. */
   onUnconfirmed?: () => void;
@@ -373,11 +376,15 @@ export function TypingTest({
           {mode === "text" && <TextPicker texts={catalog[lang]} lang={lang} selected={textId} progress={progress} onPick={(id) => choose({ text: id })} />}
           <p className="text-sm text-muted">
             {minutes === 5 ? "5 minutos" : "1 minuto"} digitando {mode === "text" ? "o texto, lendo enquanto digita" : "as palavras que aparecem"}.
-            {minutes === 5 && " O recorde de 5 minutos é separado; nos pontos do dia vale o seu melhor teste."} Vale a melhor de {attemptsLeft === 3 ? "3 tentativas" : `${attemptsLeft} ${attemptsLeft === 1 ? "tentativa restante" : "tentativas restantes"}`} hoje. Colar não funciona.
+            {minutes === 5 && " O recorde de 5 minutos é separado; nos pontos do dia vale o seu melhor teste."}{" "}
+            {special
+              ? "Esta é a nova tentativa, única. Se o grupo também anular esta prova, a dívida do dia ganha 1 Coca a mais."
+              : `Vale a melhor de ${attemptsLeft === 3 ? "3 tentativas" : `${attemptsLeft} ${attemptsLeft === 1 ? "tentativa restante" : "tentativas restantes"}`} hoje.`}{" "}
+            Colar não funciona.
           </p>
           <button className="btn-primary w-full" onClick={start} disabled={attemptsLeft <= 0 || phase === "starting"}>
             {phase === "starting" ? <Loader size={18} aria-hidden className="animate-[spin_800ms_steps(8)_infinite] motion-reduce:animate-none" /> : <Keyboard size={18} aria-hidden />}
-            {attemptsLeft <= 0 ? "Sem tentativas hoje" : "Começar teste"}
+            {attemptsLeft <= 0 ? "Sem tentativas hoje" : special ? "Nova tentativa" : "Começar teste"}
           </button>
         </>
       ) : phase === "done" && result ? (

@@ -28,6 +28,8 @@ ficam no artefato **e2e-screens-and-logs** da execução.
 | `e2e_o.mjs` | Desafio novo: primeiros passos na Hoje (link copiado, combinado, primeira prova vinda do servidor, recolher e reabrir) e link de convite por cadastro com e-mail, login e Google; Feed e Ranking vazios |
 | `e2e_p.mjs` | Digitação confirmada que não virou prova: falha no envio, resposta perdida (do envio e do teste), recarregar, duas abas, última tentativa e virada do dia; nunca outro teste nem tentativa |
 | `e2e_q.mjs` | Rascunhos das provas: voltam depois de recarregar (resposta, minutos, páginas, nome e link do projeto; nunca fotos), sessão extra à parte, somem depois do envio confirmado, no dia seguinte, para outra conta no mesmo aparelho e ao sair; com o armazenamento bloqueado, a prova ainda é enviada |
+| `e2e_r.mjs` | Regras de digitação de 10/11/2026 (0031): nova tentativa única depois das 3 tentativas e da anulação, prova congelada no próprio teste, Coca de punição listada em Dívidas |
+| `e2e_s.mjs` | Aprender (0033): aula e desafio concluídos ficam na conta e aparecem em outro aparelho, nunca para outra conta; Playground roda Python e, no Chromium isolado, Java no próprio aparelho |
 
 As etapas compartilham estado (usuários criados em `a`, histórico semeado antes de `d`): rode sempre
 o conjunto inteiro com `run.sh`, num banco recém-criado.

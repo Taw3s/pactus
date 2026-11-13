@@ -13,7 +13,6 @@ import { embeddedVerdict, getMembers, requireMember, signThumbs } from "@/lib/da
 import { GOAL_SPRITE } from "@/lib/goal-icons";
 import { dayOffOn, type DayOffChange } from "@/lib/ledger";
 import { photoIsOlder } from "@/lib/photo-date";
-import { scoringTypingTests } from "@/lib/ranking";
 import { typingLabel } from "@/lib/typing";
 import { checkinNumbers, goalMeta, GOALS, type Checkin, type DisputeResult } from "@/lib/types";
 
@@ -28,20 +27,17 @@ export default async function FeedPage() {
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("user_id, weekday, effective_from"),
     supabase.from("dispute_results").select("*"),
-    supabase.from("typing_tests").select("user_id, day, wpm, accuracy, score, minutes, device, finished_at").eq("day", today).not("score", "is", null),
+    supabase.from("typing_tests").select("id, wpm, accuracy, score, minutes, device").eq("day", today).not("score", "is", null),
   ]);
   const checkins = (checkinRows ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const results = (resultRows ?? []) as DisputeResult[];
   const resultByCheckin = new Map(results.map((r) => [r.checkin_id, r]));
-  // The best typing test shown on a proof's tile is the one its page shows (checkin/[id]): the day's best, without
-  // the tests judged with an earlier condemned proof of that person (after a retake they do not score, as in the ranking).
-  type TestRow = { user_id: string; day: string; wpm: number; accuracy: number; score: number; minutes: number; device: "pc" | "mobile"; finished_at: string };
-  const tests = (typingRows ?? []) as TestRow[];
-  const condemnedTyping = checkins.filter((c) => c.goal === "typing" && !c.extra && resultByCheckin.get(c.id)?.status === "upheld");
+  // A typing tile shows the test sent with the proof, as its page does (checkin/[id]): the proof is frozen.
+  type TestRow = { id: string; wpm: number; accuracy: number; score: number; minutes: number; device: "pc" | "mobile" };
+  const testById = new Map(((typingRows ?? []) as TestRow[]).map((t) => [t.id, t]));
   const typingBestFor = (proof: Checkin): (TypingScore & { score: number }) | undefined => {
-    const before = condemnedTyping.filter((c) => c.user_id === proof.user_id && c.created_at < proof.created_at);
-    const best = scoringTypingTests(tests.filter((t) => t.user_id === proof.user_id), before).sort((a, b) => Number(b.score) - Number(a.score))[0];
-    return best && { wpm: Number(best.wpm), accuracy: Number(best.accuracy), score: Number(best.score), minutes: Number(best.minutes), device: best.device };
+    const t = proof.typing_test_id ? testById.get(proof.typing_test_id) : undefined;
+    return t && { wpm: Number(t.wpm), accuracy: Number(t.accuracy), score: Number(t.score), minutes: Number(t.minutes), device: t.device };
   };
   const reviewOf = new Map(checkins.map((c) => [c.id, embeddedVerdict(c.checkin_reviews)]));
 

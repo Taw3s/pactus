@@ -41,19 +41,22 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     // Before 0029 runs the table is missing: treat it as seen, so nobody gets a welcome by mistake.
     { data: welcomeRow, error: welcomeError },
     { data: menuRows },
+    { data: attempts },
   ] = await Promise.all([
     supabase.from("checkins").select("*, checkin_reviews(verdict)").eq("user_id", me.user_id).eq("day", today).order("created_at"),
     supabase.from("day_off_changes").select("weekday, effective_from").eq("user_id", me.user_id),
-    supabase.from("dispute_results").select("checkin_id, status"),
+    supabase.from("dispute_results").select("checkin_id, status, decided_at"),
     getMembers(supabase),
     supabase.from("chest_openings").select("kind, period, item_id, collectibles(rarity)").eq("user_id", me.user_id).in("period", [today, monday]),
     supabase.rpc("my_weekly_progress"),
-    supabase.from("typing_tests").select("id, wpm, accuracy, score, device, minutes, finished_at").eq("user_id", me.user_id).eq("day", today),
+    supabase.from("typing_tests").select("id, wpm, accuracy, score, device, minutes, started_at, finished_at").eq("user_id", me.user_id).eq("day", today),
     supabase.from("completed_days").select("day").eq("user_id", me.user_id),
     supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", me.user_id).in("goal", GOALS.map((g) => g.id)),
     supabase.from("groups").select("invite_code, name").maybeSingle<{ invite_code: string; name: string }>(),
     supabase.from("welcome_seen").select("user_id").maybeSingle(),
     supabase.from("debt_menus").select("effective_from, items").order("effective_from"),
+    // The server decides the attempts, including the single "Nova tentativa" after an annulment (0031).
+    supabase.rpc("my_typing_attempts").maybeSingle<{ used: number; special_available: boolean; special_used: boolean }>(),
   ]);
   const firstProof = (proofCount ?? 0) > 0;
   const menus = ((menuRows ?? []) as { effective_from: string; items: string[] }[]).map((m) => ({ effective_from: m.effective_from, items: m.items.filter(isDebtItem) }));
@@ -82,6 +85,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const mine = (checkins ?? []) as (Checkin & { checkin_reviews: unknown })[];
   const urls = await signThumbs(supabase, mine.map((c) => c.photo_path));
   const statusOf = new Map((results ?? []).map((r) => [r.checkin_id as string, r.status as DisputeStatus]));
+  const decidedOf = new Map((results ?? []).map((r) => [r.checkin_id as string, (r.decided_at as string | null) ?? null]));
   const reviewOf = new Map(mine.map((c) => [c.id, embeddedVerdict(c.checkin_reviews)]));
   const isOff = weekdayOf(today) === dayOffOn(changes ?? [], today);
   // A retake comes after the proof it retakes, so the latest proof of a goal is the one that counts.
@@ -147,7 +151,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
           userId={me.user_id}
           done={mine.filter((c) => !c.extra && latest(c.goal) === c).map(toDone)}
           extras={mine.filter((c) => c.extra).map(toDone)}
-          typing={typingToday(typingRows ?? [], mine, latest("typing"), statusOf, today)}
+          typing={typingToday(typingRows ?? [], mine, latest("typing"), statusOf, decidedOf, attempts, today)}
         />
         {!dayComplete && <div className="mt-8">{chestsPanel}</div>}
       </div>
@@ -157,22 +161,36 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 }
 
 /**
- * Attempts used today, the best finished one ("72 WPM · 96% · PC") and a test the server confirmed but
- * no proof uses yet (the proof failed or its answer was lost): it sends the goal without another test.
+ * Attempts used today, the best finished one ("72 WPM · 96% · PC", what scores), the test the proof was sent with
+ * (frozen: what the proof page and the tribunal show) and a test the server confirmed but no proof uses yet (the
+ * proof failed or its answer was lost): it sends the goal without another test.
  */
-function typingToday(rows: FinishedTyping[], mine: Checkin[], proof: Checkin | undefined, statusOf: Map<string, DisputeStatus>, today: string) {
-  // Same cut as the ranking: after a retake, the tests judged with the condemned proof are not the day's best.
+function typingToday(
+  rows: (FinishedTyping & { started_at: string })[],
+  mine: Checkin[],
+  proof: Checkin | undefined,
+  statusOf: Map<string, DisputeStatus>,
+  decidedOf: Map<string, string | null>,
+  attempts: { used: number; special_available: boolean; special_used: boolean } | null,
+  today: string,
+) {
+  // Same cut as the ranking: after an annulment, only tests started after the verdict count.
   const judged = mine.filter((c) => c.goal === "typing" && !c.extra && statusOf.get(c.id) === "upheld");
-  const finished = rows.filter((r) => r.finished_at && r.score !== null).map((r) => ({ ...r, user_id: "me", day: today, finished_at: r.finished_at! }));
-  const best = scoringTypingTests(finished, judged.map((c) => ({ user_id: "me", day: today, created_at: c.created_at })))
+  const finished = rows.filter((r) => r.finished_at && r.score !== null).map((r) => ({ ...r, user_id: "me", day: today }));
+  const best = scoringTypingTests(finished, judged.map((c) => ({ user_id: "me", day: today, decided_at: decidedOf.get(c.id) ?? null })))
     .sort((a, b) => Number(b.score) - Number(a.score))[0];
-  const condemned = proof && statusOf.get(proof.id) === "upheld" ? proof.created_at : null;
-  const unsent = !proof || condemned ? unsentTypingTest(rows, mine.map((c) => c.typing_test_id), condemned) : null;
+  const verdictAt = proof && statusOf.get(proof.id) === "upheld" ? (decidedOf.get(proof.id) ?? null) : null;
+  const unsent = !proof || verdictAt ? unsentTypingTest(rows, mine.map((c) => c.typing_test_id), verdictAt) : null;
+  const sent = proof?.typing_test_id ? rows.find((r) => r.id === proof.typing_test_id) : undefined;
+  const score = (t: FinishedTyping) => ({ wpm: Number(t.wpm), accuracy: Number(t.accuracy), device: t.device, minutes: Number(t.minutes) });
+  const label = (t: FinishedTyping) => `${typingLabel({ wpm: t.wpm!, accuracy: t.accuracy!, minutes: t.minutes })} · ${DEVICE_LABEL[t.device]}`;
   return {
-    used: rows.length,
-    best: best ? `${typingLabel({ wpm: best.wpm!, accuracy: best.accuracy!, minutes: best.minutes })} · ${DEVICE_LABEL[best.device]}` : null,
-    // Drawn in place of the stored picture, which shows only the first test.
-    bestScore: best ? { wpm: Number(best.wpm), accuracy: Number(best.accuracy), device: best.device, minutes: Number(best.minutes) } : null,
+    // Before 0031 runs the RPC is missing: fall back to counting the rows, as before.
+    used: attempts?.used ?? rows.length,
+    special: !!attempts?.special_available,
+    best: best ? label(best) : null,
+    // The proof's own test, drawn in place of the stored picture.
+    sent: sent && sent.score !== null ? { label: label(sent), score: score(sent) } : null,
     unsent: unsent
       ? { testId: unsent.id, wpm: Number(unsent.wpm), accuracy: Number(unsent.accuracy), score: Number(unsent.score), device: unsent.device, minutes: (Number(unsent.minutes) === 5 ? 5 : 1) as 1 | 5 }
       : null,

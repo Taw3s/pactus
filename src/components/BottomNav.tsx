@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Loader, ReceiptText, UserRound, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, CircleCheck, Loader, ReceiptText, UserRound, Users, type LucideIcon } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ interface Item {
 const ITEMS: Item[] = [
   { label: "Hoje", icon: CircleCheck, href: "/hoje", match: ["/hoje"] },
   { label: "Grupo", icon: Users, href: "/feed", match: ["/feed", "/ranking", "/checkin"] },
+  { label: "Aprender", icon: BookOpen, href: "/aprender", match: ["/aprender"] },
   { label: "Dívidas", icon: ReceiptText, href: "/dividas", match: ["/dividas"] },
   { label: "Perfil", icon: UserRound, href: "/historico", match: ["/historico", "/config"] },
 ];
@@ -53,7 +54,7 @@ export function BottomNav({ profileHref }: { profileHref: string }) {
         <p className="pixel text-[32px] font-bold uppercase leading-9 text-accent [text-shadow:3px_3px_0_var(--color-hard-shadow)]">Pacto</p>
         <p className="mt-1 text-sm text-muted">Seu compromisso com o grupo</p>
       </div>
-      <ul className="mx-auto grid h-16 max-w-[560px] grid-cols-4 desk:mx-3 desk:h-auto desk:max-w-none desk:grid-cols-1 desk:gap-1">
+      <ul className="mx-auto grid h-16 max-w-[560px] grid-cols-5 desk:mx-3 desk:h-auto desk:max-w-none desk:grid-cols-1 desk:gap-1">
         {ITEMS.map((item) => {
           const active = item.match.some((m) => path === m || path.startsWith(`${m}/`));
           const href = item.label === "Grupo" ? groupHref : item.label === "Perfil" ? profileHref : item.href;

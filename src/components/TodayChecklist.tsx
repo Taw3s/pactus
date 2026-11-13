@@ -54,10 +54,19 @@ interface Props {
   /** Extra study sessions sent today. */
   extras: DoneGoal[];
   /**
-   * Today's typing tests: how many were used, the best result and a result the server confirmed that no
-   * proof uses yet (`day`: the day the page was drawn, to tell a failure from the turn of the day).
+   * Today's typing tests: how many normal ones were used, whether the server opened the single "Nova tentativa"
+   * (0031), the best result (what scores), the test the proof was sent with (frozen: what the proof shows), and a
+   * result the server confirmed that no proof uses yet (`day`: the day the page was drawn, to tell a failure from
+   * the turn of the day).
    */
-  typing: { used: number; best: string | null; bestScore: TypingScore | null; unsent: TypingResult | null; day: string };
+  typing: {
+    used: number;
+    special: boolean;
+    best: string | null;
+    sent: { label: string; score: TypingScore } | null;
+    unsent: TypingResult | null;
+    day: string;
+  };
 }
 
 type FormMode = DraftMode;
@@ -158,8 +167,10 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
   const [moved, setMoved] = useState("");
   // The result whose proof failed here, until the page knows about it from the server.
   const [failed, setFailed] = useState<TypingResult | null>(null);
-  const left = Math.max(0, 3 - typing.used);
   const retake = done?.dispute === "upheld";
+  // The "Nova tentativa" only exists for a retake, and only when the server says so.
+  const special = retake && typing.special;
+  const left = special ? 1 : Math.max(0, 3 - typing.used);
   const needsProof = !done || retake;
   const unsent = failed ?? typing.unsent;
   // Once the server shows the goal sent (an answer lost after the proof was saved), the local copy is spent.
@@ -215,13 +226,19 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
               <h3 id="typing-title" className="pixel text-xl uppercase leading-6">
                 {retake ? "Refazer digitação" : "Digitação"}
               </h3>
-              <p className="text-sm text-muted">{retake ? "O grupo condenou a prova. Faça um teste novo até 23:59." : "Teste de 1 minuto aqui no app"}</p>
+              <p className="text-sm text-muted">
+                {special
+                  ? "O grupo anulou a prova e suas 3 tentativas já foram usadas. Você tem uma nova tentativa, única, até 23:59."
+                  : retake
+                    ? "O grupo condenou a prova. Faça um teste novo até 23:59: os testes de antes do veredito não servem."
+                    : "Teste de 1 minuto aqui no app"}
+              </p>
             </div>
           </div>
           {unsent ? (
             <UnsentTyping result={unsent} onSend={() => sendProof(unsent)} />
           ) : (
-            <TypingTest attemptsLeft={left} onResult={sendProof} onUnconfirmed={() => router.refresh()} />
+            <TypingTest attemptsLeft={left} special={special} onResult={sendProof} onUnconfirmed={() => router.refresh()} />
           )}
           {error && (
             <p role="alert" className="mt-2 text-sm text-fail">
@@ -235,7 +252,13 @@ function TypingGoal({ done, groupId, userId, typing }: { done?: DoneGoal; groupI
 
   return (
     <div className="space-y-2">
-      <DoneRow item={{ ...done!, typingBest: typing.best, typingScore: typing.bestScore }} />
+      <DoneRow item={{ ...done!, typingBest: typing.sent?.label ?? null, typingScore: typing.sent?.score ?? null }} />
+      {/* The proof keeps the test it was sent with; a better test later only changes the day's points. */}
+      {typing.best && typing.sent && typing.best !== typing.sent.label && (
+        <p className="px-1 text-sm text-muted" data-testid="typing-best">
+          Melhor teste do dia, para o ranking: <span className="tabular">{typing.best}</span>
+        </p>
+      )}
       {moved && !again && (
         <p className="px-1 text-sm text-muted" role="status" data-testid="typing-moved">
           {moved}

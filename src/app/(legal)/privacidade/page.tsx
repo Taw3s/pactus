@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTACT_EMAIL, CONTROLLER_NAME, LEGAL_UPDATED } from "@/lib/legal";
+import { CONTACT_EMAIL, CONTROLLER_NAME, LEGAL_UPDATED, PUBLIC_NAME } from "@/lib/legal";
 import { KEEP_FULL_DAYS } from "@/lib/media-retention";
 
 export const metadata: Metadata = { title: "Política de privacidade · Pacto" };
@@ -8,14 +8,16 @@ export const metadata: Metadata = { title: "Política de privacidade · Pacto" }
 // Written from what the code actually stores and sends (keep in sync when that changes; see CLAUDE.md).
 export default function PrivacyPage() {
   const contact = CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <b>(e-mail de contato ainda não definido)</b>;
+  const controller = CONTROLLER_NAME || <b>(identidade do controlador ainda não informada)</b>;
   return (
     <>
       <h1>Política de privacidade</h1>
       <p className="text-sm text-muted">Atualizada em {LEGAL_UPDATED}.</p>
       <p>
         O Pacto é um app para grupos de amigos cumprirem metas diárias juntos. Esta página explica quais dados o app guarda, quem vê, com quem
-        eles são compartilhados e como você apaga tudo. Responsável pelos dados (controlador, na LGPD): {CONTROLLER_NAME}, que também é o
-        encarregado pelo tratamento de dados (LGPD, art. 41). Contato: {contact}.
+        eles são compartilhados e como você apaga tudo. {PUBLIC_NAME} é só o nome público do projeto, não uma empresa. Responsável pelos dados
+        (controlador, na LGPD): {controller}, que também é o encarregado pelo tratamento de dados (LGPD, art. 41). Contato para assuntos de
+        privacidade: {contact}.
       </p>
 
       <h2>O que o Pacto guarda</h2>
@@ -37,11 +39,22 @@ export default function PrivacyPage() {
           celular e até onde você chegou em cada texto.
         </li>
         <li>
+          <b>Aprender:</b> quais aulas escritas e desafios você concluiu, a melhor nota de cada desafio (de 0 a 5) e, em cada curso em vídeo,
+          os identificadores dos vídeos do YouTube que você concluiu, o vídeo atual, a posição nele e o tamanho da playlist. Isso fica na sua
+          conta, para você continuar em qualquer aparelho; só você vê, e não muda pontos, ranking nem nada do grupo. O código que você digita
+          no playground fica no aparelho: Python, SQL e Bash passam por uma mensagem entre quadros do navegador em domínios separados para
+          executar localmente. O texto do código não é enviado em uma requisição ao servidor nem a outro serviço.
+        </li>
+        <li>
           <b>Vida do grupo:</b> dívidas e pagamentos (quem pagou, o que e quem recebeu), acusações, defesas e votos no tribunal com o motivo,
           carimbos nas provas, baús e itens da coleção.
         </li>
         <li>
           <b>Avisos:</b> se você ativar os avisos no aparelho, o endereço que o navegador cria para recebê-los.
+        </li>
+        <li>
+          <b>Feedback do beta:</b> se você usar o formulário de feedback, o app guarda só o dia e a hora de cada envio ligados à sua conta,
+          para limitar os envios (um a cada 30 segundos e até 3 em 24 horas). O texto da mensagem não fica guardado no app.
         </li>
       </ul>
       <p>
@@ -54,7 +67,19 @@ export default function PrivacyPage() {
         Também guarda o rascunho de uma prova ainda não enviada (resposta à pergunta do dia, minutos, páginas, nome e link do projeto, nunca fotos
         nem arquivos), para ele não se perder se a página recarregar. O rascunho vale só para a sua conta, o seu grupo e o dia em que foi escrito:
         sai quando a prova é enviada, no dia seguinte, ao sair da conta, ao sair do grupo e ao excluir a conta.
+        Nos cursos em vídeo, o navegador guarda também a ordem e os títulos dos vídeos de cada playlist, como vieram do YouTube, só para
+        desenhar a lista antes de o player responder (o que você assistiu fica na conta, acima).
         Limpar os dados do site no navegador apaga essas marcações. O link de convite leva só o código do grupo, nunca o seu e-mail ou a sua conta.
+      </p>
+
+      <p>
+        Os cursos em vídeo usam o player do YouTube. Ele só carrega quando você toca em “Carregar player do YouTube”. Se o domínio isolado
+        estiver configurado, o navegador abre o player nesse domínio separado do app; é lá que o YouTube carrega a API e o vídeo pelo domínio
+        youtube-nocookie.com, sem começar a tocar sozinho. Sem essa configuração, o navegador abre o player direto em youtube-nocookie.com e
+        o progresso é marcado manualmente. Quando o player do YouTube carrega, o Google/YouTube recebe dados técnicos do navegador e da conexão
+        e, durante a reprodução, dados de uso do player, conforme a{" "}
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">política de privacidade do Google</a>. Se
+        preferir, abra a playlist direto no YouTube, sem carregar o player aqui.
       </p>
 
       <h2>Quem vê</h2>
@@ -89,11 +114,22 @@ export default function PrivacyPage() {
           decide nada sozinho: a decisão é sempre do grupo.
         </li>
         <li>
+          <b>YouTube/Google:</b> só se você carregar o player de um curso em vídeo: recebe dados técnicos do navegador e da conexão e, durante
+          a reprodução, dados de uso do player. Não recebe o seu nome, e-mail nem o seu progresso no Pacto. Veja os{" "}
+          <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">Termos de Serviço do YouTube</a>.
+        </li>
+        <li>
           <b>Serviços de aviso do navegador</b> (Google, Apple ou Mozilla, conforme o seu aparelho): entregam os avisos que você ativou.
         </li>
         <li>
           <b>Resend (e-mail):</b> envia os links de login e de confirmação. Recebe o seu e-mail e o conteúdo da mensagem (o link). Os
           envios saem por servidores em São Paulo.
+        </li>
+        <li>
+          <b>Resend (feedback):</b> quando você manda feedback pelo formulário, o servidor do Pacto entrega por e-mail à equipe do projeto o
+          assunto escolhido, o texto que você escreveu e a data. Não vão junto o seu e-mail, o seu nome, o seu perfil nem o identificador da
+          sua conta, e o seu aplicativo de e-mail não é aberto. Só aparece o que você mesmo escrever no texto. O Resend guarda registros dos
+          envios conforme a política dele, e a mensagem fica na caixa de e-mail da equipe enquanto for útil para responder ou corrigir o app.
         </li>
         <li>
           <b>GitHub (cópia de segurança):</b> uma vez por dia, uma cópia do banco de dados (contas, perfis, provas sem as fotos, testes, dívidas,
@@ -106,7 +142,13 @@ export default function PrivacyPage() {
       <ul>
         <li>Para o app funcionar como você pediu ao entrar num grupo: execução do serviço (LGPD, art. 7º, V).</li>
         <li>Para os avisos no aparelho: o seu consentimento, que você retira desativando os avisos.</li>
+        <li>Para guardar o seu progresso no Aprender e retomá-lo em outro aparelho: execução do serviço (art. 7º, V).</li>
+        <li>Para os cursos em vídeo: a sua escolha de carregar o player do YouTube, que trata os dados conforme os próprios termos.</li>
         <li>Para a segurança do app e para responder a problemas: legítimo interesse (art. 7º, IX).</li>
+        <li>
+          Para receber o feedback que você decide mandar e limitar os envios contra abuso: legítimo interesse (art. 7º, IX, e art. 10), só com
+          a data e a hora de cada envio.
+        </li>
         <li>
           Para saber se os grupos continuam usando o app (as datas de entrada e saída e as semanas com prova, descritas abaixo): legítimo
           interesse (art. 7º, IX, e art. 10), só com os dados estritamente necessários para isso.
@@ -140,6 +182,14 @@ export default function PrivacyPage() {
           conta, como no item acima.
         </li>
         <li>
+          O progresso do <b>Aprender</b> fica enquanto a conta existir e é apagado junto quando você exclui a conta. Sair do grupo não o
+          apaga, porque ele não é do grupo; para apagar só o progresso, use o contato abaixo.
+        </li>
+        <li>
+          As datas dos envios de <b>feedback</b> são apagadas quando a sua conta passa 30 dias sem enviar nada, ou na hora, se você excluir a
+          conta.
+        </li>
+        <li>
           As <b>cópias de segurança</b> do banco são apagadas 30 dias depois de feitas. Por isso, o que você apaga ou leva ao sair ainda pode
           existir numa cópia por até 30 dias, cifrada e sem uso, até ela expirar. Se uma cópia precisar ser usada para recuperar o app, o
           grupo é avisado, e quem tiver saído ou excluído a conta depois da data da cópia pode pedir a exclusão de novo pelo contato abaixo.
@@ -158,7 +208,8 @@ export default function PrivacyPage() {
         <li>retirar o consentimento dos avisos (em Configurações ou no seu aparelho) e saber o que muda se não der o consentimento: só deixa de receber avisos.</li>
       </ul>
       <p>
-        Para o que não está em Configurações, escreva para {contact}. Se não for atendido, você pode reclamar à ANPD (gov.br/anpd) ou a um
+        Para o que não está em Configurações, escreva para {contact}. Se você tem conta, também pode usar o formulário de{" "}
+        <Link href="/feedback">feedback</Link> com o assunto “Privacidade e dados” (escreva no texto como prefere ser respondido). Se não for atendido, você pode reclamar à ANPD (gov.br/anpd) ou a um
         órgão de defesa do consumidor, como o Procon.
       </p>
 
