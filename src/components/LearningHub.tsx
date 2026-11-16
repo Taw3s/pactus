@@ -10,7 +10,12 @@ import { lessonPath } from "@/lib/learning-paths";
 import { BASH_CHECKS, buildCheckScript, compareCheckOutput, randomMarker, shellQuote, type BashCase, type CaseResult } from "@/lib/bash-challenge-checks";
 import { buildPythonCheckScript, comparePythonOutput, pythonCases, pythonPlaygroundPrelude } from "@/lib/python-challenge-checks";
 import { buildSqlCheckScript, compareSqlOutput, SQL_CHECKS, sqlPlaygroundPrelude, sqlRowLine, type SqlTable } from "@/lib/sql-challenge-checks";
-import { useIsolatedRunner, type IsolatedRun } from "@/components/IsolatedRunner";
+import { checkScriptAnswer, SCRIPT_CHECKS, scriptInputText, scriptPlaygroundPrelude } from "@/lib/script-challenge-checks";
+import { compareWebReports, WEB_CASE_TIMEOUT_MS, WEB_CHECKS, webExpectedLines, webFrameSpecs } from "@/lib/web-challenge-checks";
+import { compareJavaRuns, JAVA_CHECK_TIMEOUT_MS, javaCases } from "@/lib/java-challenge-checks";
+import { runCheckFrames } from "@/lib/check-frames";
+import { useIsolatedRunner } from "@/components/IsolatedRunner";
+import { javaCheckAvailable, runJavaCheck } from "@/components/JavaCheck";
 import type { TypingLang } from "@/lib/typing";
 import type { TypingText } from "@/lib/typing-texts";
 import { completeLearning, emptyLearning, loadLearning, toLearning, withRow, type LearningProgress } from "@/lib/learning-progress";
@@ -77,46 +82,102 @@ function normalizeCode(value: string) {
 }
 
 /** A case as the panel lists it, whatever the language: what goes in and the lines that must come out. */
-type ListedCase = Pick<BashCase, "label" | "args" | "stdin" | "expect"> & { tables?: Record<TypingLang, SqlTable[]> };
+type ListedCase = Pick<BashCase, "label" | "args" | "stdin" | "expect"> & { tables?: Record<TypingLang, SqlTable[]>; page?: string };
+
+type Isolated = ReturnType<typeof useIsolatedRunner>;
+/** What a check found: a result per case; or the reason no case could be checked; or that it was stopped after `timedOut` seconds. */
+type CheckOutcome = { results: CaseResult[] } | { runError: string } | { timedOut: number };
 
 /**
- * How a challenge is checked by running the answer in the isolated runner (Bash, Python, SQL): the cases to list, the
- * script for one run, the comparison of that run and, for the playground, what an approved answer needs before it.
- * The other languages have none yet and still compare the text (see docs/ideias.md).
+ * How a challenge is checked by what the answer does. Three engines: the isolated host (Bash, Python, SQL), a sandboxed
+ * frame of this page per case (JavaScript, TypeScript, Web) and the Java compiler on the device. Each check brings the
+ * cases to list, the run itself and what an approved answer becomes in the playground (with the first case's data).
+ * Only Fundamentos has none: it is pseudocode, nothing can run it, and it still compares the text.
  */
 type BehaviorCheck = {
-  language: "bash" | "python" | "sql";
+  engine: "isolated" | "frame" | "java";
   cases: ListedCase[];
-  script: (code: string, marker: string) => string;
-  compare: (run: IsolatedRun, marker: string, code: string) => CaseResult[];
-  prelude: string;
+  run: (code: string, isolated: Isolated) => Promise<CheckOutcome>;
+  playground: (code: string) => string;
+  /** Standard input the playground gives an approved answer (Java). */
+  stdin?: string;
+  /** Bash prints one block; the others are listed case by case. */
+  plain?: boolean;
 };
+
+async function isolatedRun(isolated: Isolated, language: "bash" | "python" | "sql", script: (marker: string) => string, compare: (run: Awaited<ReturnType<Isolated["run"]>>, marker: string) => CaseResult[]): Promise<CheckOutcome> {
+  const marker = randomMarker();
+  const result = await isolated.run(script(marker), language);
+  if (result.timedOut) return { timedOut: 10 };
+  // The interpreter stopped before the cases could be compared (in SQL, any error in the query does this).
+  if (language !== "bash" && result.failed) return { runError: result.stderr.trim().slice(0, 600) };
+  return { results: compare(result, marker) };
+}
 
 function behaviorCheck(id: LanguageExampleId, difficulty: BashDifficulty, lang: TypingLang, bashId?: string): BehaviorCheck | null {
   if (id === "bash") {
     const cases = bashId ? BASH_CHECKS[bashId] : undefined;
-    return cases ? { language: "bash", cases, script: (code, marker) => buildCheckScript(code, cases, marker), compare: (run, marker, code) => compareCheckOutput(run.stdout, cases, marker, lang, code), prelude: "" } : null;
+    return cases ? { engine: "isolated", plain: true, cases, run: (code, isolated) => isolatedRun(isolated, "bash", (marker) => buildCheckScript(code, cases, marker), (run, marker) => compareCheckOutput(run.stdout, cases, marker, lang, code)), playground: (code) => code } : null;
   }
   if (id === "python") {
     const cases = pythonCases(difficulty, lang);
-    return { language: "python", cases, script: (code, marker) => buildPythonCheckScript(code, cases, marker), compare: (run, marker) => comparePythonOutput(run.messages, cases, marker, lang), prelude: pythonPlaygroundPrelude(cases[0]) };
+    return { engine: "isolated", cases, run: (code, isolated) => isolatedRun(isolated, "python", (marker) => buildPythonCheckScript(code, cases, marker), (run, marker) => comparePythonOutput(run.messages, cases, marker, lang)), playground: (code) => pythonPlaygroundPrelude(cases[0]) + code };
   }
   if (id === "sql") {
     const spec = SQL_CHECKS[difficulty];
     const lines = (l: TypingLang) => (c: (typeof spec.cases)[number]) => c.expect[l].map(sqlRowLine);
     return {
-      language: "sql",
+      engine: "isolated",
       cases: spec.cases.map((c) => ({ label: c.label, tables: c.tables, expect: { pt: lines("pt")(c), en: lines("en")(c) } })),
-      script: (code, marker) => buildSqlCheckScript(code, spec.cases.map((c) => c.tables[lang]), marker),
-      compare: (run, marker) => compareSqlOutput(run.messages, spec, marker, lang),
-      prelude: sqlPlaygroundPrelude(spec, lang),
+      run: (code, isolated) => isolatedRun(isolated, "sql", (marker) => buildSqlCheckScript(code, spec.cases.map((c) => c.tables[lang]), marker), (run, marker) => compareSqlOutput(run.messages, spec, marker, lang)),
+      playground: (code) => sqlPlaygroundPrelude(spec, lang) + code,
+    };
+  }
+  if (id === "javascript" || id === "typescript") {
+    const cases = SCRIPT_CHECKS[id][difficulty];
+    return {
+      engine: "frame",
+      cases: cases.map((c) => ({ label: c.label, stdin: scriptInputText(c, lang), expect: c.expect })),
+      run: async (code) => {
+        // The compiler converts TypeScript and puts a time guard in every loop; without it nothing runs.
+        const outcome = await checkScriptAnswer(await import("typescript"), code, id, difficulty, lang, randomMarker(), runCheckFrames);
+        return "errors" in outcome ? { runError: outcome.errors.slice(0, 600) } : outcome;
+      },
+      playground: (code) => scriptPlaygroundPrelude(cases[0], lang) + code,
+    };
+  }
+  if (id === "web") {
+    const check = WEB_CHECKS[difficulty];
+    return {
+      engine: "frame",
+      cases: check.cases.map((c) => ({ label: c.label, page: check.page?.[lang], expect: { pt: webExpectedLines(c, "pt"), en: webExpectedLines(c, "en") } })),
+      run: async (code) => {
+        const token = randomMarker();
+        return { results: compareWebReports(await runCheckFrames(webFrameSpecs(code, difficulty, lang, token), token, WEB_CASE_TIMEOUT_MS), difficulty, lang) };
+      },
+      // A style sheet alone shows nothing: in the playground it goes with the page of the cases.
+      playground: (code) => (check.page ? `<style>\n${code}\n</style>\n${check.page[lang]}` : code),
+    };
+  }
+  if (id === "java") {
+    const cases = javaCases(difficulty, lang);
+    return {
+      engine: "java",
+      cases,
+      run: async (code) => {
+        const outcome = await runJavaCheck(code, cases.map((c) => c.stdin));
+        if (outcome === "timeout") return { timedOut: JAVA_CHECK_TIMEOUT_MS / 1000 };
+        return "compileError" in outcome ? { runError: outcome.compileError } : { results: compareJavaRuns(outcome.runs, cases, lang) };
+      },
+      playground: (code) => code,
+      stdin: cases[0].stdin,
     };
   }
   return null;
 }
 
-/** Languages whose answers are only ever checked by running them: for these there is no fallback to comparing text. */
-const RUNS_ANSWER: LanguageExampleId[] = ["bash", "python", "sql"];
+/** The only language whose answer is still compared as text: pseudocode, which nothing executes. */
+const COMPARES_TEXT: LanguageExampleId = "fundamentals";
 
 function lineExplanation(line: string, lang: TypingLang) {
   const value = line.trim();
@@ -287,7 +348,7 @@ export function LearningHub() {
     </section>}
 
     {tab === "challenges" && <section className="card" aria-label="Desafios de código">
-      <div><p className="pixel text-[10px] uppercase text-muted">Prática por linguagem</p><h2 className="pixel mt-1 text-lg uppercase">Código, tentativa e explicação</h2><p className="mt-1 text-sm text-muted">Sem visualizador, você escreve a solução e o app confere o que ela faz (em Bash, Python e SQL, executando no interpretador isolado contra os casos do desafio); dicas são opcionais e cada uma reduz os pontos. Com visualizador, você copia a referência e vale 1 ponto. O progresso fica na sua conta.</p></div>
+      <div><p className="pixel text-[10px] uppercase text-muted">Prática por linguagem</p><h2 className="pixel mt-1 text-lg uppercase">Código, tentativa e explicação</h2><p className="mt-1 text-sm text-muted">Sem visualizador, você escreve a solução e o app confere o que ela faz, executando a resposta contra os casos do desafio (em Fundamentos, que é pseudocódigo, compara o texto com a referência); dicas são opcionais e cada uma reduz os pontos. Com visualizador, você copia a referência e vale 1 ponto. O progresso fica na sua conta.</p></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <label className="text-sm font-semibold">Linguagem<select className="input mt-1" value={exampleId} onChange={(event) => { setExampleId(event.target.value as LanguageExampleId); }}>
           {LANGUAGE_CODE_EXAMPLES.map((item) => <option key={item.id} value={item.id}>{item.label[lang]}</option>)}
@@ -396,8 +457,8 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
       }
       return approve(challenge.output[lang]);
     }
-    if (!check && !RUNS_ANSWER.includes(example.id)) {
-      // Languages without a behavior check yet: the answer is compared with the reference, ignoring spaces at line ends.
+    if (!check && example.id === COMPARES_TEXT) {
+      // Pseudocode is not executed: the answer is compared with the reference, ignoring spaces at line ends.
       if (normalizeCode(typed) !== normalizeCode(solution)) {
         setError(true);
         setNotice(pt ? "A resposta ainda difere da solução de referência. Revise e tente de novo." : "Your answer still differs from the reference. Review it and try again.");
@@ -405,34 +466,49 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
       }
       return approve(challenge.output[lang]);
     }
-    // Bash, Python and SQL: only the run decides. Without the isolated runner the check refuses; it never compares text.
-    if (!check || !bash.available || !bash.ready) {
+    // Every other language: only the run decides. Without its engine the check refuses; it never compares text.
+    const unavailable = !check ? "isolated" : check.engine === "isolated" && (!bash.available || !bash.ready) ? "isolated" : check.engine === "java" && !javaCheckAvailable() ? "java" : null;
+    if (!check || unavailable) {
       setError(true);
-      setNotice(pt
-        ? "A conferência roda a sua resposta no interpretador isolado, que não está disponível aqui. Use o modo com visualizador ou tente mais tarde."
-        : "The check runs your answer in the isolated runner, which is not available here. Use the visualizer mode or try later.");
+      setNotice(unavailable === "java"
+        ? (pt
+          ? "A conferência compila e roda a sua resposta neste aparelho, e o compilador Java precisa de isolamento entre origens, que este navegador não oferece aqui. Use o Chrome ou o Edge no computador, ou o modo com visualizador."
+          : "The check compiles and runs your answer on this device, and the Java compiler needs cross-origin isolation, which this browser does not offer here. Use Chrome or Edge on a computer, or the visualizer mode.")
+        : (pt
+          ? "A conferência roda a sua resposta no interpretador isolado, que não está disponível aqui. Use o modo com visualizador ou tente mais tarde."
+          : "The check runs your answer in the isolated runner, which is not available here. Use the visualizer mode or try later."));
+      return;
+    }
+    // The isolated runner drops a command over 30 000 characters; the same limit holds for the other engines.
+    if (typed.length > 30000) {
+      setError(true);
+      setNotice(pt ? "A resposta é longa demais para ser conferida." : "The answer is too long to be checked.");
       return;
     }
     setChecking(true);
-    setNotice(pt ? "Executando sua resposta no interpretador isolado…" : "Running your answer in the isolated runner…");
-    const marker = randomMarker();
+    setNotice(check.engine === "java"
+      ? (pt ? "Compilando e executando sua resposta neste aparelho. Pode levar alguns segundos…" : "Compiling and running your answer on this device. It may take a few seconds…")
+      : check.engine === "frame"
+        ? (pt ? "Conferindo sua resposta em um quadro isolado do navegador…" : "Checking your answer in an isolated browser frame…")
+        : (pt ? "Executando sua resposta no interpretador isolado…" : "Running your answer in the isolated runner…"));
     try {
-      const result = await bash.run(check.script(typed, marker), check.language);
-      const results = check.compare(result, marker, typed);
-      if (result.timedOut) {
+      const outcome = await check.run(typed, bash);
+      if ("timedOut" in outcome) {
         setError(true);
-        setNotice(pt ? "A execução passou de 10 segundos e foi interrompida." : "The run took more than 10 seconds and was stopped.");
-      } else if (check.language !== "bash" && result.failed) {
-        // The interpreter stopped before the cases could be compared (in SQL, any error in the query does this).
+        setNotice(pt ? `A execução passou de ${outcome.timedOut} segundos e foi interrompida.` : `The run took more than ${outcome.timedOut} seconds and was stopped.`);
+      } else if ("runError" in outcome) {
+        // What the interpreter or the compiler said, never the solution.
         setError(true);
-        setRunError(result.stderr.trim().slice(0, 600));
+        setRunError(outcome.runError);
         setNotice(pt ? "A resposta deu erro ao rodar e nenhum caso pôde ser conferido." : "The answer failed to run and no case could be checked.");
-      } else if (results.every((r) => r.ok)) {
+      } else if (outcome.results.length > 0 && outcome.results.every((r) => r.ok)) {
+        const results = outcome.results;
         setCases(results);
-        approve(check.language === "bash"
+        approve(check.plain
           ? results.map((r) => r.got.join("\n")).join("\n")
           : results.map((r, i) => `${pt ? "Caso" : "Case"} ${i + 1} (${check.cases[i].label[lang]}):\n${r.got.join("\n") || (pt ? "(nenhuma linha)" : "(no rows)")}`).join("\n\n"));
       } else {
+        const results = outcome.results;
         setCases(results);
         setError(true);
         setNotice(pt ? `Sua resposta rodou, mas ${results.filter((r) => !r.ok).length} de ${results.length} casos não deram o resultado esperado.` : `Your answer ran, but ${results.filter((r) => !r.ok).length} of ${results.length} cases did not give the expected result.`);
@@ -458,15 +534,17 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
   }
 
   const challengeCompletedBefore = progress.completedChallenges.includes(key);
-  // An approved Python or SQL answer reads its data from the case: in the playground it gets the first case's input or tables.
-  const playgroundCode = passed?.code && mode === "hints" ? `${check?.prelude ?? ""}${passed.code}` : example.id === "bash" ? solution : example.code[lang];
+  // An approved answer reads its data from the case: in the playground it gets the first case's input, tables or page.
+  const ownAnswer = !!passed?.code && mode === "hints";
+  const playgroundCode = ownAnswer ? (check ? check.playground(passed.code) : passed.code) : example.id === "bash" ? solution : example.code[lang];
 
   return <section className="mt-4 rounded-sm border-2 border-accent/50 bg-raised p-3 sm:p-4" data-testid="language-code-challenge">
     {bash.frame}
     <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="pixel text-[10px] uppercase text-accent">{example.label[lang]} · {DIFFICULTY_LABEL[difficulty]}</p><h3 className="pixel mt-1 text-base uppercase">{challenge.title[lang]}</h3></div><span className="rounded-sm border border-divider px-2 py-1 text-xs text-muted">{progress.bestScores[key] ?? 0} ponto(s) · recorde</span></div>
     <p className="mt-2 text-sm text-muted">{challenge.prompt[lang]}</p>
     {checks && <ul className="mt-2 space-y-1 text-xs text-muted" aria-label="Casos conferidos">
-      {checks.map((c, i) => <li key={i}>Caso {i + 1}: {c.label[lang]}{c.args?.length ? ` · argumentos: ${c.args.map((a) => `“${a}”`).join(" ")}` : ""}{c.stdin ? ` · entrada: “${c.stdin.trim()}”` : ""}
+      {checks.map((c, i) => <li key={i}>Caso {i + 1}: {c.label[lang]}{c.args?.length ? ` · argumentos: ${c.args.map((a) => `“${a}”`).join(" ")}` : ""}{c.stdin ? ` · entrada: “${c.stdin.trim().replace(/\n/g, " ↵ ")}”` : ""}
+        {c.page && <details className="mt-1"><summary className="cursor-pointer">Ver a página deste caso</summary><pre className="mt-1 whitespace-pre-wrap break-all rounded-sm border border-divider bg-bg p-2 font-mono">{c.page}</pre></details>}
         {c.tables && <details className="mt-1"><summary className="cursor-pointer">Ver as tabelas deste caso</summary>
           {c.tables[lang].map((t) => <pre key={t.name} className="mt-1 whitespace-pre-wrap rounded-sm border border-divider bg-bg p-2 font-mono">{`${t.name} (${t.columns.join(" | ")})\n${t.rows.map(sqlRowLine).join("\n")}`}</pre>)}
         </details>}
@@ -489,7 +567,7 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
       <textarea className="input mt-1 min-h-40 resize-y py-3 font-mono text-sm leading-6" aria-invalid={error} value={typed} onChange={(event) => { setTyped(event.target.value); setError(false); setNotice(""); setCases(null); setRunError(""); }} onPaste={(event) => event.preventDefault()} onDrop={(event) => event.preventDefault()} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} placeholder="Escreva sua resposta…" data-testid="challenge-answer" />
     </label>}
 
-    {!completed && <div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" className="btn-primary min-h-10" disabled={!typed.trim() || checking} onClick={submit} data-testid="challenge-submit"><Check size={16} aria-hidden />{runsAnswer ? "Executar e conferir" : "Conferir resposta"}</button><span className="text-xs text-muted">Esta tentativa vale até {points} ponto(s).</span></div>}
+    {!completed && <div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" className="btn-primary min-h-10" disabled={!typed.trim() || checking} onClick={submit} data-testid="challenge-submit"><Check size={16} aria-hidden />{!runsAnswer ? "Conferir resposta" : example.id === "web" ? "Montar e conferir" : "Executar e conferir"}</button><span className="text-xs text-muted">Esta tentativa vale até {points} ponto(s).</span></div>}
     {notice && <p role={error ? "alert" : "status"} className={`mt-2 text-sm ${error ? "text-fail" : "text-accent"}`} data-testid="challenge-notice">{notice}</p>}
     {runError && <pre className="mt-2 whitespace-pre-wrap rounded-sm border border-fail/60 p-2 font-mono text-xs" data-testid="challenge-run-error">{runError}</pre>}
     {/* Failed cases say what was expected and what came out, never the reference solution. */}
@@ -501,7 +579,7 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
     </ul>}
 
     {completed && <div className="mt-4 rounded-sm border border-done/40 bg-done-bg p-3"><p className="font-semibold text-done">Desafio concluído. Seu progresso ficou guardado na sua conta.</p><p className="mt-1 text-xs text-muted">Recorde: {progress.bestScores[key] ?? 0} ponto(s)</p>
-      {passed && <div className="mt-3 rounded-sm border border-divider bg-bg p-3" data-testid="challenge-output"><p className="pixel text-[10px] uppercase text-muted">{runsAnswer ? "Saída da sua resposta (aprovada)" : "Resultado esperado"}</p><pre className="mt-1 whitespace-pre-wrap font-mono text-sm">{passed.output}</pre></div>}
+      {passed && <div className="mt-3 rounded-sm border border-divider bg-bg p-3" data-testid="challenge-output"><p className="pixel text-[10px] uppercase text-muted">{!runsAnswer ? "Resultado esperado" : example.id === "web" ? "O que a conferência leu na sua página (aprovada)" : "Saída da sua resposta (aprovada)"}</p><pre className="mt-1 whitespace-pre-wrap font-mono text-sm">{passed.output}</pre></div>}
       <p className="mt-3 text-xs text-muted">Solução de referência</p><pre className="mt-1 max-h-72 overflow-auto rounded-sm border border-divider bg-bg p-3 font-mono text-xs leading-5"><code>{solution}</code></pre>
       <div className="mt-3 flex flex-wrap gap-2"><button type="button" className="btn-secondary min-h-9 text-xs" onClick={() => setShowExplanation((value) => !value)}>{showExplanation ? "Ocultar explicação" : "Entender o código (beta)"}</button><button type="button" className="btn-secondary min-h-9 text-xs" onClick={() => setShowExample((value) => !value)}>{showExample ? "Fechar playground" : passed?.code && mode === "hints" ? "Abrir sua resposta no playground" : "Abrir no playground"}</button><button type="button" className="btn-secondary min-h-9 text-xs" onClick={() => { setReview(true); setTyped(""); setPassed(null); setCases(null); setRunError(""); setHintLevel(0); setNotice("Revisão opcional: seu progresso e recorde serão preservados."); setError(false); }}>{challengeCompletedBefore ? "Fazer de novo" : "Tentar novamente"}</button></div>
       {showExplanation && <CodeExplainer code={passed?.code && mode === "hints" ? passed.code : solution} lang={lang} checks={checks} hints={hints} prompt={challenge.prompt[lang]} />}
@@ -511,7 +589,7 @@ function ChallengePanel({ example, challenge, lang, difficulty, bashId, progress
           <p className="mt-1 text-xs text-muted">Este exemplo é outro programa, para experimentar a linguagem; não é a resposta do desafio.</p>
           <div className="mt-2 rounded-sm border border-done/30 bg-done-bg p-2"><p className="pixel text-[10px] uppercase text-done">Resultado do exemplo</p><pre className="mt-1 whitespace-pre-wrap font-mono text-xs">{example.expected[lang]}</pre></div>
         </>}
-        {example.id === "bash" ? <BashTry code={playgroundCode} bash={bash} lang={lang} /> : <CodePlayground id={example.id} code={playgroundCode} expected={example.expected[lang]} lang={lang} />}
+        {example.id === "bash" ? <BashTry code={playgroundCode} bash={bash} lang={lang} /> : <CodePlayground id={example.id} code={playgroundCode} expected={example.expected[lang]} lang={lang} stdin={ownAnswer ? check?.stdin : undefined} />}
       </section>}
     </div>}
   </section>;

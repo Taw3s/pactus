@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Globe2, Play, RotateCcw, Terminal } from "lucide-react";
 import type { LanguageExampleId } from "@/lib/typing-language-examples";
 import type { TypingLang } from "@/lib/typing";
+import { JAVA_CHECK_RESOURCES } from "@/lib/java-challenge-checks";
 import { javaBrowserSource } from "@/lib/java-toolchain";
 import { isPlaygroundRunnerMessage, PLAYGROUND_RUNNER_BRIDGE } from "@/lib/playground-runner-messages";
 import { resolveIsolatedHostOrigin } from "@/lib/youtube-player-messages";
@@ -14,6 +15,8 @@ type Props = {
   code: string;
   expected: string;
   lang: TypingLang;
+  /** Java only: standard input for the run (an approved challenge answer reads its first case from it). */
+  stdin?: string;
 };
 
 type ConsoleLine = { kind: "log" | "warn" | "error"; text: string };
@@ -84,7 +87,7 @@ function clampOutput(text: string) {
   return text.length > MAX_OUTPUT_LENGTH ? `${text.slice(0, MAX_OUTPUT_LENGTH)}\n… saída limitada` : text;
 }
 
-export function CodePlayground({ id, code, expected, lang }: Props) {
+export function CodePlayground({ id, code, expected, lang, stdin }: Props) {
   const [source, setSource] = useState(code);
   const [liveDocument, setLiveDocument] = useState(() => withPreviewPolicy(code));
   const [runDocument, setRunDocument] = useState("");
@@ -286,9 +289,10 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
 
       setRunMessage(english ? "Running the compiled program in a bounded WebAssembly sandbox…" : "Executando o programa compilado em um ambiente WebAssembly com limites…");
       const result = await engine.run(build.artifact, {
-        stdin: "",
+        stdin: stdin ?? "",
         resources: {
-          instructionBudget: 50_000_000,
+          // An answer that reads its input with java.util.Scanner needs the challenge check's budget.
+          instructionBudget: stdin ? JAVA_CHECK_RESOURCES.instructionBudget : 50_000_000,
           logicalTimeLimitMs: 5000,
           memoryLimitBytes: 64 * 1024 * 1024,
           outputLimitBytes: MAX_OUTPUT_LENGTH,
@@ -412,6 +416,8 @@ export function CodePlayground({ id, code, expected, lang }: Props) {
     <label className="mt-3 block text-xs font-semibold text-muted">{english ? "Editable code" : "Código editável"}
       <textarea className="mt-1 min-h-48 w-full resize-y rounded-sm border-2 border-bevel-dark bg-bg p-3 font-mono text-xs leading-5 text-fg focus:border-accent focus:outline-none" spellCheck={false} autoCapitalize="off" autoCorrect="off" maxLength={30000} value={source} onChange={(event) => setSource(event.target.value)} aria-label={english ? "Editable playground code" : "Código editável do playground"} />
     </label>
+
+    {id === "java" && stdin && <p className="mt-2 text-xs text-muted" data-testid="playground-stdin">{english ? "Standard input of this run (first case):" : "Entrada padrão desta execução (caso 1):"} <code className="whitespace-pre-wrap font-mono">{stdin.trim().replace(/\n/g, " ↵ ")}</code></p>}
 
     {needsIsolatedRunner && !runnerOrigin && <p className="mt-3 rounded-sm border border-pending/60 bg-warn-bg p-3 text-xs text-muted" role="status">
       {english
