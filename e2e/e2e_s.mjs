@@ -214,9 +214,19 @@ await step("JavaScript, TypeScript and Web answers are checked by what they do, 
   assert((await panel.getByRole("list", { name: "Casos conferidos" }).count()) === 0, "fundamentals: no cases");
 });
 
-await step("Java without its runtime (no cross-origin isolation on this phone): even the exact reference is refused, with no output and no row in learning_progress", async () => {
+await step("Java without its runtime (a page without cross-origin isolation): even the exact reference is refused, with no output and no row in learning_progress", async () => {
   const p = lia.page;
-  assert(!(await p.evaluate(() => crossOriginIsolated)), "the phone is not cross-origin isolated");
+  // A browser without cross-origin isolation (Safari, Firefox): whether the phone profile gets the headers depends on the
+  // browser build, so the page is loaded without them on purpose, and the check is the same everywhere.
+  await p.route("**/aprender", async (route) => {
+    const response = await route.fetch();
+    const headers = { ...response.headers() };
+    delete headers["cross-origin-opener-policy"];
+    delete headers["cross-origin-embedder-policy"];
+    await route.fulfill({ response, headers });
+  });
+  await p.goto(`${APP}/aprender`);
+  assert(!(await p.evaluate(() => crossOriginIsolated)), "the page is not cross-origin isolated");
   await p.getByRole("tab", { name: "Desafios" }).click();
   const panel = p.getByTestId("language-code-challenge");
   await p.getByLabel("Linguagem").selectOption("java");
@@ -232,6 +242,7 @@ await step("Java without its runtime (no cross-origin isolation on this phone): 
   assert((await panel.getByTestId("challenge-cases").count()) === 0, "java: no case was run");
   assert((await panel.getByText("Desafio concluído. Seu progresso ficou guardado na sua conta.").count()) === 0, "java: not completed");
   assert(sql(`select count(*) from learning_progress where user_id = '${lia.id}' and item_id = 'java:easy:pt'`) === "0", "java: no score saved");
+  await p.unroute("**/aprender");
 });
 
 await step("typing: Código mode with Bash ends at the end of the code and offers Recomeçar", async () => {
