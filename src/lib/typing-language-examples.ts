@@ -111,14 +111,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "No playground após o desafio, pressione Executar. A lista aparece na prévia Web e o console mostra os nomes. Altere concluida para true ou false e execute de novo.", en: "In the playground after the challenge, press Run. The list appears in the Web preview and the console prints the names. Change completed to true or false and run again." },
     challenge: {
       title: { pt: "Listar itens ativos", en: "List active items" },
-      prompt: { pt: "Dada a lista [{nome: 'Ler', ativa: true}, {nome: 'Pausar', ativa: false}], filtre os itens ativos e mostre seus nomes separados por vírgula.", en: "Given [{name: 'Read', active: true}, {name: 'Pause', active: false}], filter active items and print their names separated by commas." },
+      prompt: { pt: "A lista de tarefas já vem declarada em entrada: objetos com nome e ativa, como [{ nome: 'Ler', ativa: true }, { nome: 'Pausar', ativa: false }]. Filtre as tarefas ativas e mostre com console.log os nomes delas separados por vírgula e espaço. Não declare a lista na resposta: cada caso traz uma lista diferente.", en: "The list of tasks is already declared as input: objects with name and active, such as [{ name: 'Read', active: true }, { name: 'Pause', active: false }]. Filter the active tasks and print their names with console.log, separated by a comma and a space. Do not declare the list in your answer: each case brings a different list." },
       solution: {
-        pt: "const tarefas = [\n  { nome: \"Ler\", ativa: true },\n  { nome: \"Pausar\", ativa: false },\n];\nconst ativas = tarefas.filter((tarefa) => tarefa.ativa);\nconsole.log(ativas.map((tarefa) => tarefa.nome).join(\", \"));",
-        en: "const tasks = [\n  { name: \"Read\", active: true },\n  { name: \"Pause\", active: false },\n];\nconst active = tasks.filter((task) => task.active);\nconsole.log(active.map((task) => task.name).join(\", \"));",
+        pt: "const ativas = entrada.filter((tarefa) => tarefa.ativa);\nconsole.log(ativas.map((tarefa) => tarefa.nome).join(\", \"));",
+        en: "const active = input.filter((task) => task.active);\nconsole.log(active.map((task) => task.name).join(\", \"));",
       },
       hints: {
-        pt: ["A lista contém objetos; cada objeto tem nome e um valor booleano ativa.", "Use filter para escolher os objetos e map para extrair os nomes.", "Filtre por tarefa.ativa e imprima ativas.map(tarefa => tarefa.nome).join(', ')."],
-        en: ["The list contains objects; each object has a name and a boolean active value.", "Use filter to choose objects and map to extract their names.", "Filter by task.active and print active.map(task => task.name).join(', ')."],
+        pt: ["A lista já existe na variável entrada; cada objeto tem nome e um valor booleano ativa.", "Use filter para escolher os objetos e map para extrair os nomes.", "Filtre por tarefa.ativa e imprima ativas.map(tarefa => tarefa.nome).join(', ')."],
+        en: ["The list already exists in the input variable; each object has a name and a boolean active value.", "Use filter to choose objects and map to extract their names.", "Filter by task.active and print active.map(task => task.name).join(', ')."],
       },
       output: { pt: "Ler", en: "Read" },
     },
@@ -136,14 +136,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "Cole no TypeScript Playground ou em um projeto TypeScript. Mude concluida para texto e observe o aviso do compilador.", en: "Paste it into the TypeScript Playground or a TypeScript project. Change completed to text and observe the compiler error." },
     challenge: {
       title: { pt: "Formatar o estado de uma tarefa", en: "Format a task status" },
-      prompt: { pt: "Declare um tipo Tarefa com nome (texto) e concluida (booleano). Crie uma tarefa pendente e mostre 'Pendente' ou 'Feita' conforme seu estado.", en: "Declare a Task type with name (text) and completed (boolean). Create a pending task and print 'Pending' or 'Done' based on its state." },
+      prompt: { pt: "Declare um tipo Tarefa com nome (texto) e concluida (booleano). A tarefa de cada caso já vem em entrada (escreva declare const entrada: Tarefa; para dar o tipo a ela). Mostre com console.log 'Feita' quando ela está concluída e 'Pendente' quando não está. Não crie a tarefa na resposta: cada caso traz uma diferente.", en: "Declare a Task type with name (text) and completed (boolean). Each case's task is already in input (write declare const input: Task; to give it the type). Print 'Done' with console.log when it is completed and 'Pending' when it is not. Do not create the task in your answer: each case brings a different one." },
       solution: {
-        pt: "type Tarefa = {\n  nome: string;\n  concluida: boolean;\n};\n\nconst tarefa: Tarefa = { nome: \"Estudar\", concluida: false };\nconst estado = tarefa.concluida ? \"Feita\" : \"Pendente\";\nconsole.log(estado);",
-        en: "type Task = {\n  name: string;\n  completed: boolean;\n};\n\nconst task: Task = { name: \"Study\", completed: false };\nconst status = task.completed ? \"Done\" : \"Pending\";\nconsole.log(status);",
+        pt: "type Tarefa = {\n  nome: string;\n  concluida: boolean;\n};\ndeclare const entrada: Tarefa;\n\nconst estado = entrada.concluida ? \"Feita\" : \"Pendente\";\nconsole.log(estado);",
+        en: "type Task = {\n  name: string;\n  completed: boolean;\n};\ndeclare const input: Task;\n\nconst status = input.completed ? \"Done\" : \"Pending\";\nconsole.log(status);",
       },
       hints: {
-        pt: ["O tipo descreve o formato do objeto, mas não escolhe o estado por conta própria.", "Crie o objeto com concluida igual a false e use uma expressão condicional para escolher o texto.", "Declare Tarefa, crie tarefa, atribua estado com tarefa.concluida ? 'Feita' : 'Pendente' e imprima."],
-        en: ["The type describes the object shape, but it does not choose the state by itself.", "Create the object with completed set to false and use a conditional expression to choose the text.", "Declare Task, create task, assign status with task.completed ? 'Done' : 'Pending', then print it."],
+        pt: ["A tarefa já existe na variável entrada; o tipo descreve o formato do objeto, mas não escolhe o estado por conta própria.", "Dê o tipo Tarefa a entrada com declare const e use uma expressão condicional para escolher o texto.", "Declare Tarefa, atribua estado com entrada.concluida ? 'Feita' : 'Pendente' e imprima."],
+        en: ["The task already exists in the input variable; the type describes the object shape, but it does not choose the state by itself.", "Give input the Task type with declare const and use a conditional expression to choose the text.", "Declare Task, assign status with input.completed ? 'Done' : 'Pending', then print it."],
       },
       output: { pt: "Pendente", en: "Pending" },
     },
@@ -161,14 +161,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "Salve como Main.java e use JDK 11 ou mais recente: compile com javac Main.java e rode java Main.", en: "Save as Main.java and use JDK 11 or newer: compile with javac Main.java, then run java Main." },
     challenge: {
       title: { pt: "Contar valores positivos", en: "Count positive values" },
-      prompt: { pt: "Percorra a lista [-2, 4, 0, 7], conte quantos números são maiores que zero e mostre a contagem.", en: "Walk through [-2, 4, 0, 7], count how many numbers are greater than zero, and print the count." },
+      prompt: { pt: "A entrada padrão (System.in) traz uma linha com números inteiros separados por espaço, como -2 4 0 7. Leia essa linha (com BufferedReader ou Scanner), conte quantos números são maiores que zero e mostre a contagem com System.out.println. Não escreva os números na resposta: cada caso traz uma linha diferente.", en: "Standard input (System.in) brings one line of integers separated by spaces, such as -2 4 0 7. Read that line (with BufferedReader or Scanner), count how many numbers are greater than zero, and print the count with System.out.println. Do not write the numbers in your answer: each case brings a different line." },
       solution: {
-        pt: "import java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> numeros = List.of(-2, 4, 0, 7);\n        long positivos = numeros.stream()\n            .filter(numero -> numero > 0)\n            .count();\n        System.out.println(positivos);\n    }\n}",
-        en: "import java.util.List;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> numbers = List.of(-2, 4, 0, 7);\n        long positives = numbers.stream()\n            .filter(number -> number > 0)\n            .count();\n        System.out.println(positives);\n    }\n}",
+        pt: "import java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader leitor = new BufferedReader(new InputStreamReader(System.in));\n        long positivos = Arrays.stream(leitor.readLine().trim().split(\" \"))\n            .mapToInt(Integer::parseInt)\n            .filter(numero -> numero > 0)\n            .count();\n        System.out.println(positivos);\n    }\n}",
+        en: "import java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        long positives = Arrays.stream(reader.readLine().trim().split(\" \"))\n            .mapToInt(Integer::parseInt)\n            .filter(number -> number > 0)\n            .count();\n        System.out.println(positives);\n    }\n}",
       },
       hints: {
-        pt: ["A lista mistura negativos, zero e positivos; zero não conta como maior que zero.", "Transforme a lista em fluxo, mantenha numero > 0 e conte os elementos restantes.", "Use stream(), filter(numero -> numero > 0), count() e imprima o resultado."],
-        en: ["The list mixes negative values, zero, and positives; zero is not greater than zero.", "Turn the list into a stream, keep number > 0, and count the remaining items.", "Use stream(), filter(number -> number > 0), count(), and print the result."],
+        pt: ["Os números chegam pela entrada padrão: leia a linha com BufferedReader e separe com split. Zero não conta como maior que zero.", "Transforme as partes em um fluxo de inteiros, mantenha numero > 0 e conte os elementos restantes.", "Use Arrays.stream(...).mapToInt(Integer::parseInt), filter(numero -> numero > 0), count() e imprima o resultado."],
+        en: ["The numbers arrive on standard input: read the line with BufferedReader and split it. Zero is not greater than zero.", "Turn the parts into a stream of integers, keep number > 0, and count the remaining items.", "Use Arrays.stream(...).mapToInt(Integer::parseInt), filter(number -> number > 0), count(), and print the result."],
       },
       output: { pt: "2", en: "2" },
     },
@@ -186,14 +186,14 @@ export const LANGUAGE_CODE_EXAMPLES: LanguageExample[] = [
     howToTry: { pt: "Salve como index.html e abra o arquivo no navegador. Edite a cor do título ou o espaçamento do cartão.", en: "Save as index.html and open it in a browser. Change the heading color or card spacing." },
     challenge: {
       title: { pt: "Criar um aviso acessível", en: "Create an accessible notice" },
-      prompt: { pt: "Escreva uma página HTML com idioma declarado, um título 'Aviso', uma mensagem dentro de main e um botão 'Entendi'. Use um rótulo claro no botão.", en: "Write an HTML page with a declared language, an 'Notice' heading, a message inside main, and an 'I understand' button with a clear label." },
+      prompt: { pt: "Escreva uma página HTML com o idioma declarado em <html> (lang), o título de página 'Aviso' e, dentro de main, um h1 'Aviso', um parágrafo 'Seu progresso foi salvo.' e um botão 'Entendi' com type=\"button\". A conferência monta a sua página num quadro isolado e examina o resultado (elementos, textos e atributos), não o texto do código.", en: "Write an HTML page with the language declared on <html> (lang), the page title 'Notice' and, inside main, an h1 'Notice', a paragraph 'Your progress was saved.' and an 'I understand' button with type=\"button\". The check mounts your page in an isolated frame and examines the result (elements, texts and attributes), not the text of the code." },
       solution: {
         pt: "<!doctype html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>Aviso</title>\n</head>\n<body>\n  <main>\n    <h1>Aviso</h1>\n    <p>Seu progresso foi salvo.</p>\n    <button type=\"button\">Entendi</button>\n  </main>\n</body>\n</html>",
         en: "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>Notice</title>\n</head>\n<body>\n  <main>\n    <h1>Notice</h1>\n    <p>Your progress was saved.</p>\n    <button type=\"button\">I understand</button>\n  </main>\n</body>\n</html>",
       },
       hints: {
-        pt: ["Comece com doctype, idioma, título da página e codificação UTF-8.", "Use main para o conteúdo principal, h1 para o título e um botão com type=button.", "Monte a estrutura HTML e coloque o texto 'Seu progresso foi salvo.' e o botão 'Entendi' dentro de main."],
-        en: ["Start with the doctype, document language, page title, and UTF-8 encoding.", "Use main for the primary content, h1 for the heading, and a button with type=button.", "Build the HTML structure and place 'Your progress was saved.' and the 'I understand' button inside main."],
+        pt: ["A conferência olha a página pronta: comece com doctype, idioma, título da página e codificação UTF-8.", "Use main para o conteúdo principal, h1 para o título e um botão com type=button.", "Monte a estrutura HTML e coloque o texto 'Seu progresso foi salvo.' e o botão 'Entendi' dentro de main."],
+        en: ["The check looks at the finished page: start with the doctype, document language, page title, and UTF-8 encoding.", "Use main for the primary content, h1 for the heading, and a button with type=button.", "Build the HTML structure and place 'Your progress was saved.' and the 'I understand' button inside main."],
       },
       output: { pt: "Uma página com o título Aviso, a mensagem de progresso e o botão Entendi.", en: "A page with the Notice heading, the progress message, and the I understand button." },
     },

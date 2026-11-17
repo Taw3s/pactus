@@ -27,6 +27,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The JavaScript, TypeScript, Web and Java challenge checks are tested in a real Chromium (src/lib/test-chromium.ts).
+      - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
