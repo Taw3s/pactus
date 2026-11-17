@@ -215,18 +215,24 @@ await step("JavaScript, TypeScript and Web answers are checked by what they do, 
 });
 
 await step("Java without its runtime (a page without cross-origin isolation): even the exact reference is refused, with no output and no row in learning_progress", async () => {
-  const p = lia.page;
-  // A browser without cross-origin isolation (Safari, Firefox): whether the phone profile gets the headers depends on the
-  // browser build, so the page is loaded without them on purpose, and the check is the same everywhere.
+  // A browser without cross-origin isolation (Safari, Firefox). Whether the phone profile gets the headers depends on the
+  // browser build, so this context has no service worker (it would answer the page without the route) and the page is
+  // loaded without the headers on purpose; the check is then the same everywhere.
+  const ctx = await browser.newContext({ ...devices["iPhone 13"], locale: "pt-BR", timezoneId: "America/Sao_Paulo", serviceWorkers: "block" });
+  const p = await ctx.newPage();
+  await login(p, "Lia");
+  let stripped = 0;
   await p.route("**/aprender", async (route) => {
     const response = await route.fetch();
     const headers = { ...response.headers() };
     delete headers["cross-origin-opener-policy"];
     delete headers["cross-origin-embedder-policy"];
+    stripped++;
     await route.fulfill({ response, headers });
   });
-  await p.goto(`${APP}/aprender`);
-  assert(!(await p.evaluate(() => crossOriginIsolated)), "the page is not cross-origin isolated");
+  const res = await p.goto(`${APP}/aprender`);
+  const isolated = await p.evaluate(() => crossOriginIsolated);
+  assert(!isolated, `the page is not cross-origin isolated (route ran ${stripped}x; COOP ${res.headers()["cross-origin-opener-policy"]}, COEP ${res.headers()["cross-origin-embedder-policy"]}; ${await p.evaluate(() => navigator.userAgent)})`);
   await p.getByRole("tab", { name: "Desafios" }).click();
   const panel = p.getByTestId("language-code-challenge");
   await p.getByLabel("Linguagem").selectOption("java");
@@ -242,7 +248,7 @@ await step("Java without its runtime (a page without cross-origin isolation): ev
   assert((await panel.getByTestId("challenge-cases").count()) === 0, "java: no case was run");
   assert((await panel.getByText("Desafio concluído. Seu progresso ficou guardado na sua conta.").count()) === 0, "java: not completed");
   assert(sql(`select count(*) from learning_progress where user_id = '${lia.id}' and item_id = 'java:easy:pt'`) === "0", "java: no score saved");
-  await p.unroute("**/aprender");
+  await ctx.close();
 });
 
 await step("typing: Código mode with Bash ends at the end of the code and offers Recomeçar", async () => {
