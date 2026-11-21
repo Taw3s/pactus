@@ -160,7 +160,11 @@ export function jpegSize(buf) {
  * types the shown words at a human pace until the test ends.
  */
 export async function typingTest(page, card) {
-  await card.getByRole("button", { name: "Começar teste" }).click();
+  const startButton = card.getByRole("button", { name: "Começar teste" });
+  // The server draws the button (and "N tentativas restantes") before React attaches its handler: a click right after
+  // a reload can land before hydration and be lost, and then typing-input never comes. Wait for React's props on it.
+  await page.waitForFunction((b) => Object.keys(b).some((k) => k.startsWith("__reactProps")), await startButton.elementHandle(), { timeout: 30_000 });
+  await startButton.click();
   const input = card.getByTestId("typing-input");
   await input.waitFor();
   while ((await card.getAttribute("data-state").catch(() => null)) !== null && (await card.getByTestId("typing-test").getAttribute("data-phase").catch(() => "gone")) === "running") {
